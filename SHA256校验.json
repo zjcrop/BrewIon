@@ -1,0 +1,30 @@
+{
+  "README_部署说明.md": {
+    "sha256": "001c3569d9f18b2f526807418752199cc6e1fab70f04fc0921a55f88961730f5",
+    "bytes": 1012
+  },
+  "BrewIon_v2.9_未来日期修改与测试报告.md": {
+    "sha256": "ee753f9dd22e15a421440e56124e899de2175979345264a69ef20044dc7f1420",
+    "bytes": 1889
+  },
+  "coffee-qr-tool/index.html": {
+    "sha256": "0d9da0f22809c3aea60b615eb83ca9a83eff9f916c7d273d6a60ba9e0fbe405a",
+    "bytes": 73637
+  },
+  "tests/BrewIon_v2.9_未来日期浏览器测试结果.json": {
+    "sha256": "a6cb1130806d25b6cc733a87f47993cf5acb5096a4968edf4e5b9f3150988cb3",
+    "bytes": 925
+  },
+  "tests/BrewIon_v2.9_未来日期浏览器测试截图.png": {
+    "sha256": "6acd0b8178670eea7159df9e57fd0ce6e11be336fec4d16c1c9d805d9105a67e",
+    "bytes": 192097
+  },
+  "tests/BrewIon_v2.9_部署包浏览器复测结果.json": {
+    "sha256": "a6cb1130806d25b6cc733a87f47993cf5acb5096a4968edf4e5b9f3150988cb3",
+    "bytes": 925
+  },
+  "tests/BrewIon_v2.9_部署包浏览器复测截图.png": {
+    "sha256": "6acd0b8178670eea7159df9e57fd0ce6e11be336fec4d16c1c9d805d9105a67e",
+    "bytes": 192097
+  }
+}

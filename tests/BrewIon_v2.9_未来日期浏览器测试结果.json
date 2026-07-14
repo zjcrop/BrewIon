@@ -1,0 +1,50 @@
+{
+  "bounds": {
+    "min": "2000-01-01",
+    "max": "2127-09-27",
+    "flag": "enabled",
+    "self": {
+      "ok": true,
+      "tests": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "protocol": "fixed-cjk16-v9"
+    }
+  },
+  "harvest_options_2035": [
+    "",
+    "2035",
+    "2034",
+    "2033",
+    "2032"
+  ],
+  "decoded_2035": {
+    "roastDate": "2035-12-31",
+    "harvestYear": "2034",
+    "totalBytes": 40
+  },
+  "decoded_max": {
+    "roastDate": "2127-09-27",
+    "harvestYear": "",
+    "totalBytes": 40
+  },
+  "beyond_max": {
+    "rejected": true,
+    "message": "烘焙日期超出2000年至2127年的编码范围"
+  },
+  "payload_visible": "HEX:2A312A312A2A312A2A322A312A312A312A2A2A2A2A2A2A2A2A2A2A2A5A5A5A2A9EBB83499008B4B6",
+  "qr_canvas_count": 1,
+  "logs": []
+}
