@@ -1,45 +1,104 @@
 # 部署说明
 
-目标仓库：`zjcrop/BrewIon`
+目标仓库：
 
-将本压缩包中的两个目录上传到仓库 `main` 分支根目录：
+```text
+zjcrop/BrewIon
+```
 
-- `coffee-qr-tool/`
-- `coffee-qr-codebook/`
+本恢复包按仓库根目录组织。解压后，把包内文件上传到仓库根目录，并保持目录结构。
 
-不要覆盖现有 `index.html`、`www/` 或 BrewIon 文件。
+## 包含文件
 
-## GitHub 网页上传
+```text
+README.md
+CONTRIBUTING.md
+MAINTENANCE_NOTICE.md
+CHANGELOG.md
+DEPLOY.md
+LICENSE
+coffee-qr-tool/index.html
+coffee-qr-tool/README.md
+coffee-qr-codebook/README.md
+docs/TECHNICAL_SPEC.md
+docs/MAINTAINER_GUIDE.md
+docs/DEVELOPMENT_DIALOGUE_TEMPLATE.md
+SHA256校验.json
+```
 
-1. 打开 `zjcrop/BrewIon`。
-2. 选择 **Add file → Upload files**。
-3. 将两个目录整体拖入上传区域。
-4. Commit message 填写：`Add coffee QR tool and public codebook`。
-5. 提交到 `main`。
+本包不包含、也不会替换：
 
-## 启用 GitHub Pages
+```text
+coffee-qr-codebook/coffee_qr_codebook_v6.json
+```
 
-进入 **Settings → Pages**：
+这样可以避免误覆盖正式编码表。
 
-- Source：`Deploy from a branch`
-- Branch：`main`
-- Folder：`/(root)`
+## GitHub网页部署
 
-保存后网页预期地址：
+1. 解压本压缩包；
+2. 打开仓库 `zjcrop/BrewIon`；
+3. 选择 **Add file → Upload files**；
+4. 将解压后的全部文件和目录拖入上传区域；
+5. 确认路径不是多套了一层压缩包目录；
+6. 提交到 `main`。
 
+建议提交说明：
+
+```text
+Restore v3.0 README and maintenance documentation
+```
+
+## GitHub Pages
+
+进入：
+
+```text
+Settings → Pages
+```
+
+设置：
+
+```text
+Source: Deploy from a branch
+Branch: main
+Folder: /(root)
+```
+
+在线地址：
+
+```text
 https://zjcrop.github.io/BrewIon/coffee-qr-tool/
+```
 
-编码表公开地址：
+如果仍显示旧版：
 
-https://github.com/zjcrop/BrewIon/tree/main/coffee-qr-codebook
+1. 把Branch临时设为None并保存；
+2. 再恢复为`main / (root)`并保存；
+3. 重新访问页面；
+4. 检查右上角是否显示v3.0。
 
-Raw 地址：
+## 部署验收
 
-https://raw.githubusercontent.com/zjcrop/BrewIon/main/coffee-qr-codebook/coffee_qr_codebook_v6.json
+### 文件
 
-## 验收
+- 根目录出现 `README.md`；
+- `coffee-qr-tool/README.md`存在；
+- `coffee-qr-codebook/README.md`存在；
+- `MAINTENANCE_NOTICE.md`存在；
+- `LICENSE`存在；
+- `coffee-qr-tool/index.html`仍是v3.0。
 
-1. 打开网页地址，确认页面正常加载。
-2. 点击版本号，检查数据库来源是否显示远程或缓存。
-3. 点击“立即同步编码表”，应显示同步成功。
-4. 生成并解码一条二维码，确认 CRC 和明文映射正常。
+### 页面
+
+- 在线工具正常加载；
+- 版本显示v3.0；
+- 生成和解码正常；
+- 自定义字段正常；
+- 日历按钮正常；
+- 图片上传和本地保持正常；
+- 编码表同步地址不变。
+
+### 安全检查
+
+上传前可对照 `SHA256校验.json`。本包中的 `coffee-qr-tool/index.html`与此前正式v3.0文件内容完全相同。
