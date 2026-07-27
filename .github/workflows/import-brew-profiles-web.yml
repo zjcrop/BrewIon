@@ -1,12 +1,10 @@
 name: Import Brew Profiles Web App
 
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]
+  push:
+    branches: [main]
     paths:
-      - '.brew-profiles-import-trigger'
-      - 'pages-deploy-trigger.txt'
-      - '.github/workflows/import-brew-profiles-web.yml'
+      - '.brew-profiles-import-trigger-main'
 
 permissions:
   contents: write
@@ -17,14 +15,13 @@ concurrency:
 
 jobs:
   import-web-assets:
-    if: github.event.pull_request.title == 'chore: import Brew Profiles web assets' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     env:
       ARTIFACT_URL: 'https://sdmntprwestus3.oaiusercontent.com/files/00000000-0ccc-81fd-aa87-b7888f8d4d99/raw?se=2026-07-27T14:12:10Z&sp=r&sv=2026-02-06&sr=b&scid=968df0f3-e327-56cf-b21c-c3378810f488&skoid=b9a47e8b-72a2-4ed3-8028-a2a98c1a6142&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-07-27T12:13:00Z&ske=2026-07-29T12:13:00Z&sks=b&skv=2026-02-06&sig=YL0KlreL4rJ9VDn9tRDfRXAv5Wfkm4h4Ot6SXrywWlE%3D'
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: main
           fetch-depth: 0
       - name: Download verified APK artifact
         run: curl --fail --location --retry 3 "$ARTIFACT_URL" --output artifact.zip
@@ -39,15 +36,14 @@ jobs:
           cp -a .import-tmp/apk/assets/web/. brew-profiles/
           test -s brew-profiles/index.html
           test -s brew-profiles/manifest.webmanifest
-      - name: Remove temporary import files and commit web directory
+      - name: Commit web directory and remove one-time importer
         run: |
           rm -rf .import-tmp artifact.zip
-          rm -f .brew-profiles-import-trigger pages-deploy-trigger.txt
-          rm -rf brew-profiles/data
+          rm -f .brew-profiles-import-trigger-main
           rm -f .github/workflows/import-brew-profiles-web.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
           git diff --cached --check
           git commit -m 'feat: publish Brew Profiles web app'
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          git push origin HEAD:main
