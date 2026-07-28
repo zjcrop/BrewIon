@@ -1,0 +1,85 @@
+name: Publish Lucky Bean stable web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.luckybean-publish-trigger'
+      - '.github/workflows/publish-luckybean-web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-luckybean-web
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout BrewIon Pages repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Checkout verified Lucky Bean source
+        uses: actions/checkout@v4
+        with:
+          repository: zjcrop/luckybean
+          ref: main
+          path: _luckybean_source
+
+      - name: Validate Lucky Bean web source
+        working-directory: _luckybean_source
+        run: |
+          set -euo pipefail
+          npm test
+          npm run check
+          test -s index.html
+          test -s styles.css
+          test -s src/app.js
+          test -s public/fallback-codebook.json
+
+      - name: Publish runtime files under BrewIon/luckybean
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf luckybean
+          mkdir -p luckybean
+          cp _luckybean_source/index.html luckybean/
+          cp _luckybean_source/styles.css luckybean/
+          cp _luckybean_source/manifest.webmanifest luckybean/
+          cp _luckybean_source/sw.js luckybean/
+          cp -R _luckybean_source/src luckybean/
+          cp -R _luckybean_source/public luckybean/
+          touch luckybean/.nojekyll
+          source_sha="$(git -C _luckybean_source rev-parse HEAD)"
+          cat > luckybean/release.json <<EOF
+          {
+            "name": "Lucky Bean Web Stable",
+            "version": "0.6.0",
+            "source_repository": "zjcrop/luckybean",
+            "source_sha": "$source_sha",
+            "published_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "url": "https://zjcrop.github.io/BrewIon/luckybean/"
+          }
+          EOF
+          rm -rf _luckybean_source
+
+      - name: Commit verified web release
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add luckybean
+          if git diff --cached --quiet; then
+            echo 'Lucky Bean web files are already current.'
+            exit 0
+          fi
+          git commit -m 'feat: publish verified Lucky Bean web stable'
+          git push origin HEAD:main
