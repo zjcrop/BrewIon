@@ -1,5 +1,6 @@
 import { clamp, sha256Hex } from './utils.js';
 import { calculateWaterRecipe, inferWaterProfile, WATER_MODEL_VERSION } from './water-profiles.js';
+import { BREW_MODEL_VERSION, professionalTemperatureModel, applyTemperatureOverrides, buildDetailedTrajectory, targetExtractionModel } from './brew-model-v09.js';
 
 /**
  * Public browser-compatible brew engine for Lucky Bean.
@@ -9,7 +10,7 @@ import { calculateWaterRecipe, inferWaterProfile, WATER_MODEL_VERSION } from './
  * or depending on GitHub at runtime. The exact private engine remains optional through
  * requestPrivatePlan().
  */
-export const FALLBACK_ENGINE_VERSION = 'lucky-brew-compat-0.8.0-beta';
+export const FALLBACK_ENGINE_VERSION = 'lucky-brew-0.9.0-beta.1';
 export const BREW_SCHEMA_VERSION = 2;
 
 export const BREW_PROFILES = Object.freeze([
@@ -318,14 +319,51 @@ export async function computeFallbackPlan(input) {
   const group = dripperGroup(brew.dripperCode);
   const resolved = resolveProfile(input);
   const waterProfileId = brew.waterProfileId || input.water?.profileId || inferWaterProfile(bean);
-  const water = calculateWaterRecipe(waterProfileId, { volumeL: Number(input.water?.recipeVolumeL || 5), targets });
-  const temperature = resolveTemperature(input, level, process, water);
+  const customWater = waterProfileId === 'custom' && input.water?.customProfile;
+  const water = customWater
+    ? {
+        modelVersion: `${WATER_MODEL_VERSION}+custom`,
+        profile: {
+          id: 'custom', name: '自定义',
+          tds: [Number(input.water.customProfile.tds || 85), Number(input.water.customProfile.tds || 85)],
+          tdsMid: Number(input.water.customProfile.tds || 85),
+          ca: clamp(Number(input.water.customProfile.ca || 0), 0, 100),
+          mg: clamp(Number(input.water.customProfile.mg || 0), 0, 100),
+          hco3: clamp(Number(input.water.customProfile.hco3 || 0), 0, 150),
+          note: '用户自定义离子浓度；应以实测TDS和感官结果复核。'
+        },
+        volumeL: Number(input.water?.recipeVolumeL || 5), doses: [], totalDoseG: null,
+        targetIonsMgL: {
+          calcium: Number(input.water.customProfile.ca || 0), magnesium: Number(input.water.customProfile.mg || 0), bicarbonate: Number(input.water.customProfile.hco3 || 0)
+        },
+        targetTdsRange: [Number(input.water.customProfile.tds || 85), Number(input.water.customProfile.tds || 85)],
+        operationalTdsRange: [Math.max(0, Number(input.water.customProfile.tds || 85) - 8), Number(input.water.customProfile.tds || 85) + 8],
+        warning: '自定义调水仅记录目标浓度，不自动推导pH；必须实测。'
+      }
+    : calculateWaterRecipe(waterProfileId, { volumeL: Number(input.water?.recipeVolumeL || 5), targets });
+  const legacyTemperature = resolveTemperature(input, level, process, water);
+  const temperatureModel = professionalTemperatureModel(bean, water.profile, targets);
+  const temperature = Number.isFinite(Number(brew.mainTemperatureC))
+    ? round(clamp(Number(brew.mainTemperatureC), 82, 97), 1)
+    : round(clamp((legacyTemperature + temperatureModel.mainC) / 2, 82, 97), 1);
+  temperatureModel.mainC = temperature;
+  temperatureModel.firstC = round(clamp(temperature - temperatureModel.firstDropC, 78, temperature), 1);
+  temperatureModel.tailC = round(clamp(temperature - temperatureModel.tailDropC, 78, temperature), 1);
   const grinder = resolveGrinder(input, level, group, resolved.id);
-  const stages = buildStages(input, resolved.id, totalWater, temperature, level, targets);
+  const rawStages = buildStages(input, resolved.id, totalWater, temperature, level, targets);
+  const stages = applyTemperatureOverrides(rawStages, temperatureModel, brew);
   const targetTimeSec = stages.reduce((sum, item) => sum + Number(item.durationSec || 0), 0);
   const flavorFit = buildFlavorFit(level, process, targets, water, resolved.id);
   const trajectory = buildTrajectory(stages, totalWater, level, targets);
-  const professional = buildProfessionalModel(input, stages, resolved.id, grinder, water, flavorFit, resolved.recommendation);
+  const trajectoryModel = buildDetailedTrajectory(stages, totalWater, flavorFit, bean, water.profile);
+  const extractionModel = targetExtractionModel({ doseG: dose, waterG: totalWater, bean, targets });
+  const professional = {
+    ...buildProfessionalModel(input, stages, resolved.id, grinder, water, flavorFit, resolved.recommendation),
+    calculationModelVersion: BREW_MODEL_VERSION,
+    temperatureModel,
+    extractionModel,
+    trajectoryModel
+  };
   const warnings = [];
   if (resolved.id === 'flat46-clean' && group !== 'flat') warnings.push('46法·平底净化方案优先用于平底滤杯；当前滤杯可能无法复现低液位与高流量假设。');
   if (dose < 10 || dose > 25) warnings.push('当前粉量超出主要模型校准区间，分段与研磨建议应增加人工复核。');
@@ -334,14 +372,14 @@ export async function computeFallbackPlan(input) {
   return {
     schemaVersion: BREW_SCHEMA_VERSION,
     engineVersion: FALLBACK_ENGINE_VERSION,
-    profileVersion: `${resolved.id}@1.0.0-compat-beta`,
+    profileVersion: `${resolved.id}@0.9.0-beta.1`,
     inputHash: await inputHash(input),
     source: 'local-compatible-engine',
     profile: professional.profile,
     recommendation: resolved.recommendation,
     stages,
     totals: { doseG: dose, waterG: totalWater, ratio, targetTimeSec },
-    temperature: { mainC: temperature, firstC: stages[0]?.temperatureC, tailC: stages.at(-1)?.temperatureC },
+    temperature: { mainC: temperature, firstC: stages[0]?.temperatureC, tailC: stages.at(-1)?.temperatureC, model: temperatureModel },
     grinder,
     water,
     warnings,
@@ -351,9 +389,12 @@ export async function computeFallbackPlan(input) {
     explanation: [
       `${resolved.profile.label}由滤杯、烘焙度、处理法和目标风味共同选择。`,
       `主萃温度 ${temperature}°C，建议研磨 ${grinder.recommended}${grinder.unit}，目标水质 ${water.profile.name}。`,
-      '专业参数默认折叠；萃取轨迹默认显示，用于比较阶段间相对释放而非代替实测萃取率。'
+      `模型目标 EY ${extractionModel.targetEY}%、预测 TDS ${extractionModel.predictedTds}%；仅作为冲煮设定参考，不能替代折光仪实测。`,
+      '萃取轨迹整合温度、流量、累计注水和风味窗口；用于比较阶段相对趋势，不等同于实测浓度曲线。'
     ],
     trajectory,
+    trajectoryModel,
+    extractionModel,
     flavorFit,
     professional
   };

@@ -1,5 +1,5 @@
 {
-  "name": "富贵盒子 Beta",
+  "name": "富贵盒子 0.9 Beta",
   "short_name": "富贵盒子β",
   "start_url": "./",
   "scope": "./",
@@ -15,5 +15,5 @@
       "purpose": "any maskable"
     }
   ],
-  "description": "咖啡豆管理、冲煮方案、品鉴与个人偏好学习 Beta"
+  "description": "富贵盒子 0.9：咖啡豆管理、专业冲煮计算、品鉴与器具库存"
 }

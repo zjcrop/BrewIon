@@ -61,8 +61,13 @@ export function makeIndex(book) {
 }
 
 export function displayName(index, table, code, fallback = '—') {
-  return index?.[table]?.get(code)?.row?.[table === 'entities' ? 3 : 1] || fallback;
+  const row = index?.[table]?.get(code)?.row;
+  if (!row) return fallback;
+  const labelIndex = table === 'regions' ? 2 : table === 'entities' ? 3 : 1;
+  const value = String(row[labelIndex] || '').trim();
+  return value || fallback;
 }
+
 
 async function fetchJson(url, timeoutMs = 8000) {
   const controller = new AbortController();

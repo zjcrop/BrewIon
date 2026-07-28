@@ -1,4 +1,4 @@
-import { APP_VERSION, SCHEMA_VERSION, $, $$, uid, esc, clamp, todayISO, formatDate, freshness, downloadBlob, safeJsonParse, assertPlainObject, assertSafeJson, browserTitle, parseNumber } from './utils.js';
+import { APP_VERSION, SCHEMA_VERSION, $, $$, uid, esc, clamp, todayISO, formatDate, freshness, freshnessProfile, downloadBlob, safeJsonParse, assertPlainObject, assertSafeJson, browserTitle, parseNumber } from './utils.js';
 import { openDb, all, get, put, remove, bulkPut, getSetting, setSetting, clearAll, migrateLegacy } from './db.js';
 import { loadCodebook, checkCodebookUpdate, makeIndex, displayName, optionsHtml, relatedRows, parseNaturalLanguage, REMOTE_CODEBOOK_URL } from './codebook.js';
 import { CameraScanner, scanQrFile, decodeJsQrResult } from './qr.js';
@@ -21,15 +21,17 @@ const ROASTS = [
 const ROAST_NAME = new Map(ROASTS);
 const STATUS_COLOR = { resting: '#5f8a73', peak: '#de9a42', good: '#bc8d55', decline: '#77736c', urgent: '#575757' };
 const DEFAULT_SETTINGS = {
-  ui: { planVisualsExpanded: true },
+  ui: { planVisualsExpanded: true, temporaryVisualOpen: false },
   brew: {
     apiEndpoint: '', mode: 'simple', method: 'pourover', doseG: 15, ratio: 15.5,
     profileId: 'recommended', segmentMode: 'auto', segments: 3, lowTempFirst: true,
-    dripper: '平底滤杯', grinder: '', waterProfileId: 'auto', waterVolumeL: 5,
+    dripper: '平底滤杯', filterPaperId: '', grinder: '', waterProfileId: 'auto', waterVolumeL: 5,
+    customWater: { tds: 85, ca: 9, mg: 12, hco3: 28 }, flavorTargets: { floral: 2, acidity: 1.5, sweetness: 2, body: 1, bitterness: 2 },
+    firstCoolingMode: 'auto', firstTemperatureC: 87, tailCoolingMode: 'auto', tailTemperatureC: 86,
     temperatureTune: 0, grindTune: 0, bloomTune: 0, repeatability: false
   },
   identity: { mode: 'guest', nickname: '访客', publicId: '', idSalt: '', verified: false, email: '', phone: '', wechat: '', qq: '' },
-  gear: { filterTypes: '', filterStock: '', drippers: '平底滤杯', grinders: '' },
+  gear: { filters: [], drippers: [{ id: 'dripper_flat', name: '平底滤杯', type: '平底滤杯' }], grinders: '' },
   sensoryRecentLimit: 50,
   shareRecordLimit: 5,
   groupMethod: 'country'
@@ -61,7 +63,7 @@ const state = {
   recommendedBeanId: null, currentPlan: null, currentBrewInput: null,
   beanFormSource: null, beanFormDraft: null, cameraScanner: null,
   timer: { interval: null, paused: false, stageIndex: 0, remaining: 0 },
-  activeGroupKey: null, preferenceBoardOpen: false,
+  activeGroupKey: null, groupAnimationMode: 'manual', recommendationTimer: null, recommendationRun: false, preferenceBoardOpen: false, settingsFocusFilterId: '',
   evaluation: null, sensoryHistoryOpen: false, sensoryFilter: { beanId: '', minScore: '', maxScore: '', start: '', end: '', expanded: false }
 };
 
@@ -99,9 +101,13 @@ async function loadSettings() {
   state.settings = {
     ...structuredClone(DEFAULT_SETTINGS), ...(saved || {}),
     ui: { ...DEFAULT_SETTINGS.ui, ...(saved?.ui || {}) },
-    brew: { ...DEFAULT_SETTINGS.brew, ...(saved?.brew || {}) },
+    brew: {
+      ...DEFAULT_SETTINGS.brew, ...(saved?.brew || {}),
+      customWater: { ...DEFAULT_SETTINGS.brew.customWater, ...(saved?.brew?.customWater || {}) },
+      flavorTargets: { ...DEFAULT_SETTINGS.brew.flavorTargets, ...(saved?.brew?.flavorTargets || {}) }
+    },
     identity: { ...DEFAULT_SETTINGS.identity, ...(saved?.identity || {}) },
-    gear: { ...DEFAULT_SETTINGS.gear, ...(saved?.gear || {}) }
+    gear: normalizeGearSettings(saved?.gear || DEFAULT_SETTINGS.gear)
   };
   state.settings.sensoryRecentLimit = clamp(state.settings.sensoryRecentLimit || 50, 5, 200);
 }
@@ -112,10 +118,18 @@ async function refreshData() {
   [state.beans, state.brewSessions, state.sensoryRecords, state.inventoryEvents] = await Promise.all([
     all('beans'), all('brewSessions'), all('sensoryRecords'), all('inventoryEvents')
   ]);
+  const repaired = [];
+  state.beans = state.beans.map(bean => {
+    const normalized = normalizeBeanDisplayData(bean);
+    if (normalized.changed) repaired.push(normalized.bean);
+    return normalized.bean;
+  });
+  if (repaired.length) await bulkPut('beans', repaired).catch(() => {});
   state.beans.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
   const activeBeans = state.beans.filter(bean => !bean.archived && Number(bean.remainingWeight) > 0);
   state.preferenceModel = buildPreferenceModel(activeBeans, state.sensoryRecords);
   state.recommendedIds = recommendedBeanIds(activeBeans, state.sensoryRecords);
+  updateLowStockIndicator();
 }
 
 async function migrateLegacyFlavorCodes() {
@@ -228,6 +242,80 @@ function codeName(table, code, fallback = '—') { return displayName(state.code
 function beanDisplayName(bean) {
   return `${codeName('countries', bean.countryCode, '未定国家')} · ${codeName('varieties', bean.varietyCode, '未定豆种')}`;
 }
+
+function normalizeGearSettings(gear = {}) {
+  const filters = Array.isArray(gear.filters)
+    ? gear.filters.map(item => ({
+        id: String(item.id || uid('filter')), brand: String(item.brand || '').trim(),
+        type: String(item.type || item.name || '').trim(), quantity: Math.max(0, Math.floor(Number(item.quantity ?? item.qty ?? 0) || 0)),
+        price: Math.max(0, Number(item.price || 0)), createdAt: item.createdAt || new Date().toISOString()
+      })).filter(item => item.type)
+    : String(gear.filterTypes || '').split(/[、,，\n]/).map(value => value.trim()).filter(Boolean).map((type, index) => ({
+        id: `legacy_filter_${index}`, brand: '', type,
+        quantity: index === 0 ? Math.max(0, Math.floor(Number(gear.filterStock || 0) || 0)) : 0,
+        price: 0, createdAt: new Date().toISOString()
+      }));
+  const drippers = Array.isArray(gear.drippers)
+    ? gear.drippers.map(item => typeof item === 'string' ? { id: uid('dripper'), name: item, type: item } : ({ id: String(item.id || uid('dripper')), name: String(item.name || item.type || '').trim(), type: String(item.type || item.name || '').trim() })).filter(item => item.name)
+    : String(gear.drippers || '平底滤杯').split(/[、,，\n]/).map(value => value.trim()).filter(Boolean).map((name, index) => ({ id: `legacy_dripper_${index}`, name, type: name }));
+  return { filters, drippers: drippers.length ? drippers : [{ id: 'dripper_flat', name: '平底滤杯', type: '平底滤杯' }], grinders: String(gear.grinders || '') };
+}
+
+function resolveKnownCode(table, value, parentCode = '') {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (state.codebookIndex?.[table]?.has(raw)) {
+    const row = state.codebookIndex[table].get(raw).row;
+    if ((table === 'regions' || table === 'entities') && parentCode && row[1] !== parentCode) return '';
+    return raw;
+  }
+  const key = raw.toLocaleLowerCase('zh-CN');
+  const matches = state.codebookIndex?.aliases?.get(key) || [];
+  const match = matches.find(item => item.table === table && (!parentCode || !['regions','entities'].includes(table) || item.row[1] === parentCode));
+  return match?.code || '';
+}
+
+function visibleFlavorCodes(bean = {}) {
+  return [...new Set((Array.isArray(bean.flavorCodes) ? bean.flavorCodes : [])
+    .map(value => resolveKnownCode('flavors', value))
+    .filter(code => code && codeName('flavors', code, '') && codeName('flavors', code, '') !== '—'))];
+}
+
+function normalizeBeanDisplayData(original = {}) {
+  const bean = { ...original };
+  let changed = false;
+  for (const [field, table] of [['countryCode','countries'],['varietyCode','varieties'],['processCode','processes']]) {
+    const next = resolveKnownCode(table, bean[field]);
+    if (next && next !== bean[field]) { bean[field] = next; changed = true; }
+  }
+  const region = resolveKnownCode('regions', bean.regionCode, bean.countryCode);
+  if (bean.regionCode && region !== bean.regionCode) { bean.legacyRegionValue = bean.legacyRegionValue || bean.regionCode; bean.regionCode = region; changed = true; }
+  const entity = resolveKnownCode('entities', bean.entityCode, bean.countryCode);
+  if (bean.entityCode && entity !== bean.entityCode) { bean.legacyEntityValue = bean.legacyEntityValue || bean.entityCode; bean.entityCode = entity; changed = true; }
+  const rawFlavors = Array.isArray(bean.flavorCodes) ? bean.flavorCodes : [];
+  const legacyFlavors = rawFlavors.filter(code => String(code).startsWith('FL-'));
+  const flavors = [...new Set([...visibleFlavorCodes(bean), ...legacyFlavors])];
+  if (JSON.stringify(flavors) !== JSON.stringify(rawFlavors)) {
+    bean.legacyFlavorCodes = [...new Set([...(bean.legacyFlavorCodes || []), ...rawFlavors.filter(code => !flavors.includes(code))])];
+    bean.flavorCodes = flavors; changed = true;
+  }
+  if (changed) bean.updatedAt = bean.updatedAt || new Date().toISOString();
+  return { bean, changed };
+}
+
+function gearFilters() { return normalizeGearSettings(state.settings?.gear || {}).filters; }
+function gearDrippers() { return normalizeGearSettings(state.settings?.gear || {}).drippers; }
+function lowStockFilters() { return gearFilters().filter(item => Number(item.quantity) < 10); }
+function updateLowStockIndicator() {
+  const button = document.querySelector('[data-page-target="settings"] span');
+  if (!button) return;
+  const low = lowStockFilters().length > 0;
+  button.innerHTML = `器${low ? '<sup class="gear-low-star" aria-label="滤纸库存低">*</sup>' : ''}`;
+}
+function selectedFilterItem() {
+  const id = $('#brewFilterPaper')?.value || state.settings.brew.filterPaperId || '';
+  return gearFilters().find(item => item.id === id) || null;
+}
 function roastFromColor(value) {
   const color = Number(value);
   if (!Number.isFinite(color) || color <= 0) return '';
@@ -282,12 +370,39 @@ function resolvedSegmentCount(bean, mode = 'auto') {
   return 4;
 }
 function trajectorySvg(plan) {
-  const points = plan.trajectory || [];
-  if (!points.length) return '<p class="muted small">当前方案没有轨迹数据</p>';
-  const width = 320, height = 150, pad = 18;
-  const xy = points.map(point => ({ x: pad + clamp(point.x, 0, 1) * (width - pad * 2), y: height - pad - clamp(point.y, 0, 1) * (height - pad * 2) }));
-  const path = xy.map((point, index) => `${index ? 'L' : 'M'}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' ');
-  return `<svg class="trajectory-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="萃取轨迹图"><path class="trajectory-axis" d="M${pad},${pad}V${height-pad}H${width-pad}"/><path class="trajectory-line" d="${path}"/>${xy.map((point,index)=>`<circle cx="${point.x}" cy="${point.y}" r="4"><title>阶段${index+1} · ${Math.round(points[index].y*100)}</title></circle>`).join('')}</svg>`;
+  const model = structuredClone(plan.trajectoryModel || plan.professional?.trajectoryModel || {});
+  const points = model.points || [];
+  if (!points.length) {
+    const legacy = Array.isArray(plan.trajectory) ? plan.trajectory : [];
+    if (!legacy.length) return '<p class="muted small trajectory-empty">当前方案没有轨迹数据，请重新生成方案。</p>';
+    model.points = legacy.map(point => ({ x: point.x, cumulativeN: point.y, temperatureN: point.y, flowN: point.y, floral: point.y, acidity: point.y, sweetness: point.y, bitterRisk: Math.max(0, point.x - .7) }));
+  }
+  const data = model.points;
+  const width = 720, height = 330, left = 42, right = 18, top = 24, bottom = 38;
+  const plotW = width - left - right, plotH = height - top - bottom;
+  const xy = (point, key) => ({ x: left + clamp(point.x, 0, 1) * plotW, y: top + (1 - clamp(point[key], 0, 1)) * plotH });
+  const line = key => data.map((point, index) => { const pos = xy(point, key); return `${index ? 'L' : 'M'}${pos.x.toFixed(1)},${pos.y.toFixed(1)}`; }).join(' ');
+  const windows = (model.windows || []).map(window => {
+    const x = left + clamp(window.start, 0, 1) * plotW;
+    const w = Math.max(0, clamp(window.end, 0, 1) - clamp(window.start, 0, 1)) * plotW;
+    return `<g class="trajectory-window ${window.kind === 'risk' ? 'risk' : 'positive'}"><rect x="${x.toFixed(1)}" y="${top}" width="${w.toFixed(1)}" height="${plotH}" rx="6"></rect><text x="${(x+6).toFixed(1)}" y="${top+15}">${esc(window.label)}</text></g>`;
+  }).join('');
+  const phases = (model.phases || []).map(phase => {
+    const x = left + clamp(phase.start, 0, 1) * plotW;
+    return `<g class="trajectory-phase"><line x1="${x.toFixed(1)}" y1="${top}" x2="${x.toFixed(1)}" y2="${height-bottom}"></line><text x="${(x+4).toFixed(1)}" y="${height-12}">${esc(String(phase.index))}</text></g>`;
+  }).join('');
+  const grid = [0,.25,.5,.75,1].map(value => { const y = top + (1-value)*plotH; return `<line class="trajectory-grid" x1="${left}" y1="${y}" x2="${width-right}" y2="${y}"></line><text class="trajectory-tick" x="${left-8}" y="${y+4}" text-anchor="end">${Math.round(value*100)}</text>`; }).join('');
+  return `<div class="trajectory-shell"><svg class="trajectory-chart detailed" viewBox="0 0 ${width} ${height}" role="img" aria-label="冲煮温度、流量、累计水量和风味窗口拟合图">
+    ${windows}${grid}${phases}
+    <path class="trajectory-series temperature" d="${line('temperatureN')}"></path>
+    <path class="trajectory-series flow" d="${line('flowN')}"></path>
+    <path class="trajectory-series water" d="${line('cumulativeN')}"></path>
+    <path class="trajectory-series floral" d="${line('floral')}"></path>
+    <path class="trajectory-series acidity" d="${line('acidity')}"></path>
+    <path class="trajectory-series sweetness" d="${line('sweetness')}"></path>
+    <path class="trajectory-series risk" d="${line('bitterRisk')}"></path>
+    <text class="trajectory-axis-label" x="${left}" y="15">相对强度 / %</text><text class="trajectory-axis-label" x="${width-right}" y="${height-9}" text-anchor="end">时间 →</text>
+  </svg><div class="trajectory-legend"><span class="temperature">温度</span><span class="flow">流量</span><span class="water">累计水量</span><span class="floral">花香</span><span class="acidity">酸</span><span class="sweetness">甜</span><span class="risk">苦涩风险</span></div></div>`;
 }
 function beanNameSummary(bean) {
   return [codeName('regions', bean.regionCode, ''), codeName('processes', bean.processCode, '')].filter(Boolean).join(' · ') || '产区与处理法未记录';
@@ -352,9 +467,12 @@ function beanCardHtml(bean) {
   const score = scoreForBean(bean.id);
   const recommended = currentRecommendedIds().has(bean.id);
   const process = codeName('processes', bean.processCode, '处理法未记');
+  const fresh = freshnessProfile(bean);
+  const progress = Math.round(fresh.progress * 100);
   return `<article class="bean-card compact${bean.id === state.recommendedBeanId ? ' recommended' : ''}${bean.archived ? ' archived' : ''}" data-bean-id="${esc(bean.id)}" tabindex="0">
     <div class="compact-bean-copy"><h3>${esc(beanDisplayName(bean))}</h3><small>${esc(process)}</small><div class="compact-bean-row"><strong>${Number(bean.remainingWeight || 0).toFixed(1)}g</strong><span class="compact-score">${score ? `${score.toFixed(1)}分` : '未评分'}${recommended ? '<em>荐</em>' : ''}</span></div></div>
     <button class="cup-action compact-pick" type="button" data-brew-bean="${esc(bean.id)}" aria-label="用这只豆拾一味">拾</button>
+    <div class="bean-freshness-progress" aria-label="${esc(fresh.label)}，风味${esc(fresh.trend)}，进度${progress}%"><span class="bean-freshness-solid" style="width:${progress}%;background:${fresh.color}"></span><span class="bean-freshness-dashed" style="left:${progress}%"></span></div>
   </article>`;
 }
 
@@ -374,15 +492,15 @@ function recommendationLeaderboardRows(limit = 6) {
 function recommendationLeaderboardHtml() {
   const rows = recommendationLeaderboardRows(3);
   if (!state.sensoryRecords.length || !rows.length) return '';
-  return `<button class="preference-board-line" type="button" data-open-recommend-board><span>荐榜</span>${rows.map((row, index) => `<span>${index + 1}. ${esc(beanDisplayName(row.bean))}</span>`).join('')}</button>`;
+  return `<button class="preference-board-line" type="button" data-open-recommend-board><span>榜</span>${rows.map((row, index) => `<span>${index + 1}. ${esc(beanDisplayName(row.bean))}</span>`).join('')}</button>`;
 }
 
 function openRecommendationLeaderboard() {
   const rows = recommendationLeaderboardRows(50);
-  const content = `${dialogHeader('荐榜', '综合主观得分、自动分差与个人标签累计', { closable: false })}<div class="recommendation-board">${rows.length ? rows.map((row, index) => `<button type="button" data-board-bean="${esc(row.bean.id)}"><span>${index + 1}</span><strong>${esc(beanDisplayName(row.bean))}</strong><small>${row.score.toFixed(1)} · 品鉴${row.sensory ? row.sensory.toFixed(1) : '—'}</small></button>`).join('') : '<p class="muted">完成品鉴后生成个人荐榜。</p>'}</div><button class="bottom-return" type="button" data-close-overlay>退</button>`;
+  const content = `${dialogHeader('榜', '综合主观得分、自动分差与个人标签累计', { closable: false })}<div class="recommendation-board">${rows.length ? rows.map((row, index) => `<button type="button" data-board-bean="${esc(row.bean.id)}"><span>${index + 1}</span><strong>${esc(beanDisplayName(row.bean))}</strong><small>${row.score.toFixed(1)} · 品鉴${row.sensory ? row.sensory.toFixed(1) : '—'}</small></button>`).join('') : '<p class="muted">完成品鉴后生成个人榜。</p>'}</div><button class="bottom-return" type="button" data-close-overlay>退</button>`;
   const overlay = showOverlay(content, { id: 'recommendation-board', backdropClose: true, dialogClass: 'bottom-sheet' });
   bindClose(overlay);
-  overlay.addEventListener('click', event => { const button = event.target.closest('[data-board-bean]'); if (!button) return; closeOverlay(); detailBean(button.dataset.boardBean); });
+  overlay.addEventListener('click', event => { const button = event.target.closest('[data-board-bean]'); if (!button) return; const bean = state.beans.find(item => item.id === button.dataset.boardBean); closeOverlay(); if (bean) focusRecommendedBean(bean, { openDetail: true }); });
 }
 
 function renderBeans() {
@@ -397,16 +515,15 @@ function renderBeans() {
   const bar = $('#activeFilterBar');
   bar.classList.toggle('hidden', !filterParts.length);
   bar.innerHTML = filterParts.length ? `${filterParts.map(value => `<span class="tag">${esc(value)}</span>`).join('')}<button class="button subtle small" id="clearActiveFilters" type="button">清除</button>` : '';
-  $('#filterSummaryBtn').textContent = filterParts.length ? `筛选 ${filterParts.length}` : '筛选';
   if (!beans.length) {
     state.activeGroupKey = null;
-    container.innerHTML = `<div class="empty-state"><strong>没有符合条件的豆卡</strong><p>点击“添”录入，或清除筛选。</p></div>`;
+    container.innerHTML = `<div class="empty-state"><strong>没有符合条件的豆卡</strong><p>点击“添”录入，或从“寻”调整条件。</p></div>`;
     return;
   }
   const board = recommendationLeaderboardHtml();
   if (beans.length <= 6) {
     state.activeGroupKey = null;
-    container.innerHTML = `${board}<div class="bean-grid compact-grid">${beans.map(beanCardHtml).join('')}</div>`;
+    container.innerHTML = `${board}<div class="bean-grid compact-grid bean-grid-animated ${state.groupAnimationMode === 'auto' ? 'auto-motion' : 'manual-motion'}">${beans.map(beanCardHtml).join('')}</div>`;
     return;
   }
   const groupMethod = state.settings.groupMethod || 'country';
@@ -418,11 +535,11 @@ function renderBeans() {
   }
   if (state.activeGroupKey && !groups.has(state.activeGroupKey)) state.activeGroupKey = null;
   if (!state.activeGroupKey) {
-    container.innerHTML = `${board}<div class="bean-grid compact-grid group-grid">${[...groups.entries()].map(([label, items]) => groupCardHtml(label, items)).join('')}</div>`;
+    container.innerHTML = `${board}<div class="bean-grid compact-grid group-grid bean-grid-animated ${state.groupAnimationMode === 'auto' ? 'auto-motion' : 'manual-motion'}">${[...groups.entries()].map(([label, items]) => groupCardHtml(label, items)).join('')}</div>`;
     return;
   }
   const items = groups.get(state.activeGroupKey) || [];
-  container.innerHTML = `${board}<div class="active-group-title"><span>${esc(state.activeGroupKey)}</span><small>${items.length}只</small></div><div class="bean-grid compact-grid">${items.map(beanCardHtml).join('')}</div><button class="group-collapse" type="button" data-collapse-group>收</button>`;
+  container.innerHTML = `${board}<section class="active-group-panel ${state.groupAnimationMode === 'auto' ? 'auto-motion' : 'manual-motion'}" data-active-group-panel><div class="active-group-title"><span>${esc(state.activeGroupKey)}</span><small>${items.length}只</small></div><div class="bean-grid compact-grid">${items.map(beanCardHtml).join('')}</div><button class="group-collapse" type="button" data-collapse-group>收</button></section>`;
 }
 
 function positionPopup(anchor, popup, { above = false } = {}) {
@@ -497,7 +614,7 @@ function openRecommendMenu() {
   closePopups();
   const popup = document.createElement('div'); popup.className = 'recommend-menu';
   const items = [
-    ['leaderboard', '荐榜', '#c9a45f', false], ['preference', '喜好', '#c74f4f', false], ['freshness', '赏味期', '#5e9a68', false],
+    ['leaderboard', '榜', '#c9a45f', false], ['preference', '喜好', '#c74f4f', false], ['freshness', '赏味期', '#5e9a68', false],
     ['price', '价格', '#c9a45f', false], ['remaining', '余粮', '#f1f1ed', false], ['random', '点兵点将', '#e88b3d', true]
   ];
   popup.innerHTML = items.map(([mode, label, color, large]) => `<button type="button" class="recommend-option" data-recommend-mode="${mode}" aria-label="${label}"><span class="recommend-label">${label}</span><span class="recommend-dot${large?' random':''}" style="background:${color}"></span></button>`).join('');
@@ -510,23 +627,43 @@ async function recommendBean(mode) {
   const beans = filteredBeans();
   if (!beans.length) return toast('没有可推荐的豆卡');
   let selected;
-  if (mode === 'preference') selected = [...beans].sort((a,b)=>scoreForBean(b.id)-scoreForBean(a.id))[0];
+  if (mode === 'preference') selected = [...beans].sort((a,b)=>recommendationScore(b)-recommendationScore(a))[0];
   else if (mode === 'freshness') selected = [...beans].sort((a,b)=>freshness(a).remaining-freshness(b).remaining)[0];
   else if (mode === 'price') selected = [...beans].sort((a,b)=>(Number(b.price)||0)-(Number(a.price)||0))[0];
   else if (mode === 'remaining') selected = [...beans].sort((a,b)=>(Number(a.remainingWeight)||0)-(Number(b.remainingWeight)||0))[0];
   else {
-    const n = Math.floor(Math.random() * 6) + 4;
-    const cards = $$('.bean-card');
-    for (let i = 0; i < Math.min(cards.length * 2, n + 6); i++) {
-      cards.forEach(card => card.classList.remove('recommended'));
-      cards[i % cards.length]?.classList.add('recommended');
-      await new Promise(resolve => setTimeout(resolve, 85 + i * 5));
+    if (state.recommendationRun) return;
+    state.recommendationRun = true;
+    const ordered = [...beans];
+    const targetIndex = Math.floor(Math.random() * ordered.length);
+    const loops = ordered.length + targetIndex + 1;
+    for (let index = 0; index < loops; index += 1) {
+      const bean = ordered[index % ordered.length];
+      await focusRecommendedBean(bean, { automatic: true, settle: false });
+      await new Promise(resolve => setTimeout(resolve, 667));
     }
-    selected = beans[(n - 1) % beans.length];
+    selected = ordered[targetIndex];
+    state.recommendationRun = false;
   }
-  state.recommendedBeanId = selected.id; renderBeans();
-  requestAnimationFrame(() => document.querySelector(`[data-bean-id="${CSS.escape(selected.id)}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  await focusRecommendedBean(selected, { automatic: mode === 'random', settle: true });
   toast(`推荐：${beanDisplayName(selected)}`);
+}
+
+async function focusRecommendedBean(bean, { automatic = true, settle = true, openDetail = false } = {}) {
+  if (!bean) return;
+  state.groupAnimationMode = automatic ? 'auto' : 'manual';
+  const visible = filteredBeans();
+  if (visible.length > 6) state.activeGroupKey = groupKey(bean, state.settings.groupMethod || 'country');
+  state.recommendedBeanId = bean.id;
+  renderBeans();
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  const card = document.querySelector(`[data-bean-id="${CSS.escape(bean.id)}"]`);
+  if (card) {
+    card.classList.add('recommend-step');
+    card.scrollIntoView({ behavior: automatic ? 'smooth' : 'auto', block: 'center' });
+    if (settle) setTimeout(() => card.classList.remove('recommend-step'), automatic ? 200 : 500);
+  }
+  if (openDetail) setTimeout(() => detailBean(bean.id), automatic ? 220 : 520);
 }
 
 function openAddMenu() {
@@ -543,14 +680,14 @@ function selectedFlavorCodes(root = document) { return $$('[data-flavor-code].se
 function beanFormHtml(bean = {}, source = {}) {
   const regions = relatedRows(state.codebook, 'regions', bean.countryCode);
   const entities = relatedRows(state.codebook, 'entities', bean.countryCode);
-  const flavors = bean.flavorCodes || [];
+  const flavors = visibleFlavorCodes(bean);
   const colorValue = bean.roastColor || '';
   const roastValue = colorValue ? roastFromColor(colorValue) : (bean.roastCode || '');
   return `${dialogHeader(bean.id ? '编辑豆卡' : '新增豆卡', `来源：${source.type || bean.source || '手工录入'}`)}
     <form id="beanForm" novalidate>
       <div class="form-grid">
         ${fieldHtml('beanCountry','国家',`<select id="beanCountry" class="control">${selectOptions(state.codebook.countries,bean.countryCode)}</select>`,'required')}
-        ${fieldHtml('beanRegion','产区',`<select id="beanRegion" class="control">${selectOptions(regions,bean.regionCode,1,bean.countryCode?'请选择产区':'先选择国家')}</select>`)}
+        ${fieldHtml('beanRegion','产区',`<select id="beanRegion" class="control">${selectOptions(regions,bean.regionCode,2,bean.countryCode?'请选择产区':'先选择国家')}</select>`)}
         ${fieldHtml('beanEntity','庄园 / 处理站',`<select id="beanEntity" class="control">${selectOptions(entities,bean.entityCode,3,bean.countryCode?'请选择庄园 / 处理站':'先选择国家')}</select>`)}
         ${fieldHtml('beanVariety','豆种',`<select id="beanVariety" class="control">${selectOptions(state.codebook.varieties,bean.varietyCode)}</select>`,'required')}
         ${fieldHtml('beanProcess','处理法',`<select id="beanProcess" class="control">${selectOptions(state.codebook.processes,bean.processCode)}</select>`,'required')}
@@ -602,7 +739,7 @@ function openBeanForm(bean = {}, source = { type: 'manual' }) {
   };
   $('#beanCountry').addEventListener('change', () => {
     const country = $('#beanCountry').value;
-    $('#beanRegion').innerHTML = selectOptions(relatedRows(state.codebook, 'regions', country), '', 1, country ? '请选择产区' : '先选择国家');
+    $('#beanRegion').innerHTML = selectOptions(relatedRows(state.codebook, 'regions', country), '', 2, country ? '请选择产区' : '先选择国家');
     $('#beanEntity').innerHTML = selectOptions(relatedRows(state.codebook, 'entities', country), '', 3, country ? '请选择庄园 / 处理站' : '先选择国家');
     bindControlStates(form);
   });
@@ -641,21 +778,34 @@ function captureBeanFormDraft() {
   return { ...state.beanFormDraft, countryCode: formValue('beanCountry'), regionCode: formValue('beanRegion'), entityCode: formValue('beanEntity'), varietyCode: formValue('beanVariety'), processCode: formValue('beanProcess'), roastColor: formValue('beanRoastColor'), roastCode: formValue('beanRoast'), roastDate: formValue('beanRoastDate'), initialWeight: formValue('beanInitialWeight'), refrigerated: formValue('beanRefrigerated') === 'true', price: formValue('beanPrice'), roasterName: formValue('beanRoaster'), altitude: formValue('beanAltitude'), notes: formValue('beanNotes'), flavorCodes: selectedSummaryCodes() };
 }
 
+function flavorGroupLabel(name = '') {
+  const value = String(name);
+  if (/花|茉莉|玫瑰|紫罗兰|洋甘菊/.test(value)) return '花香';
+  if (/果|莓|柑|橘|柠檬|桃|苹果|葡萄|芒果|菠萝/.test(value)) return '果香';
+  if (/蜂蜜|糖|焦糖|甜|太妃/.test(value)) return '甜感';
+  if (/茶|乌龙/.test(value)) return '茶感';
+  if (/香料|肉桂|丁香|胡椒/.test(value)) return '香料';
+  if (/坚果|可可|巧克力|杏仁|榛子/.test(value)) return '坚果可可';
+  if (/纸|木|土|霉|药|橡胶|金属|焦糊|青草/.test(value)) return '负面';
+  return '其他';
+}
+
 function openFlavorEditor(selected, bean, source) {
   const draft = captureBeanFormDraft();
-  const set = new Set(selected);
-  const rows = state.codebook.flavors || [];
-  const content = `${dialogHeader('风味标签', `可用 ${rows.length} 项，最多选择 12 项`)}<div class="flavor-grid">${rows.length ? rows.map(row=>`<button type="button" class="flavor-button${set.has(row[0])?' selected':''}" data-flavor-code="${esc(row[0])}">${esc(row[1])}</button>`).join('') : '<p class="status-bad">风味数据库未载入，请到器设 → 数藏检查数据源。</p>'}</div><div class="row end"><button id="clearFlavorsBtn" class="button subtle" type="button">清空</button><button id="confirmFlavorsBtn" class="button primary" type="button">确定</button></div>`;
+  const set = new Set((selected || []).filter(code => state.codebookIndex?.flavors?.has(code)));
+  const rows = (state.codebook.flavors || []).filter(row => row?.[0] && String(row[1] || '').trim());
+  const groups = new Map();
+  rows.forEach(row => { const label = flavorGroupLabel(row[1]); if (!groups.has(label)) groups.set(label, []); groups.get(label).push(row); });
+  const content = `${dialogHeader('风味标签', `中文标签 ${rows.length} 项，最多选择 12 项`, { closable: false })}<div class="flavor-groups">${[...groups.entries()].map(([label, items]) => `<section class="flavor-group"><h3>${esc(label)}</h3><div class="flavor-grid">${items.map(row=>`<button type="button" class="flavor-button${set.has(row[0])?' selected':''}" data-flavor-code="${esc(row[0])}">${esc(String(row[1]).trim())}</button>`).join('')}</div></section>`).join('')}</div><div class="row end"><button id="backFlavorsBtn" class="button subtle" type="button">返回</button><button id="clearFlavorsBtn" class="button subtle" type="button">清空</button><button id="confirmFlavorsBtn" class="button primary" type="button">确定</button></div>`;
   const overlay = showOverlay(content, { full: true, id: 'flavors' }); bindClose(overlay);
   overlay.addEventListener('click', event => {
     const button = event.target.closest('[data-flavor-code]'); if (!button) return;
     if (!button.classList.contains('selected') && $$('.flavor-button.selected', overlay).length >= 12) return toast('风味标签最多选择 12 项');
     button.classList.toggle('selected');
   });
+  $('#backFlavorsBtn').addEventListener('click', () => openBeanForm(draft, source));
   $('#clearFlavorsBtn').addEventListener('click', () => $$('.flavor-button.selected', overlay).forEach(button => button.classList.remove('selected')));
-  $('#confirmFlavorsBtn').addEventListener('click', () => {
-    draft.flavorCodes = selectedFlavorCodes(overlay); openBeanForm(draft, source);
-  });
+  $('#confirmFlavorsBtn').addEventListener('click', () => { draft.flavorCodes = selectedFlavorCodes(overlay); openBeanForm(draft, source); });
 }
 
 function openTextRecognition(text = '', existingDraft = null) {
@@ -709,23 +859,41 @@ async function handleQrFile(file) {
   finally { $('#qrImageInput').value = ''; }
 }
 
+function freshnessCurveSvg(bean) {
+  const profile = freshnessProfile(bean);
+  const width = 680, height = 210, left = 38, right = 20, top = 18, bottom = 36;
+  const maxDay = Math.max(profile.fullDay + 14, 45);
+  const sigma = Math.max(5, (profile.end - profile.start) / 2.2);
+  const samples = Array.from({ length: 61 }, (_, index) => {
+    const day = maxDay * index / 60;
+    let score = 100 * Math.exp(-((day - profile.peakDay) ** 2) / (2 * sigma ** 2));
+    if (day > profile.end) score *= Math.exp(-(day - profile.end) / 22);
+    return { day, score: clamp(score, 0, 100) };
+  });
+  const x = day => left + clamp(day / maxDay, 0, 1) * (width-left-right);
+  const y = score => top + (1-clamp(score/100,0,1))*(height-top-bottom);
+  const path = samples.map((point,index)=>`${index?'L':'M'}${x(point.day).toFixed(1)},${y(point.score).toFixed(1)}`).join(' ');
+  const currentX = x(profile.effectiveAge), currentY = y(profile.flavorScore);
+  const marks = [[0,'烘焙'],[profile.start,'适饮开始'],[profile.peakDay,'高峰'],[profile.end,'赏味结束']].map(([day,label])=>`<g class="freshness-mark"><line x1="${x(day)}" y1="${top}" x2="${x(day)}" y2="${height-bottom}"></line><text x="${x(day)}" y="${height-12}" text-anchor="middle">${esc(label)}</text></g>`).join('');
+  return `<svg class="freshness-curve" viewBox="0 0 ${width} ${height}" role="img" aria-label="赏味曲线，当前处于${esc(profile.label)}，风味${esc(profile.trend)}"><path class="freshness-curve-line" d="${path}"></path>${marks}<line class="freshness-today-line" x1="${currentX}" y1="${top}" x2="${currentX}" y2="${height-bottom}"></line><circle class="freshness-current-point" cx="${currentX}" cy="${currentY}" r="7"></circle><text class="freshness-current-label" x="${Math.min(width-right-80,currentX+10)}" y="${Math.max(top+14,currentY-10)}">今天 · ${esc(profile.label)} · 风味${esc(profile.trend)}</text></svg>`;
+}
+
 function detailBean(beanId) {
   const bean = state.beans.find(item => item.id === beanId); if (!bean) return;
   state.selectedBeanId = bean.id;
-  const fresh = freshness(bean);
-  const totalRange = 85;
-  const marker = clamp(((Math.max(0, -fresh.remaining) + 25) / totalRange) * 100, 2, 98);
-  const flavors = (bean.flavorCodes || []).map(code => `<span class="tag">${esc(codeName('flavors', code, code))}</span>`).join('');
+  const fresh = freshnessProfile(bean);
+  const flavors = visibleFlavorCodes(bean).map(code => `<span class="tag">${esc(codeName('flavors', code, ''))}</span>`).join('');
   const records = state.sensoryRecords.filter(record => record.beanId === bean.id).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))).slice(0,3);
   const sessions = state.brewSessions.filter(session => session.beanId === bean.id).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))).slice(0,5);
   const content = `${dialogHeader(beanDisplayName(bean), beanNameSummary(bean))}
-    <div class="detail-layout"><div class="freshness-card"><div><div class="small muted">赏味状态</div><h2>${esc(fresh.label)}</h2><p class="muted small">烘焙日期 ${formatDate(bean.roastDate)} · 剩余 ${Number(bean.remainingWeight||0).toFixed(1)}g</p></div><div><div class="freshness-bar"><span class="freshness-marker" style="left:${marker}%"></span></div><div class="row small muted"><span>养豆</span><span class="grow"></span><span>高峰</span><span class="grow"></span><span>衰减</span></div></div></div>
+    <div class="detail-layout"><div class="freshness-card"><div><div class="small muted">赏味状态</div><h2>${esc(fresh.label)}</h2><p class="muted small">烘焙日期 ${formatDate(bean.roastDate)} · 有效豆龄 ${Math.round(fresh.effectiveAge)} 天 · 剩余 ${Number(bean.remainingWeight||0).toFixed(1)}g</p></div><div class="freshness-trend ${fresh.rising?'rising':'falling'}">风味${esc(fresh.trend)}</div></div>
     <div class="management-stack"><button id="correctWeightBtn" class="button" type="button">修正克重</button><button id="toggleColdBtn" class="button${bean.refrigerated?' active':''}" type="button">${bean.refrigerated?'解除冷藏':'设为冷藏'}</button><button id="archiveBeanBtn" class="button" type="button">${bean.archived?'移出诹吉':'放入诹吉'}</button></div></div>
+    <section class="freshness-curve-panel">${freshnessCurveSvg(bean)}</section>
     <div class="detail-tags">${flavors || '<span class="muted small">风味待录</span>'}</div>
     <section class="panel"><div class="panel-title"><div><h3>冲煮记录</h3><p>点击可载入完整方案复刻</p></div></div><div class="record-list">${sessions.length ? sessions.map(sessionRecordHtml).join('') : '<p class="muted small">尚无冲煮记录</p>'}</div></section>
     <section class="panel"><div class="panel-title"><div><h3>最近品鉴</h3></div></div>${records.length ? records.map(record=>`<div class="record-item"><span>${formatDate(record.createdAt)}</span><span>${esc((record.summary||[]).join(' · '))}${record.naturalNote ? `<small>${esc(record.naturalNote)}</small>` : ''}</span><strong>${Number(record.subjectiveScore ?? record.score ?? 0).toFixed(1)}</strong></div>`).join('') : '<p class="muted small">尚无品鉴记录</p>'}</section>
     <div class="detail-actions menu-row"><button id="brewThisBeanBtn" class="button primary" type="button">拾一味</button><button id="editBeanBtn" class="button" type="button">编辑</button><button id="copyBeanBtn" class="button" type="button">复制</button><button id="shareBeanBtn" class="button" type="button">分享</button></div>`;
-  const overlay = showOverlay(content, { id: 'bean-detail' }); bindClose(overlay);
+  const overlay = showOverlay(content, { id: 'bean-detail', backdropClose: true }); bindClose(overlay);
   $('#correctWeightBtn').addEventListener('click', () => correctWeightDialog(bean));
   $('#toggleColdBtn').addEventListener('click', async () => { bean.refrigerated = !bean.refrigerated; bean.freezeDate = bean.refrigerated ? todayISO() : ''; bean.updatedAt = new Date().toISOString(); await put('beans', bean); await refreshData(); detailBean(bean.id); });
   $('#archiveBeanBtn').addEventListener('click', async () => { bean.archived = !bean.archived; bean.updatedAt = new Date().toISOString(); await put('beans', bean); await refreshData(); closeOverlay(); renderBeans(); toast(bean.archived?'已放入诹吉':'已恢复到豆藏'); });
@@ -760,21 +928,27 @@ function correctWeightDialog(bean) {
 }
 
 function buildBrewInput(bean) {
-  const segmentMode = $('#brewSegments')?.value || 'auto';
+  const segmentMode = $('#brewSegments')?.value || state.settings.brew.segmentMode || 'auto';
   const segments = resolvedSegmentCount(bean, segmentMode);
-  const waterProfileId = $('#brewWaterProfile')?.value || state.settings.brew.waterProfileId || 'auto';
+  const waterSelection = $('#brewWaterProfile')?.value || state.settings.brew.waterProfileId || 'auto';
+  const resolvedWater = waterSelection === 'auto' ? inferWaterProfile(bean) : waterSelection;
+  const targets = state.settings.brew.flavorTargets || DEFAULT_SETTINGS.brew.flavorTargets;
+  const customWater = state.settings.brew.customWater || DEFAULT_SETTINGS.brew.customWater;
   return {
     schemaVersion: 2,
     bean: { countryCode: bean.countryCode, regionCode: bean.regionCode, entityCode: bean.entityCode, varietyCode: bean.varietyCode, processCode: bean.processCode, roastCode: bean.roastCode, roastColor: bean.roastColor || null, roastDate: bean.roastDate, altitude: bean.altitude || null },
     brew: {
-      mode: state.settings.brew.mode || 'simple', method: $('#brewMethod')?.value || 'pourover', doseG: parseNumber($('#brewDose')?.value, 15), ratio: parseNumber($('#brewRatio')?.value, 15.5),
-      profileId: $('#brewProfile')?.value || 'recommended', segmentMode, segments, lowTempFirst: $('#lowTempFirst')?.checked ?? true,
-      dripperCode: $('#brewDripper')?.value || '平底滤杯', filterPaper: $('#brewFilterPaper')?.value || '', grinder: $('#brewGrinder')?.value || '',
-      temperatureTune: parseNumber($('#brewTemperatureTune')?.value, 0), grindTune: parseNumber($('#brewGrindTune')?.value, 0), bloomTune: parseNumber($('#brewBloomTune')?.value, 0),
-      repeatability: $('#brewRepeatability')?.checked ?? false, waterProfileId: waterProfileId === 'auto' ? inferWaterProfile(bean) : waterProfileId
+      mode: 'professional', method: 'pourover', doseG: parseNumber($('#brewDose')?.value, 15), ratio: parseNumber($('#brewRatio')?.value, 15.5),
+      profileId: $('#brewProfile')?.value || 'recommended', segmentMode, segments,
+      dripperCode: $('#brewDripper')?.value || '平底滤杯', filterPaper: selectedFilterItem()?.type || '', filterPaperId: $('#brewFilterPaper')?.value || '', grinder: state.settings.brew.grinder || '',
+      firstCoolingMode: $('#firstCoolingMode')?.value || state.settings.brew.firstCoolingMode || 'auto', firstTemperatureC: Number(state.settings.brew.firstTemperatureC),
+      tailCoolingMode: $('#tailCoolingMode')?.value || state.settings.brew.tailCoolingMode || 'auto', tailTemperatureC: Number(state.settings.brew.tailTemperatureC),
+      lowTempFirst: ($('#firstCoolingMode')?.value || state.settings.brew.firstCoolingMode) !== 'off',
+      temperatureTune: Number(state.settings.brew.temperatureTune || 0), grindTune: Number(state.settings.brew.grindTune || 0), bloomTune: Number(state.settings.brew.bloomTune || 0),
+      repeatability: Boolean(state.settings.brew.repeatability), waterProfileId: resolvedWater
     },
-    water: { profileId: waterProfileId === 'auto' ? inferWaterProfile(bean) : waterProfileId, recipeVolumeL: parseNumber($('#brewWaterVolume')?.value, 5), tdsMgL: parseNumber($('#brewTds')?.value, 90) },
-    targets: { floral: parseNumber($('#targetFloral')?.value, 2), acidity: parseNumber($('#targetAcidity')?.value, 1.5), sweetness: parseNumber($('#targetSweet')?.value, 2), body: parseNumber($('#targetBody')?.value, 1), bitterness: parseNumber($('#targetBitterness')?.value, 2) }
+    water: { profileId: resolvedWater, recipeVolumeL: Number(state.settings.brew.waterVolumeL || 5), tdsMgL: Number(customWater.tds || 85), customProfile: resolvedWater === 'custom' ? customWater : undefined },
+    targets: { floral: Number(targets.floral), acidity: Number(targets.acidity), sweetness: Number(targets.sweetness), body: Number(targets.body), bitterness: Number(targets.bitterness) }
   };
 }
 
@@ -788,19 +962,18 @@ function renderBrew() {
   const waterProfiles = listWaterProfiles();
   const inferredWater = selected ? inferWaterProfile(selected) : 'custom';
   const currentWater = settings.waterProfileId || 'auto';
+  const drippers = gearDrippers();
+  const filters = gearFilters();
+  const selectedFilterId = settings.filterPaperId || filters[0]?.id || '';
   const recentSessions = state.brewSessions.filter(session => session.beanId === state.selectedBeanId).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))).slice(0,5);
-  container.innerHTML = `<section class="panel brew-form"><div class="brew-inputs">
-    <div class="brew-main-row"><label class="field"><span>豆卡</span><select id="brewBean" class="control">${activeBeans.map(bean=>`<option value="${esc(bean.id)}"${bean.id===state.selectedBeanId?' selected':''}>${esc(beanDisplayName(bean))}</option>`).join('')}</select></label><label class="field"><span>粉量</span><input id="brewDose" class="control" type="number" min="5" max="40" step="0.1" value="${settings.doseG}"></label></div>
-    <div class="grid-2"><label class="field"><span>粉水比</span><input id="brewRatio" class="control" type="number" min="8" max="25" step="0.1" value="${settings.ratio}"></label><label class="field"><span>滤杯</span><select id="brewDripper" class="control"><option${settings.dripper==='平底滤杯'?' selected':''}>平底滤杯</option><option${settings.dripper==='锥形滤杯'?' selected':''}>锥形滤杯</option><option${settings.dripper==='混合式滤杯'?' selected':''}>混合式滤杯</option><option${settings.dripper==='低旁路滤杯'?' selected':''}>低旁路滤杯</option></select></label></div>
-    <details class="details-block professional-config"><summary>专业设定……</summary><div class="details-content">
-      <div class="grid-2"><label class="field"><span>冲煮法</span><select id="brewProfile" class="control">${listBrewProfiles().map(profile=>`<option value="${profile.id}"${settings.profileId===profile.id?' selected':''}>${profile.label}</option>`).join('')}</select></label><label class="field"><span>分段方式</span><select id="brewSegments" class="control"><option value="auto"${settings.segmentMode==='auto'?' selected':''}>模型自动推荐：${recommendedSegments+1}段</option>${[1,2,3,4,5].map(value=>`<option value="${value}"${String(settings.segmentMode)===String(value)?' selected':''}>${value+1}段（含闷蒸）</option>`).join('')}</select></label>
-      <label class="field"><span>研磨设备 / 刻度</span><input id="brewGrinder" class="control" value="${esc(settings.grinder)}" placeholder="例如 C40 22格"></label><label class="field"><span>滤纸</span><input id="brewFilterPaper" class="control" value="${esc(settings.filterPaper || '')}" placeholder="例如 Wave 185"></label>
-      <label class="field"><span>调水方案</span><select id="brewWaterProfile" class="control"><option value="auto"${currentWater==='auto'?' selected':''}>模型推荐：${esc(waterProfiles.find(item=>item.id===inferredWater)?.name || inferredWater)}</option>${waterProfiles.map(profile=>`<option value="${profile.id}"${currentWater===profile.id?' selected':''}>${esc(profile.name)}</option>`).join('')}</select></label><label class="field"><span>调水计算体积</span><input id="brewWaterVolume" class="control" type="number" min="1" max="20" step="1" value="${settings.waterVolumeL || 5}"></label>
-      <label class="field"><span>TDS mg/L</span><input id="brewTds" class="control" type="number" min="20" max="250" value="${settings.tdsMgL || 90}"></label><label class="field"><span>制作方法</span><select id="brewMethod" class="control"><option value="pourover">手冲咖啡</option><option value="aeropress">爱乐压</option><option value="coldbrew">冷萃</option></select></label></div>
-      <label class="field"><span>目标：花香 / 酸 / 甜 / 体感 / 抑苦</span><div class="grid-5"><input id="targetFloral" class="control" type="number" min="0" max="3" step="0.5" value="${settings.targetFloral ?? 2}"><input id="targetAcidity" class="control" type="number" min="0" max="3" step="0.5" value="${settings.targetAcidity ?? 1.5}"><input id="targetSweet" class="control" type="number" min="0" max="3" step="0.5" value="${settings.targetSweet ?? 2}"><input id="targetBody" class="control" type="number" min="0" max="3" step="0.5" value="${settings.targetBody ?? 1}"><input id="targetBitterness" class="control" type="number" min="0" max="3" step="0.5" value="${settings.targetBitterness ?? 2}"></div></label>
-      <div class="grid-3"><label class="field"><span>温度微调 °C</span><input id="brewTemperatureTune" class="control" type="number" min="-6" max="6" value="${settings.temperatureTune || 0}"></label><label class="field"><span>研磨微调</span><input id="brewGrindTune" class="control" type="number" min="-4" max="4" value="${settings.grindTune || 0}"></label><label class="field"><span>闷蒸秒数微调</span><input id="brewBloomTune" class="control" type="number" min="-20" max="40" value="${settings.bloomTune || 0}"></label></div>
-      <div class="menu-row"><label class="toggle"><input id="lowTempFirst" type="checkbox"${settings.lowTempFirst!==false?' checked':''}>首段降温</label><label class="toggle"><input id="brewRepeatability" type="checkbox"${settings.repeatability?' checked':''}>复刻优先</label></div>
-    </div></details>
+  const heading = $('#brewHeadingBean');
+  if (heading) heading.innerHTML = `<select id="brewBean" class="control brew-bean-heading" aria-label="选择豆子">${activeBeans.map(bean=>`<option value="${esc(bean.id)}"${bean.id===state.selectedBeanId?' selected':''}>${esc(beanDisplayName(bean))}</option>`).join('')}</select>`;
+  const customWaterLabel = currentWater === 'custom' ? '自定义' : '';
+  container.innerHTML = `<section class="panel brew-form"><div class="brew-compact-grid">
+    <div class="brew-row three"><label class="field"><span>粉量</span><input id="brewDose" class="control" type="number" min="5" max="40" step="0.1" value="${settings.doseG}"></label><label class="field"><span>粉水比</span><select id="brewRatio" class="control">${[14,14.5,15,15.5,16,16.5,17,18].map(value=>`<option value="${value}"${Number(settings.ratio)===value?' selected':''}>1:${value}</option>`).join('')}</select></label><label class="field"><span>滤杯</span><select id="brewDripper" class="control">${drippers.map(item=>`<option value="${esc(item.type)}"${settings.dripper===item.type?' selected':''}>${esc(item.name)}</option>`).join('')}</select><select id="brewFilterPaper" class="control sub-control" aria-label="滤纸">${filters.length?filters.map(item=>`<option value="${esc(item.id)}"${selectedFilterId===item.id?' selected':''}>${esc([item.brand,item.type].filter(Boolean).join(' '))} · ${item.quantity}张</option>`).join(''):'<option value="">未设滤纸</option>'}</select></label></div>
+    <div class="brew-row two"><label class="field"><span>冲煮法</span><select id="brewProfile" class="control">${listBrewProfiles().map(profile=>`<option value="${profile.id}"${settings.profileId===profile.id?' selected':''}>${profile.label}</option>`).join('')}</select></label><label class="field"><span>分段方式</span><select id="brewSegments" class="control"><option value="auto"${settings.segmentMode==='auto'?' selected':''}>模型推荐：${recommendedSegments+1}段</option>${[1,2,3,4,5].map(value=>`<option value="${value}"${String(settings.segmentMode)===String(value)?' selected':''}>${value+1}段（含首段）</option>`).join('')}</select></label></div>
+    <div class="brew-row two"><label class="field"><span>调水方案</span><select id="brewWaterProfile" class="control${currentWater==='auto'?' model-recommended':' custom-selected'}"><option value="auto"${currentWater==='auto'?' selected':''}>模型推荐：${esc(waterProfiles.find(item=>item.id===inferredWater)?.name || inferredWater)}</option>${waterProfiles.filter(profile=>profile.id!=='custom').map(profile=>`<option value="${profile.id}"${currentWater===profile.id?' selected':''}>${esc(profile.name)}</option>`).join('')}<option value="custom"${currentWater==='custom'?' selected':''}>自定义</option></select>${customWaterLabel?'<small class="custom-summary">自定义</small>':''}</label><div class="field"><span>风味设定</span><button id="openFlavorTargetBtn" class="control control-button" type="button">风味设定</button></div></div>
+    <div class="brew-row three"><div class="field"><span>微调</span><button id="openBrewTuneBtn" class="control control-button" type="button">微调</button></div><label class="field"><span>首段降温</span><select id="firstCoolingMode" class="control ${settings.firstCoolingMode==='auto'?'model-recommended':'custom-selected'}"><option value="auto"${settings.firstCoolingMode==='auto'?' selected':''}>模型推荐</option><option value="custom"${settings.firstCoolingMode==='custom'?' selected':''}>自定义 ${Number(settings.firstTemperatureC||87)}°C</option><option value="off"${settings.firstCoolingMode==='off'?' selected':''}>不开启</option></select></label><label class="field"><span>尾段降温</span><select id="tailCoolingMode" class="control ${settings.tailCoolingMode==='auto'?'model-recommended':'custom-selected'}"><option value="auto"${settings.tailCoolingMode==='auto'?' selected':''}>模型推荐</option><option value="custom"${settings.tailCoolingMode==='custom'?' selected':''}>自定义 ${Number(settings.tailTemperatureC||86)}°C</option><option value="off"${settings.tailCoolingMode==='off'?' selected':''}>不开启</option></select></label></div>
     <div class="brew-generate-row menu-row"><button id="generatePlanBtn" class="button primary" type="button"${selected?'':' disabled'}>生成方案</button><button id="directSensoryBtn" class="button" type="button"${selected?'':' disabled'}>直接品鉴</button></div>
   </div></section>
   <div id="planResult">${state.currentPlan && state.currentPlan.beanId === state.selectedBeanId ? planHtml(state.currentPlan) : ''}</div>
@@ -808,8 +981,49 @@ function renderBrew() {
   $('#brewBean')?.addEventListener('change', event => { state.selectedBeanId = event.target.value; state.currentPlan = null; renderBrew(); });
   $('#generatePlanBtn')?.addEventListener('click', generatePlan);
   $('#directSensoryBtn')?.addEventListener('click', () => { if (!state.selectedBeanId) return; startEvaluation(state.selectedBeanId, { direct: true }); switchPage('sensory'); });
-  container.addEventListener('click', event => { const replay = event.target.closest('[data-replay-session]'); if (replay) loadBrewSession(replay.dataset.replaySession); });
+  $('#openFlavorTargetBtn')?.addEventListener('click', openFlavorTargetDialog);
+  $('#openBrewTuneBtn')?.addEventListener('click', openBrewTuneDialog);
+  $('#brewWaterProfile')?.addEventListener('change', async event => { state.settings.brew.waterProfileId = event.target.value; await saveSettings(); if (event.target.value === 'custom') openCustomWaterDialog(); else renderBrew(); });
+  $('#firstCoolingMode')?.addEventListener('change', async event => { state.settings.brew.firstCoolingMode = event.target.value; await saveSettings(); if (event.target.value === 'custom') openCoolingDialog('first'); else renderBrew(); });
+  $('#tailCoolingMode')?.addEventListener('change', async event => { state.settings.brew.tailCoolingMode = event.target.value; await saveSettings(); if (event.target.value === 'custom') openCoolingDialog('tail'); else renderBrew(); });
+  if (!container.dataset.replayBound) {
+    container.dataset.replayBound = 'true';
+    container.addEventListener('click', event => { const replay = event.target.closest('[data-replay-session]'); if (replay) loadBrewSession(replay.dataset.replaySession); });
+  }
   bindPlanActions(); bindControlStates(container);
+}
+
+function rangeSelect(id, value, labels = ['低','中','高']) {
+  return `<select id="${id}" class="control">${[0,1,2,3].map(number=>`<option value="${number}"${Number(value)===number?' selected':''}>${number===0?'关闭/最低':labels[Math.min(labels.length-1,number-1)]}</option>`).join('')}</select>`;
+}
+
+function openCustomWaterDialog() {
+  const water = state.settings.brew.customWater || DEFAULT_SETTINGS.brew.customWater;
+  const overlay = showOverlay(`${dialogHeader('自定义调水', '保存后拾味页仅显示“自定义”', { centered: true })}<div class="grid-2"><label class="field"><span>TDS mg/L</span><input id="customWaterTds" class="control" type="number" min="0" max="300" value="${Number(water.tds||85)}"></label><label class="field"><span>Ca mg/L</span><input id="customWaterCa" class="control" type="number" min="0" max="100" step="0.1" value="${Number(water.ca||9)}"></label><label class="field"><span>Mg mg/L</span><input id="customWaterMg" class="control" type="number" min="0" max="100" step="0.1" value="${Number(water.mg||12)}"></label><label class="field"><span>HCO₃⁻ mg/L</span><input id="customWaterHco3" class="control" type="number" min="0" max="200" step="0.1" value="${Number(water.hco3||28)}"></label></div><p class="status-warn small">TDS不能推导pH，离子浓度与TDS应分别实测。</p><div class="row end"><button id="saveCustomWaterBtn" class="button primary" type="button">确定</button></div>`, { id: 'custom-water', backdropClose: true });
+  bindClose(overlay);
+  $('#saveCustomWaterBtn').addEventListener('click', async () => { state.settings.brew.customWater = { tds: parseNumber($('#customWaterTds').value,85), ca: parseNumber($('#customWaterCa').value,9), mg: parseNumber($('#customWaterMg').value,12), hco3: parseNumber($('#customWaterHco3').value,28) }; state.settings.brew.waterProfileId='custom'; await saveSettings(); closeOverlay(); renderBrew(); });
+}
+
+function openFlavorTargetDialog() {
+  const target = state.settings.brew.flavorTargets || DEFAULT_SETTINGS.brew.flavorTargets;
+  const overlay = showOverlay(`${dialogHeader('风味设定', '设定花香、酸、甜、口感与抑苦方向', { centered: true })}<div class="grid-2"><label class="field"><span>花香</span>${rangeSelect('flavorTargetFloral',target.floral)}</label><label class="field"><span>酸</span>${rangeSelect('flavorTargetAcidity',target.acidity)}</label><label class="field"><span>甜</span>${rangeSelect('flavorTargetSweetness',target.sweetness)}</label><label class="field"><span>口感</span>${rangeSelect('flavorTargetBody',target.body,['轻盈','均衡','厚重'])}</label><label class="field"><span>抑苦</span>${rangeSelect('flavorTargetBitterness',target.bitterness,['轻度','中度','强'])}</label></div><div class="row end"><button id="saveFlavorTargetBtn" class="button primary" type="button">确定</button></div>`, { id: 'flavor-target', backdropClose: true });
+  bindClose(overlay);
+  $('#saveFlavorTargetBtn').addEventListener('click', async () => { state.settings.brew.flavorTargets = { floral:parseNumber($('#flavorTargetFloral').value,2), acidity:parseNumber($('#flavorTargetAcidity').value,1.5), sweetness:parseNumber($('#flavorTargetSweetness').value,2), body:parseNumber($('#flavorTargetBody').value,1), bitterness:parseNumber($('#flavorTargetBitterness').value,2) }; await saveSettings(); closeOverlay(); renderBrew(); });
+}
+
+function openBrewTuneDialog() {
+  const brew = state.settings.brew;
+  const overlay = showOverlay(`${dialogHeader('微调', '具体数值会进入计算模型', { centered: true })}<div class="grid-2"><label class="field"><span>研磨设备/刻度</span><input id="tuneGrinder" class="control" value="${esc(brew.grinder||'')}" placeholder="例如 C40 22格"></label><label class="field"><span>温度微调 °C</span><input id="tuneTemperature" class="control" type="number" min="-6" max="6" step="0.5" value="${Number(brew.temperatureTune||0)}"></label><label class="field"><span>研磨微调</span><input id="tuneGrind" class="control" type="number" min="-4" max="4" step="0.5" value="${Number(brew.grindTune||0)}"></label><label class="field"><span>闷蒸时间微调 s</span><input id="tuneBloom" class="control" type="number" min="-20" max="40" value="${Number(brew.bloomTune||0)}"></label><label class="toggle"><input id="tuneRepeatability" type="checkbox"${brew.repeatability?' checked':''}>复刻优先</label></div><div class="row end"><button id="saveBrewTuneBtn" class="button primary" type="button">确定</button></div>`, { id: 'brew-tune', backdropClose: true });
+  bindClose(overlay);
+  $('#saveBrewTuneBtn').addEventListener('click', async () => { Object.assign(state.settings.brew,{grinder:$('#tuneGrinder').value.trim(),temperatureTune:parseNumber($('#tuneTemperature').value,0),grindTune:parseNumber($('#tuneGrind').value,0),bloomTune:parseNumber($('#tuneBloom').value,0),repeatability:$('#tuneRepeatability').checked});await saveSettings();closeOverlay();renderBrew(); });
+}
+
+function openCoolingDialog(which) {
+  const first = which === 'first';
+  const key = first ? 'firstTemperatureC' : 'tailTemperatureC';
+  const overlay = showOverlay(`${dialogHeader(first?'首段降温':'尾段降温', '模型推荐显示金色；手工温度显示白色', { centered:true })}<label class="field"><span>自定义目标温度 °C</span><input id="coolingTemperature" class="control" type="number" min="78" max="97" step="0.5" value="${Number(state.settings.brew[key] || (first?87:86))}"></label><div class="row end"><button id="saveCoolingBtn" class="button primary" type="button">确定</button></div>`, { id:'cooling', backdropClose:true });
+  bindClose(overlay);
+  $('#saveCoolingBtn').addEventListener('click', async()=>{state.settings.brew[key]=parseNumber($('#coolingTemperature').value,first?87:86);state.settings.brew[first?'firstCoolingMode':'tailCoolingMode']='custom';await saveSettings();closeOverlay();renderBrew();});
 }
 
 async function generatePlan() {
@@ -828,10 +1042,12 @@ async function generatePlan() {
     state.settings.brew = {
       ...state.settings.brew, method: input.brew.method, doseG: input.brew.doseG, ratio: input.brew.ratio,
       profileId: input.brew.profileId, segmentMode: input.brew.segmentMode, segments: input.brew.segments, lowTempFirst: input.brew.lowTempFirst,
-      dripper: input.brew.dripperCode, filterPaper: input.brew.filterPaper, grinder: input.brew.grinder, waterProfileId: $('#brewWaterProfile')?.value || 'auto', waterVolumeL: input.water.recipeVolumeL,
+      dripper: input.brew.dripperCode, filterPaper: input.brew.filterPaper, filterPaperId: input.brew.filterPaperId, grinder: input.brew.grinder,
+      waterProfileId: $('#brewWaterProfile')?.value || 'auto', waterVolumeL: input.water.recipeVolumeL,
+      firstCoolingMode: input.brew.firstCoolingMode, firstTemperatureC: input.brew.firstTemperatureC,
+      tailCoolingMode: input.brew.tailCoolingMode, tailTemperatureC: input.brew.tailTemperatureC,
       temperatureTune: input.brew.temperatureTune, grindTune: input.brew.grindTune, bloomTune: input.brew.bloomTune, repeatability: input.brew.repeatability,
-      targetFloral: input.targets.floral, targetAcidity: input.targets.acidity, targetSweet: input.targets.sweetness, targetBody: input.targets.body, targetBitterness: input.targets.bitterness,
-      tdsMgL: input.water.tdsMgL
+      flavorTargets: { floral: input.targets.floral, acidity: input.targets.acidity, sweetness: input.targets.sweetness, body: input.targets.body, bitterness: input.targets.bitterness }
     };
     await saveSettings(); $('#planResult').innerHTML = planHtml(plan); bindPlanActions();
     requestAnimationFrame(() => $('#planResult').scrollIntoView({ behavior: 'smooth', block: 'start' }));
@@ -848,15 +1064,17 @@ function planHtml(plan) {
   const water = plan.water;
   const candidates = plan.recommendation?.candidates || [];
   const corrected = Boolean(plan.correction);
+  const showVisual = Boolean(state.settings.ui.planVisualsExpanded || state.settings.ui.temporaryVisualOpen);
+  const extraction = plan.extractionModel || plan.professional?.extractionModel || {};
   return `<section class="panel generated-plan" id="generatedPlan"><div class="panel-title"><div><h2>冲煮方案${corrected ? ' · 修正' : ''}</h2><p>${Number(plan.totals?.doseG||0).toFixed(1)}g · ${Number(plan.totals?.waterG||0).toFixed(0)}g · ${formatSeconds(plan.totals?.targetTimeSec||0)}</p></div><span class="plan-profile-label">${esc(plan.profile?.label || String(plan.profileVersion || '').split('@')[0])}</span></div>
   ${(plan.warnings||[]).map(warning=>`<p class="small status-warn">${esc(warning)}</p>`).join('')}
   ${first ? `<p class="low-temp-note">首段建议 ${Number(first.temperatureC).toFixed(0)}°C：${esc(plan.firstPourReason || '控制初段释放并保留香气与甜感。')}</p>` : ''}
-  <div>${plan.stages.map(stage=>`<article class="plan-stage"><div class="stage-index">${stage.index}</div><div class="stage-lines"><div class="stage-line"><div class="stage-cell"><span>本段注水</span><strong>${Number(stage.stageWaterG).toFixed(0)}g</strong></div><div class="stage-cell"><span>累计注水</span><strong>${Number(stage.cumulativeWaterG).toFixed(0)}g</strong></div><div class="stage-cell"><span>阶段</span><strong>${esc(stage.name)}</strong></div></div><div class="stage-line"><div class="stage-cell"><span>水温</span><strong>${Number(stage.temperatureC).toFixed(0)}°C</strong></div><div class="stage-cell"><span>时间</span><strong>${Number(stage.durationSec).toFixed(0)}s</strong></div><div class="stage-cell"><span>注水方法</span><strong>${esc(stage.method)}</strong><small>${stage.methodCode ? `编码 ${esc(stage.methodCode)}` : ''}</small></div></div></div></article>`).join('')}</div>
-  <section class="visual-section"><h3>萃取轨迹</h3>${trajectorySvg(plan)}<p class="muted small">相对可溶物释放轨迹，不等同于折光仪实测萃取率。</p></section>
+  <div>${plan.stages.map(stage=>`<article class="plan-stage"><div class="stage-index">${stage.index}</div><div class="stage-lines"><div class="stage-line"><div class="stage-cell"><span>本段注水</span><strong>${Number(stage.stageWaterG).toFixed(0)}g</strong></div><div class="stage-cell"><span>累计注水</span><strong>${Number(stage.cumulativeWaterG).toFixed(0)}g</strong></div><div class="stage-cell"><span>阶段</span><strong>${esc(stage.name)}</strong></div></div><div class="stage-line"><div class="stage-cell"><span>壶中/粉床</span><strong>${Number(stage.temperatureC).toFixed(0)}°/${Number(stage.coreTemperatureC ?? stage.temperatureC).toFixed(0)}°C</strong></div><div class="stage-cell"><span>时间/流速</span><strong>${Number(stage.durationSec).toFixed(0)}s · ${Number(stage.flowGPerSec||0).toFixed(1)}g/s</strong></div><div class="stage-cell"><span>注水方法</span><strong>${esc(stage.method)}</strong><small>${esc(stage.notice || '')}</small></div></div></div></article>`).join('')}</div>
+  <section class="visual-section trajectory-section${showVisual?' open':''}"><div class="trajectory-title-row"><button id="trajectoryTitleBtn" type="button"><h3>冲煮轨迹拟合图</h3></button><label class="switch-control"><span>默认开启</span><input id="trajectoryDefaultToggle" type="checkbox"${state.settings.ui.planVisualsExpanded?' checked':''}><i></i></label></div>${showVisual?`${trajectorySvg(plan)}<p class="muted small">目标 EY ${extraction.targetEY ?? '—'}% · 预测 TDS ${extraction.predictedTds ?? '—'}%；轨迹是相对模型，不替代折光仪测量。</p>`:''}</section>
   <details class="details-block professional-result"><summary>专业内容……</summary><div class="details-content">
-    <section class="visual-section"><h3>风味拟合</h3><div class="bar-chart">${Object.entries({花香:flavor.floral,酸质:flavor.acidity,甜感:flavor.sweetness,体感:flavor.body,苦感:flavor.bitterness,洁净度:flavor.clarity}).map(([key,value])=>`<div class="bar-row"><span>${key}</span><div class="bar-track"><div class="bar-fill" style="width:${clamp(Number(value||0)*100,0,100)}%"></div></div><strong>${Math.round(Number(value||0)*100)}</strong></div>`).join('')}</div></section>
-    <dl class="professional-list"><dt>研磨建议</dt><dd>${esc(plan.grinder ? `${plan.grinder.label} ${plan.grinder.recommended}${plan.grinder.unit}` : '未提供')}</dd><dt>调水方案</dt><dd>${esc(water?.profile?.name || '未提供')} ${water?.profile ? `· Ca ${water.profile.ca} / Mg ${water.profile.mg} / HCO₃ ${water.profile.hco3} mg/L` : ''}</dd><dt>调水版本</dt><dd>${esc(water?.modelVersion || '—')}</dd><dt>平均流速</dt><dd>${esc(String(plan.professional?.hydraulics?.averageFlowGPerSec ?? '—'))} g/s</dd></dl>
-    ${water?.doses ? `<details class="nested-settings"><summary>调水粉剂换算</summary><div class="nested-content"><p class="muted small">按 ${Number(water.volumeL||5)}L RO水；称量值含纯度修正。</p>${water.doses.map(item=>`<div class="record-item"><span>${esc(item.name)}</span><span>${esc(item.id)}</span><strong>${Number(item.grams).toFixed(4)}g</strong></div>`).join('')}<p class="status-warn small">${esc(water.warning || '')}</p></div></details>` : ''}
+    <section class="visual-section"><h3>风味拟合</h3><div class="bar-chart">${Object.entries({花香:flavor.floral,酸质:flavor.acidity,甜感:flavor.sweetness,口感:flavor.body,苦感风险:flavor.bitterness,洁净度:flavor.clarity}).map(([key,value])=>`<div class="bar-row"><span>${key}</span><div class="bar-track"><div class="bar-fill" style="width:${clamp(Number(value||0)*100,0,100)}%"></div></div><strong>${Math.round(Number(value||0)*100)}</strong></div>`).join('')}</div></section>
+    <dl class="professional-list"><dt>研磨建议</dt><dd>${esc(plan.grinder ? `${plan.grinder.label} ${plan.grinder.recommended}${plan.grinder.unit}` : '未提供')}</dd><dt>品种模型</dt><dd>${esc(plan.temperature?.model?.model || '通用模型')}</dd><dt>关键化学标记</dt><dd>${esc((plan.temperature?.model?.markers || []).join('、') || '未提供')}</dd><dt>敏感度</dt><dd>${esc(plan.temperature?.model?.sensitivityText || '未提供')}</dd><dt>执行主轴</dt><dd>${esc(plan.temperature?.model?.execution || '未提供')}</dd><dt>容差参考</dt><dd>${plan.temperature?.model?.tolerance ? `温度 ±${plan.temperature.model.tolerance.temperatureC}°C / 流速 ±${plan.temperature.model.tolerance.flowGPerSec}g/s / 水量 ±${plan.temperature.model.tolerance.waterG}g` : '未提供'}</dd><dt>调水方案</dt><dd>${esc(water?.profile?.name || '未提供')} ${water?.profile ? `· Ca ${water.profile.ca} / Mg ${water.profile.mg} / HCO₃ ${water.profile.hco3} mg/L` : ''}</dd><dt>水质判断</dt><dd>${esc(plan.temperature?.model?.waterAdvice || '未提供')}</dd><dt>调水版本</dt><dd>${esc(water?.modelVersion || '—')}</dd><dt>计算模型</dt><dd>${esc(plan.professional?.calculationModelVersion || plan.engineVersion || '—')}</dd><dt>平均流速</dt><dd>${esc(String(plan.professional?.hydraulics?.averageFlowGPerSec ?? '—'))} g/s</dd></dl>
+    ${water?.doses?.length ? `<details class="nested-settings"><summary>调水粉剂换算</summary><div class="nested-content"><p class="muted small">按 ${Number(water.volumeL||5)}L RO水；称量值含纯度修正。</p>${water.doses.map(item=>`<div class="record-item"><span>${esc(item.name)}</span><span>${esc(item.id)}</span><strong>${Number(item.grams).toFixed(4)}g</strong></div>`).join('')}<p class="status-warn small">${esc(water.warning || '')}</p></div></details>` : ''}
     ${candidates.length ? `<details class="nested-settings"><summary>方案推荐排序</summary><div class="nested-content">${candidates.map(item=>`<div class="record-item"><span>${esc(item.profile?.label || item.id)}</span><span>${esc(item.reason || '')}</span><strong>${Math.round(Number(item.score||0)*100)}</strong></div>`).join('')}</div></details>` : ''}
     ${(plan.explanation||[]).map(value=>`<p class="muted small">${esc(value)}</p>`).join('')}
     ${(plan.professional?.modelLimitations||[]).map(value=>`<p class="status-warn small">${esc(value)}</p>`).join('')}
@@ -870,6 +1088,8 @@ function bindPlanActions() {
   $('#startBrewBtn')?.addEventListener('click', startTimer);
   $('#planToSensoryBtn')?.addEventListener('click', () => { if (!state.selectedBeanId) return; startEvaluation(state.selectedBeanId, { direct: true }); switchPage('sensory'); });
   $('#exportPlanBtn')?.addEventListener('click', () => exportCurrentPlan($('#planExportFormat')?.value || 'json'));
+  $('#trajectoryDefaultToggle')?.addEventListener('change', async event => { state.settings.ui.planVisualsExpanded = event.target.checked; state.settings.ui.temporaryVisualOpen = false; await saveSettings(); if (state.currentPlan) { $('#planResult').innerHTML=planHtml(state.currentPlan); bindPlanActions(); } });
+  $('#trajectoryTitleBtn')?.addEventListener('click', () => { if (state.settings.ui.planVisualsExpanded) return; state.settings.ui.temporaryVisualOpen = !state.settings.ui.temporaryVisualOpen; if (state.currentPlan) { $('#planResult').innerHTML=planHtml(state.currentPlan); bindPlanActions(); } });
 }
 
 function planExportDocument(plan, format, bean) {
@@ -895,8 +1115,10 @@ function speak(text) {
 }
 function startTimer() {
   if (!state.currentPlan) return;
-  state.timer.stageIndex = 0; state.timer.remaining = Number(state.currentPlan.stages[0].durationSec); state.timer.paused = false;
-  renderTimerDialog(); startTimerInterval(); speak(`第一段，${state.currentPlan.stages[0].name}，${state.timer.remaining}秒`);
+  const first = state.currentPlan.stages[0];
+  state.timer.stageIndex = 0; state.timer.remaining = Number(first.durationSec); state.timer.paused = false;
+  renderTimerDialog(); startTimerInterval();
+  speak(`第一段，${first.name}，注水${Math.round(first.stageWaterG)}克，水温${Math.round(first.temperatureC)}度，${first.method}。${first.notice || ''}`);
 }
 
 function startTimerInterval() {
@@ -904,14 +1126,18 @@ function startTimerInterval() {
   state.timer.interval = setInterval(() => {
     if (state.timer.paused) return;
     state.timer.remaining -= 1;
-    if ([10,5,3,2,1].includes(state.timer.remaining)) speak(String(state.timer.remaining));
+    const stages = state.currentPlan?.stages || [];
+    const next = stages[state.timer.stageIndex + 1];
+    if (state.timer.remaining === 8 && next) speak(next.advanceSpeech || `下一段，${next.name}，注水${Math.round(next.stageWaterG)}克，水温${Math.round(next.temperatureC)}度，${next.method}`);
+    if ([3,2,1].includes(state.timer.remaining)) speak(String(state.timer.remaining));
     if (state.timer.remaining <= 0) advanceTimerStage();
     renderTimerValues();
   }, 1000);
 }
 function renderTimerDialog() {
   const stage = state.currentPlan.stages[state.timer.stageIndex];
-  const content = `<div class="timer-full"><div class="timer-top"><span id="timerStageCounter">${state.timer.stageIndex+1}/${state.currentPlan.stages.length}</span></div><div class="timer-stage-name" id="timerStageName">${esc(stage.name)}</div><div id="timerClock" class="timer-clock">${formatSeconds(state.timer.remaining)}</div><div class="timer-totals"><span>总时长 <strong id="timerTotal">${formatSeconds(state.currentPlan.totals?.targetTimeSec||0)}</strong></span><span>已进行 <strong id="timerElapsed">00:00</strong></span><span>总剩余 <strong id="timerTotalRemaining">${formatSeconds(state.currentPlan.totals?.targetTimeSec||0)}</strong></span></div><div class="timer-stage-grid"><div><span>本段</span><strong id="timerStageWater">${Number(stage.stageWaterG).toFixed(0)}g</strong></div><div><span>累计</span><strong id="timerCumulativeWater">${Number(stage.cumulativeWaterG).toFixed(0)}g</strong></div><div><span>水温</span><strong id="timerTemperature">${Number(stage.temperatureC).toFixed(0)}°C</strong></div></div><p id="timerStageText">${esc(stage.method)}</p><div class="timer-progress"><span id="timerProgressFill"></span></div><div class="timer-actions four"><button id="timerPrevBtn" class="button" type="button">退</button><button id="timerPauseBtn" class="button active" type="button">驻</button><button id="timerNextBtn" class="button" type="button">进</button><button id="timerEndBtn" class="button" type="button">终</button></div></div>`;
+  const next = state.currentPlan.stages[state.timer.stageIndex+1];
+  const content = `<div class="timer-full"><div class="timer-top"><span id="timerStageCounter">${state.timer.stageIndex+1}/${state.currentPlan.stages.length}</span></div><div class="timer-stage-name" id="timerStageName">${esc(stage.name)}</div><div id="timerClock" class="timer-clock">${formatSeconds(state.timer.remaining)}</div><div class="timer-totals"><span>总时长 <strong id="timerTotal">${formatSeconds(state.currentPlan.totals?.targetTimeSec||0)}</strong></span><span>已进行 <strong id="timerElapsed">00:00</strong></span><span>总剩余 <strong id="timerTotalRemaining">${formatSeconds(state.currentPlan.totals?.targetTimeSec||0)}</strong></span></div><div class="timer-stage-grid"><div><span>本段</span><strong id="timerStageWater">${Number(stage.stageWaterG).toFixed(0)}g</strong></div><div><span>累计</span><strong id="timerCumulativeWater">${Number(stage.cumulativeWaterG).toFixed(0)}g</strong></div><div><span>水温</span><strong id="timerTemperature">${Number(stage.temperatureC).toFixed(0)}°C</strong></div></div><p id="timerStageText">${esc(stage.method)}${stage.notice?`<small>${esc(stage.notice)}</small>`:''}</p><div id="timerNextCue" class="timer-next-cue">${next?`下一段：${esc(next.name)} · ${Math.round(next.stageWaterG)}g · ${Math.round(next.temperatureC)}°C · ${esc(next.method)}`:'最后一段'}</div><div class="timer-progress"><span id="timerProgressFill"></span></div><div class="timer-actions four"><button id="timerPrevBtn" class="button" type="button">退</button><button id="timerPauseBtn" class="button active" type="button">驻</button><button id="timerNextBtn" class="button" type="button">进</button><button id="timerEndBtn" class="button" type="button">终</button></div></div>`;
   showOverlay(content, { full: true, id: 'timer' });
   $('#timerPauseBtn').addEventListener('click', () => { state.timer.paused = !state.timer.paused; $('#timerPauseBtn').textContent = state.timer.paused ? '续' : '驻'; $('#timerPauseBtn').classList.toggle('active', state.timer.paused); if (state.timer.paused) speak('已暂停'); });
   $('#timerPrevBtn').addEventListener('click', () => moveTimerStage(-1));
@@ -925,19 +1151,17 @@ function renderTimerValues() {
   const clock = $('#timerClock'); if (!clock || !state.currentPlan) return;
   const stages = state.currentPlan.stages;
   const stage = stages[state.timer.stageIndex];
+  const next = stages[state.timer.stageIndex+1];
   const elapsedBefore = stages.slice(0, state.timer.stageIndex).reduce((sum,item)=>sum+Number(item.durationSec||0),0);
   const stageElapsed = Math.max(0, Number(stage.durationSec||0)-state.timer.remaining);
   const elapsed = elapsedBefore + stageElapsed;
   const total = Number(state.currentPlan.totals?.targetTimeSec || stages.reduce((sum,item)=>sum+Number(item.durationSec||0),0));
   clock.textContent = formatSeconds(state.timer.remaining);
-  $('#timerElapsed').textContent = formatSeconds(elapsed);
-  $('#timerTotalRemaining').textContent = formatSeconds(Math.max(0,total-elapsed));
-  $('#timerStageCounter').textContent = `${state.timer.stageIndex+1}/${stages.length}`;
-  $('#timerStageName').textContent = stage.name;
-  $('#timerStageText').textContent = stage.method;
-  $('#timerStageWater').textContent = `${Number(stage.stageWaterG).toFixed(0)}g`;
-  $('#timerCumulativeWater').textContent = `${Number(stage.cumulativeWaterG).toFixed(0)}g`;
-  $('#timerTemperature').textContent = `${Number(stage.temperatureC).toFixed(0)}°C`;
+  $('#timerElapsed').textContent = formatSeconds(elapsed); $('#timerTotalRemaining').textContent = formatSeconds(Math.max(0,total-elapsed));
+  $('#timerStageCounter').textContent = `${state.timer.stageIndex+1}/${stages.length}`; $('#timerStageName').textContent = stage.name;
+  $('#timerStageText').innerHTML = `${esc(stage.method)}${stage.notice?`<small>${esc(stage.notice)}</small>`:''}`;
+  $('#timerStageWater').textContent = `${Number(stage.stageWaterG).toFixed(0)}g`; $('#timerCumulativeWater').textContent = `${Number(stage.cumulativeWaterG).toFixed(0)}g`; $('#timerTemperature').textContent = `${Number(stage.temperatureC).toFixed(0)}°C`;
+  if ($('#timerNextCue')) $('#timerNextCue').textContent = next ? `下一段：${next.name} · ${Math.round(next.stageWaterG)}g · ${Math.round(next.temperatureC)}°C · ${next.method}` : '最后一段';
   $('#timerProgressFill').style.width = `${clamp((1-state.timer.remaining/Math.max(1,Number(stage.durationSec)))*100,0,100)}%`;
 }
 
@@ -950,7 +1174,7 @@ function moveTimerStage(direction = 1, automatic = false) {
   const stage = state.currentPlan.stages[next];
   if ($('#timerPauseBtn')) { $('#timerPauseBtn').textContent = '驻'; $('#timerPauseBtn').classList.remove('active'); }
   renderTimerValues();
-  speak(`${automatic?'进入':'切换到'}第${stage.index}段，${stage.name}，${stage.stageWaterG}克，${stage.durationSec}秒`);
+  speak(`${automatic?'进入':'切换到'}第${stage.index}段，${stage.name}，注水${Math.round(stage.stageWaterG)}克，水温${Math.round(stage.temperatureC)}度，${stage.method}。${stage.notice || ''}`);
 }
 
 function promptRecordConsumption(reason) {
@@ -972,7 +1196,12 @@ async function consumeBean(bean, amount, sessionId, note = '') {
   if (!bean) return;
   const consumed = Math.min(Number(bean.remainingWeight)||0, amount); bean.remainingWeight = Math.max(0, Number(bean.remainingWeight||0) - consumed); bean.updatedAt = new Date().toISOString();
   const event = { id: uid('inv'), beanId: bean.id, type: 'consume', amountG: -consumed, resultingWeightG: bean.remainingWeight, sessionId, note, createdAt: new Date().toISOString() };
-  await Promise.all([put('beans', bean), put('inventoryEvents', event)]); await refreshData();
+  state.settings.gear = normalizeGearSettings(state.settings.gear);
+  const filterId = state.currentBrewInput?.brew?.filterPaperId || state.currentPlan?.input?.brew?.filterPaperId || state.settings.brew.filterPaperId || '';
+  const filter = state.settings.gear.filters.find(item => item.id === filterId);
+  if (filter) filter.quantity = Math.max(0, Number(filter.quantity||0)-1);
+  await Promise.all([put('beans', bean), put('inventoryEvents', event), saveSettings()]); await refreshData();
+  if (filter && filter.quantity < 10) toast(`滤纸“${filter.type}”仅剩 ${filter.quantity} 张`, 'status-bad');
 }
 
 function startEvaluation(beanId = state.selectedBeanId, options = {}) {
@@ -1003,10 +1232,10 @@ function renderSensory() {
   const recent = filteredSensoryRecords(5);
   const current = state.evaluation;
   container.innerHTML = `<section class="panel sensory-history"><button id="sensoryHistoryToggle" class="history-toggle${state.sensoryHistoryOpen?' active':''}" type="button"><span>往昔……</span><span>${state.sensoryHistoryOpen?'⌃':'⌄'}</span></button>${state.sensoryHistoryOpen ? `<div class="record-list">${recent.length?recent.map(recordHtml).join(''):'<p class="muted small">尚无品鉴记录</p>'}</div><button id="sensoryMoreBtn" class="button" type="button">更多</button>` : ''}</section>
-  ${current ? evaluationHtml(current) : `<section class="panel"><div class="panel-title"><div><h2>开始品鉴</h2><p>花香、果香、其他、甜、酸、苦、口感、负面、总分</p></div></div><label class="field"><span>豆卡</span><select id="sensoryBeanSelect" class="control">${state.beans.filter(bean=>!bean.archived).map(bean=>`<option value="${esc(bean.id)}"${bean.id===state.selectedBeanId?' selected':''}>${esc(beanDisplayName(bean))}</option>`).join('')}</select></label><button id="startSensoryBtn" class="button primary" type="button">开始品鉴</button></section>`}`;
+  ${current ? evaluationHtml(current) : `<section class="panel sensory-start-panel"><div class="panel-title centered"><div><h2>本次品鉴</h2><p>花香 · 果香 · 甜 · 酸 · 苦 · 口感 · 负面 · 总分</p></div></div><label class="field centered-field"><span>选择豆子</span><select id="sensoryBeanSelect" class="control">${state.beans.filter(bean=>!bean.archived).map(bean=>`<option value="${esc(bean.id)}"${bean.id===state.selectedBeanId?' selected':''}>${esc(beanDisplayName(bean))}</option>`).join('')}</select></label><div class="sensory-start-action"><button id="startSensoryBtn" class="button primary" type="button">开始品鉴</button></div></section>`}`;
   $('#sensoryHistoryToggle').addEventListener('click', () => { state.sensoryHistoryOpen = !state.sensoryHistoryOpen; renderSensory(); });
   $('#sensoryMoreBtn')?.addEventListener('click', openSensoryRecordsPage);
-  $('#startSensoryBtn')?.addEventListener('click', () => { const beanId = $('#sensoryBeanSelect').value; if (!beanId) return toast('请先选择豆卡'); startEvaluation(beanId); renderSensory(); });
+  $('#startSensoryBtn')?.addEventListener('click', () => { const beanId = $('#sensoryBeanSelect').value; if (!beanId) return toast('请先选择豆子'); startEvaluation(beanId); renderSensory(); });
   bindEvaluationEvents(); bindControlStates(container);
 }
 
@@ -1022,12 +1251,12 @@ function evaluationHtml(evaluation) {
   const node = SENSORY_NODES[evaluation.nodeIndex];
   const body = node.type === 'score' ? scoreNodeHtml(evaluation) : node.type === 'note' ? noteNodeHtml(evaluation) : node.groups.map((group,index)=>questionGroupHtml(node,group,index,evaluation.answers[node.id]||{})).join('');
   const last = evaluation.nodeIndex === SENSORY_NODES.length - 1;
-  return `<section class="panel"><div class="panel-title"><div><h2>${evaluation.nodeIndex+1}. ${node.label}</h2><p>${beanDisplayName(state.beans.find(b=>b.id===evaluation.beanId) || {})}</p></div><button id="cancelEvaluationBtn" class="button subtle" type="button">取消</button></div><div class="sensory-progress">${SENSORY_NODES.map((_,i)=>`<span class="${i<evaluation.nodeIndex?'done':i===evaluation.nodeIndex?'current':''}"></span>`).join('')}</div>${body}<div class="row menu-row"><button id="prevSensoryNodeBtn" class="button" type="button"${evaluation.nodeIndex===0?' disabled':''}>退</button><button id="nextSensoryNodeBtn" class="button primary" type="button">${last?'完成品鉴':node.type==='score'?'继续札记':'进'}</button></div></section>`;
+  return `<section class="panel sensory-evaluation"><div class="panel-title sensory-title-centered"><div><h2>${esc(node.label)}</h2><p>${esc(beanDisplayName(state.beans.find(b=>b.id===evaluation.beanId) || {}))}</p></div><button id="cancelEvaluationBtn" class="button subtle" type="button">取消</button></div><div class="sensory-progress">${SENSORY_NODES.map((_,i)=>`<span class="${i<evaluation.nodeIndex?'done':i===evaluation.nodeIndex?'current':''}"></span>`).join('')}</div>${body}<div class="row menu-row sensory-navigation"><button id="prevSensoryNodeBtn" class="button" type="button"${evaluation.nodeIndex===0?' disabled':''}>退</button><button id="nextSensoryNodeBtn" class="button primary" type="button">${last?'完成品鉴':node.type==='score'?'继续札记':'进'}</button></div></section>`;
 }
 
 function questionGroupHtml(node, group, groupIndex, answer) {
   const selected = new Set(answer[groupIndex] || []);
-  return `<div class="question-group"><h4>${esc(group.label)}</h4><div class="sensory-options">${group.options.map(option=>`<button type="button" class="sensory-option${selected.has(option)?' selected':''}" data-sensory-option="${esc(option)}" data-group-index="${groupIndex}" data-single="${Boolean(group.single)}">${esc(option)}</button>`).join('')}</div></div>`;
+  return `<div class="question-group centered-question"><h4>${esc(group.label)}</h4><div class="sensory-options">${group.options.map(option=>`<button type="button" class="sensory-option${selected.has(option)?' selected':''}" data-sensory-option="${esc(option)}" data-group-index="${groupIndex}" data-single="${Boolean(group.single)}">${esc(option)}</button>`).join('')}</div></div>`;
 }
 function scoreNodeHtml(evaluation) {
   const autoScore = computeAutomaticScore(evaluation.answers);
@@ -1037,7 +1266,7 @@ function scoreNodeHtml(evaluation) {
 }
 
 function noteNodeHtml(evaluation) {
-  return `<div class="question-group"><h4>自然文字记录</h4><textarea id="sensoryNaturalNote" class="control natural-note" maxlength="1200" placeholder="描述本次冲煮的香气、酸甜、口感、问题及下一次调整方向……">${esc(evaluation.naturalNote || '')}</textarea><div class="row menu-row"><button id="sensoryVoiceNoteBtn" class="button" type="button">语记</button><span class="muted small">文字将写入品鉴记录和对应冲煮记录。</span></div></div>`;
+  return `<div class="question-group centered-question"><h4>自然文字记录</h4><textarea id="sensoryNaturalNote" class="control natural-note" maxlength="1200" placeholder="描述本次冲煮的香气、酸甜、口感、问题及下一次调整方向……">${esc(evaluation.naturalNote || '')}</textarea><div class="row menu-row sensory-note-actions"><button id="sensoryVoiceNoteBtn" class="button" type="button">语记</button><span class="muted small">文字将写入品鉴记录和对应冲煮记录。</span></div></div>`;
 }
 
 function bindEvaluationEvents() {
@@ -1217,23 +1446,47 @@ function openHistory() {
   });
 }
 
+function gearManagerHtml() {
+  const gear = normalizeGearSettings(state.settings.gear);
+  const lowIds = new Set(gear.filters.filter(item => Number(item.quantity) < 10).map(item => item.id));
+  return `<div class="gear-manager"><section class="gear-subpage"><div class="panel-title centered"><div><h3>滤纸</h3><p>品牌、类型、张数和价格</p></div><button id="addFilterBtn" class="button" type="button">添</button></div><div class="gear-list">${gear.filters.length?gear.filters.map(item=>`<button class="gear-item${lowIds.has(item.id)?' low-stock':''}" type="button" data-filter-item="${esc(item.id)}"><span><strong>${esc([item.brand,item.type].filter(Boolean).join(' '))}</strong><small>价格 ¥${Number(item.price||0).toFixed(2)}</small></span><b>${Math.floor(Number(item.quantity)||0)}张</b></button>`).join(''):'<p class="muted small">尚未添加滤纸。每次完成冲煮后会自动扣减所选滤纸 1 张。</p>'}</div></section><section class="gear-subpage"><div class="panel-title centered"><div><h3>滤杯</h3><p>用于冲煮模型和拾味选择</p></div><button id="addDripperBtn" class="button" type="button">添</button></div><div class="gear-list">${gear.drippers.map(item=>`<div class="gear-item"><span><strong>${esc(item.name)}</strong><small>${esc(item.type)}</small></span></div>`).join('')}</div></section><label class="field"><span>磨豆机 / 刻度</span><input id="gearGrinders" class="control" value="${esc(gear.grinders||'')}" placeholder="例如 C40 22格"></label><button id="saveGearTextBtn" class="button primary" type="button">保存磨豆机</button></div>`;
+}
+
+function openAddFilterDialog(existingId = '') {
+  const existing = gearFilters().find(item => item.id === existingId) || {};
+  const overlay = showOverlay(`${dialogHeader(existingId?'编辑滤纸':'添加滤纸', '类型和张数为必填项', { centered:true })}<div class="grid-2"><label class="field"><span>品牌</span><input id="filterBrand" class="control" value="${esc(existing.brand||'')}"></label><label class="field"><span>类型 *</span><input id="filterType" class="control" value="${esc(existing.type||'')}"></label><label class="field"><span>张数 *</span><input id="filterQuantity" class="control" type="number" min="0" step="1" value="${Number(existing.quantity??0)}"></label><label class="field"><span>价格</span><input id="filterPrice" class="control" type="number" min="0" step="0.01" value="${Number(existing.price||0)}"></label></div><div class="row end"><button id="saveFilterBtn" class="button primary" type="button">确定</button></div>`, { id:'filter-editor',backdropClose:true });
+  bindClose(overlay);
+  $('#saveFilterBtn').addEventListener('click',async()=>{const type=$('#filterType').value.trim();const quantity=Math.floor(parseNumber($('#filterQuantity').value,-1));if(!type)return toast('滤纸类型为必填项','status-bad');if(quantity<0)return toast('滤纸张数为必填项且不能小于0','status-bad');state.settings.gear=normalizeGearSettings(state.settings.gear);const record={id:existing.id||uid('filter'),brand:$('#filterBrand').value.trim(),type,quantity,price:Math.max(0,parseNumber($('#filterPrice').value,0)),createdAt:existing.createdAt||new Date().toISOString()};const index=state.settings.gear.filters.findIndex(item=>item.id===record.id);if(index>=0)state.settings.gear.filters[index]=record;else state.settings.gear.filters.push(record);state.settings.brew.filterPaperId ||= record.id;await saveSettings();closeOverlay();renderSettings();updateLowStockIndicator();});
+}
+
+function openAddDripperDialog() {
+  const overlay=showOverlay(`${dialogHeader('添加滤杯','名称和类型用于拾味与计算模型',{centered:true})}<div class="grid-2"><label class="field"><span>名称 *</span><input id="dripperName" class="control"></label><label class="field"><span>类型 *</span><select id="dripperType" class="control"><option>平底滤杯</option><option>锥形滤杯</option><option>混合式滤杯</option><option>低旁路滤杯</option><option>浸泡式滤杯</option></select></label></div><div class="row end"><button id="saveDripperBtn" class="button primary" type="button">确定</button></div>`,{id:'dripper-editor',backdropClose:true});bindClose(overlay);$('#saveDripperBtn').addEventListener('click',async()=>{const name=$('#dripperName').value.trim();if(!name)return toast('滤杯名称为必填项','status-bad');state.settings.gear=normalizeGearSettings(state.settings.gear);state.settings.gear.drippers.push({id:uid('dripper'),name,type:$('#dripperType').value});await saveSettings();closeOverlay();renderSettings();});
+}
+
 function renderSettings() {
   const meta = state.codebookMeta || {};
   const identity = state.settings.identity;
-  const gear = state.settings.gear || DEFAULT_SETTINGS.gear;
+  state.settings.gear = normalizeGearSettings(state.settings.gear);
+  const low = lowStockFilters();
+  const autoOpenGear = low.length > 0;
+  if (autoOpenGear) state.settingsFocusFilterId = low[0].id;
   $('#settingsContent').innerHTML = `<div class="settings-categories">
-  <details class="settings-category"><summary><span>账户</span><small>${esc(identity.nickname || '访客')}</small></summary><div class="settings-category-body"><div class="grid-2"><label class="field"><span>昵称</span><input id="settingsNickname" class="control" maxlength="24" value="${esc(identity.nickname||'')}"></label><label class="field"><span>邮箱</span><input id="settingsEmail" class="control" type="email" value="${esc(identity.email||'')}"></label><label class="field"><span>手机</span><input id="settingsPhone" class="control" inputmode="tel" value="${esc(identity.phone||'')}"></label><label class="field"><span>微信</span><input id="settingsWechat" class="control" value="${esc(identity.wechat||'')}"></label><label class="field"><span>QQ</span><input id="settingsQq" class="control" inputmode="numeric" value="${esc(identity.qq||'')}"></label><div class="field"><span>个人 ID</span><div class="static-value mono">${esc(identity.publicId||'保存账户后生成')}</div></div></div><p class="muted small">个人 ID 由本机随机盐、昵称和账户信息生成，用于分享时标记来源，不公开原始联系方式。</p><button id="saveIdentityBtn" class="button primary" type="button">保存账户</button></div></details>
-  <details class="settings-category"><summary><span>私器</span><small>滤纸 · 滤杯 · 磨豆机</small></summary><div class="settings-category-body"><div class="grid-2"><label class="field"><span>滤纸种类</span><input id="gearFilterTypes" class="control" value="${esc(gear.filterTypes||'')}" placeholder="例如 漂白纸、原木纸"></label><label class="field"><span>滤纸数量</span><input id="gearFilterStock" class="control" type="number" min="0" step="1" value="${esc(gear.filterStock||'')}"></label><label class="field"><span>滤杯</span><input id="gearDrippers" class="control" value="${esc(gear.drippers||'')}" placeholder="多个器具用顿号分隔"></label><label class="field"><span>磨豆机 / 刻度</span><input id="gearGrinders" class="control" value="${esc(gear.grinders||'')}" placeholder="例如 C40 22格"></label></div><button id="saveGearBtn" class="button primary" type="button">保存私器</button></div></details>
-  <details class="settings-category"><summary><span>数藏</span><small>备份 · 恢复 · 数据源</small></summary><div class="settings-category-body"><div class="text-actions"><button id="settingsExportBtn" class="button" type="button">导出备份</button><button id="settingsImportBtn" class="button" type="button">导入备份</button><button id="clearAllDataBtn" class="button danger" type="button">清空本地数据</button></div><details class="nested-settings"><summary>数据源与接口</summary><div class="nested-content"><div class="setting-row"><div><h3>数据源</h3><p>仅在需要时检查更新；技术信息请见本物。</p></div><button id="updateCodebookBtn" class="button" type="button">检查更新</button></div><label class="field"><span>私有冲煮 API</span><input id="brewApiEndpoint" class="control" type="url" placeholder="HTTPS 服务端地址" value="${esc(state.settings.brew.apiEndpoint||'')}"></label><button id="saveApiBtn" class="button" type="button">保存接口</button><label class="toggle"><input id="planVisualToggle" type="checkbox"${state.settings.ui.planVisualsExpanded?' checked':''}>默认显示萃取图</label></div></details></div></details>
-  <details class="settings-category"><summary><span>本物</span><small>关于富贵盒子</small></summary><div class="settings-category-body about-content"><h2>富贵盒子</h2><p>咖啡豆管理、拾味冲煮辅助、品鉴记录与本地数据归档工具。</p><dl><dt>版本</dt><dd>${APP_VERSION}</dd><dt>数据结构</dt><dd>${SCHEMA_VERSION}</dd><dt>离线引擎</dt><dd>${esc(FALLBACK_ENGINE_VERSION)}</dd><dt>数据源</dt><dd>公开编码数据 ${esc(meta.version||state.codebook.version||'6')}</dd><dt>开发与维护</dt><dd>zjcrop</dd><dt>微信</dt><dd>zj_crop</dd><dt>小红书</dt><dd>端茶倒水的秦始皇🐻</dd></dl><p class="muted small">真实注册、跨设备同步和私有冲煮服务需要独立后端。当前数据默认保存在本机浏览器。</p></div></details>
+  <details class="settings-category"><summary><span>账户</span><small>（${esc(identity.nickname || '访客')}）</small></summary><div class="settings-category-body"><div class="grid-2"><label class="field"><span>昵称</span><input id="settingsNickname" class="control" maxlength="24" value="${esc(identity.nickname||'')}"></label><label class="field"><span>邮箱</span><input id="settingsEmail" class="control" type="email" value="${esc(identity.email||'')}"></label><label class="field"><span>手机</span><input id="settingsPhone" class="control" inputmode="tel" value="${esc(identity.phone||'')}"></label><label class="field"><span>微信</span><input id="settingsWechat" class="control" value="${esc(identity.wechat||'')}"></label><label class="field"><span>QQ</span><input id="settingsQq" class="control" inputmode="numeric" value="${esc(identity.qq||'')}"></label><div class="field"><span>个人 ID</span><div class="static-value mono">${esc(identity.publicId||'保存账户后生成')}</div></div></div><button id="saveIdentityBtn" class="button primary" type="button">保存账户</button></div></details>
+  <details class="settings-category" id="privateGearCategory"${autoOpenGear?' open':''}><summary><span>私器${low.length?'<sup class="gear-low-star">*</sup>':''}</span><small>（滤纸 · 滤杯 · 磨豆机）</small></summary><div class="settings-category-body">${gearManagerHtml()}</div></details>
+  <details class="settings-category"><summary><span>数藏</span><small>（备份 · 恢复 · 数据源）</small></summary><div class="settings-category-body"><div class="text-actions"><button id="settingsExportBtn" class="button" type="button">导出备份</button><button id="settingsImportBtn" class="button" type="button">导入备份</button><button id="clearAllDataBtn" class="button danger" type="button">清空本地数据</button></div><details class="nested-settings"><summary>数据源与接口（点击展开）</summary><div class="nested-content"><div class="setting-row"><div><h3>数据源</h3><p>仅在需要时检查更新。</p></div><button id="updateCodebookBtn" class="button" type="button">检查更新</button></div><label class="field"><span>私有冲煮 API</span><input id="brewApiEndpoint" class="control" type="url" placeholder="HTTPS 服务端地址" value="${esc(state.settings.brew.apiEndpoint||'')}"></label><button id="saveApiBtn" class="button" type="button">保存接口</button><label class="toggle"><input id="planVisualToggle" type="checkbox"${state.settings.ui.planVisualsExpanded?' checked':''}>默认显示冲煮轨迹图</label></div></details></div></details>
+  <details class="settings-category"><summary><span>本物</span><small>（关于富贵盒子）</small></summary><div class="settings-category-body about-content"><h2>富贵盒子</h2><p>咖啡豆管理、拾味冲煮辅助、品鉴记录与本地数据归档工具。</p><dl><dt>版本</dt><dd>${APP_VERSION}</dd><dt>数据结构</dt><dd>${SCHEMA_VERSION}</dd><dt>离线引擎</dt><dd>${esc(FALLBACK_ENGINE_VERSION)}</dd><dt>数据源</dt><dd>公开编码数据 ${esc(meta.version||state.codebook.version||'6')}</dd><dt>开发与维护</dt><dd>zjcrop</dd></dl></div></details>
   </div>`;
+  $$('.settings-category').forEach(section=>section.addEventListener('toggle',()=>{if(!section.open)return;$$('.settings-category').forEach(other=>{if(other!==section)other.open=false;});}));
   $('#updateCodebookBtn').addEventListener('click', updateCodebook);
   $('#saveApiBtn').addEventListener('click',async()=>{state.settings.brew.apiEndpoint=$('#brewApiEndpoint').value.trim();await saveSettings();toast('接口地址已保存');});
   $('#planVisualToggle').addEventListener('change',async event=>{state.settings.ui.planVisualsExpanded=event.target.checked;await saveSettings();});
   $('#saveIdentityBtn').addEventListener('click',async()=>{const next={...state.settings.identity,nickname:$('#settingsNickname').value.trim()||'访客',email:$('#settingsEmail').value.trim(),phone:$('#settingsPhone').value.trim(),wechat:$('#settingsWechat').value.trim(),qq:$('#settingsQq').value.trim()};Object.assign(next,await derivePublicId(next));state.settings.identity=next;await saveSettings();renderSettings();toast('账户信息与个人 ID 已保存');});
-  $('#saveGearBtn').addEventListener('click',async()=>{state.settings.gear={filterTypes:$('#gearFilterTypes').value.trim(),filterStock:$('#gearFilterStock').value.trim(),drippers:$('#gearDrippers').value.trim(),grinders:$('#gearGrinders').value.trim()};if(state.settings.gear.drippers)state.settings.brew.dripper=state.settings.gear.drippers.split(/[、,，]/)[0].trim();if(state.settings.gear.grinders)state.settings.brew.grinder=state.settings.gear.grinders.split(/[、,，]/)[0].trim();await saveSettings();toast('私器已保存');});
+  $('#addFilterBtn')?.addEventListener('click',()=>openAddFilterDialog()); $('#addDripperBtn')?.addEventListener('click',openAddDripperDialog);
+  $$('[data-filter-item]').forEach(button=>button.addEventListener('click',()=>openAddFilterDialog(button.dataset.filterItem)));
+  $('#saveGearTextBtn')?.addEventListener('click',async()=>{state.settings.gear.grinders=$('#gearGrinders').value.trim();await saveSettings();toast('磨豆机已保存');});
   $('#settingsExportBtn').addEventListener('click',exportData); $('#settingsImportBtn').addEventListener('click',()=>$('#importInput').click());
   $('#clearAllDataBtn').addEventListener('click',confirmClearAll); bindControlStates($('#settingsContent'));
+  if (state.settingsFocusFilterId) requestAnimationFrame(()=>{const item=document.querySelector(`[data-filter-item="${CSS.escape(state.settingsFocusFilterId)}"]`);item?.scrollIntoView({behavior:'smooth',block:'center'});});
 }
 
 async function updateCodebook() {
@@ -1250,7 +1503,7 @@ async function importData(file) {
   if (!file) return; if (file.size>5*1024*1024) return toast('导入文件不能超过 5MB','status-bad');
   try { const text=await file.text();const parsed=JSON.parse(text);assertSafeJson(parsed);const payload=assertPlainObject(parsed,'备份文件');if(payload.format!=='luckybean-backup')throw new Error('不是富贵盒子备份');if(Number(payload.schemaVersion)>SCHEMA_VERSION)throw new Error('备份 Schema 版本高于当前应用');
     for(const key of ['beans','brewSessions','sensoryRecords','inventoryEvents'])if(payload[key]!==undefined&&!Array.isArray(payload[key]))throw new Error(`${key} 必须是数组`);
-    await Promise.all([bulkPut('beans',payload.beans||[]),bulkPut('brewSessions',payload.brewSessions||[]),bulkPut('sensoryRecords',payload.sensoryRecords||[]),bulkPut('inventoryEvents',payload.inventoryEvents||[])]);if(payload.settings){state.settings={...state.settings,...payload.settings};await saveSettings();}await refreshData();renderBeans();toast('备份导入完成','status-good');
+    await Promise.all([bulkPut('beans',payload.beans||[]),bulkPut('brewSessions',payload.brewSessions||[]),bulkPut('sensoryRecords',payload.sensoryRecords||[]),bulkPut('inventoryEvents',payload.inventoryEvents||[])]);if(payload.settings){state.settings={...state.settings,...payload.settings,ui:{...state.settings.ui,...(payload.settings.ui||{})},brew:{...state.settings.brew,...(payload.settings.brew||{}),customWater:{...state.settings.brew.customWater,...(payload.settings.brew?.customWater||{})},flavorTargets:{...state.settings.brew.flavorTargets,...(payload.settings.brew?.flavorTargets||{})}},identity:{...state.settings.identity,...(payload.settings.identity||{})},gear:normalizeGearSettings(payload.settings.gear||state.settings.gear)};await saveSettings();}await refreshData();renderBeans();toast('备份导入完成','status-good');
   } catch(error){toast(`导入失败：${error.message}`,'status-bad');} finally{$('#importInput').value='';}
 }
 function confirmClearAll() {
@@ -1266,14 +1519,17 @@ function bindGlobalEvents() {
   $('#bottomNav').addEventListener('click',event=>{const button=event.target.closest('[data-page-target]');if(button)switchPage(button.dataset.pageTarget);});
   $('#beanGroups').addEventListener('click',event=>{
     const board = event.target.closest('[data-open-recommend-board]'); if (board) return openRecommendationLeaderboard();
-    const group = event.target.closest('[data-open-group]'); if (group) { state.activeGroupKey = group.dataset.openGroup; renderBeans(); return; }
-    if (event.target.closest('[data-collapse-group]')) { state.activeGroupKey = null; renderBeans(); return; }
+    const group = event.target.closest('[data-open-group]');
+    if (group) { state.groupAnimationMode='manual'; state.activeGroupKey = group.dataset.openGroup; renderBeans(); return; }
+    if (event.target.closest('[data-collapse-group]')) { state.groupAnimationMode='manual'; state.activeGroupKey = null; renderBeans(); return; }
     const brew=event.target.closest('[data-brew-bean]');if(brew){event.stopPropagation();state.selectedBeanId=brew.dataset.brewBean;state.currentPlan=null;switchPage('brew');return;}
-    const card=event.target.closest('[data-bean-id]');if(card)detailBean(card.dataset.beanId);
+    const card=event.target.closest('[data-bean-id]');if(card){detailBean(card.dataset.beanId);return;}
+    const panel=event.target.closest('[data-active-group-panel]');
+    if(panel && !event.target.closest('[data-bean-id],[data-brew-bean],.active-group-title,.group-collapse')){state.groupAnimationMode='manual';state.activeGroupKey=null;renderBeans();}
   });
   $('#beanGroups').addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&event.target.matches('[data-bean-id]'))detailBean(event.target.dataset.beanId);});
   $('#activeFilterBar').addEventListener('click',event=>{if(event.target.id==='clearActiveFilters'){state.filter={search:'',country:'',variety:'',process:'',flavors:[],sort:'freshness',dir:'asc'};state.activeGroupKey=null;renderBeans();}});
-  $('#groupBtn').addEventListener('click',openGroupMenu); $('#filterSummaryBtn').addEventListener('click',openSearchDialog); $('#manageBtn').addEventListener('click',openManageMenu);
+  $('#groupBtn').addEventListener('click',openGroupMenu); $('#manageBtn').addEventListener('click',openManageMenu);
   $('#fabSearchBtn').addEventListener('click',openSearchDialog); $('#fabRecommendBtn').addEventListener('click',openRecommendMenu); $('#fabHistoryBtn').addEventListener('click',openHistory); $('#fabAddBtn').addEventListener('click',openAddMenu);
   document.addEventListener('click',event=>{
     const manage=event.target.closest('[data-manage-action]');if(manage){const action=manage.dataset.manageAction;closePopups();if(action==='export')exportData();if(action==='import')$('#importInput').click();if(action==='history')openHistory();return;}
