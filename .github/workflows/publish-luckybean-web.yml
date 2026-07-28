@@ -42,6 +42,7 @@ jobs:
           test -s index.html
           test -s styles.css
           test -s src/app.js
+          test -s src/codebook.js
           test -s public/fallback-codebook.json
 
       - name: Publish runtime files under BrewIon/luckybean
@@ -88,7 +89,6 @@ jobs:
           fi
 
       - name: Verify public Pages deployment
-        id: verify
         shell: bash
         run: |
           set -euo pipefail
@@ -96,6 +96,7 @@ jobs:
           ok='false'
           index_code='000'
           app_code='000'
+          codebook_js_code='000'
           data_code='000'
           release_code='000'
           release_version=''
@@ -105,6 +106,7 @@ jobs:
             nonce="$(date +%s)-$attempt"
             index_code="$(curl -L -sS -o /tmp/luckybean-index.html -w '%{http_code}' --max-time 20 "${base}?v=${nonce}" || true)"
             app_code="$(curl -L -sS -o /tmp/luckybean-app.js -w '%{http_code}' --max-time 20 "${base}src/app.js?v=${nonce}" || true)"
+            codebook_js_code="$(curl -L -sS -o /tmp/luckybean-codebook.js -w '%{http_code}' --max-time 20 "${base}src/codebook.js?v=${nonce}" || true)"
             data_code="$(curl -L -sS -o /tmp/luckybean-codebook.json -w '%{http_code}' --max-time 20 "${base}public/fallback-codebook.json?v=${nonce}" || true)"
             release_code="$(curl -L -sS -o /tmp/luckybean-release.json -w '%{http_code}' --max-time 20 "${base}release.json?v=${nonce}" || true)"
 
@@ -115,6 +117,7 @@ jobs:
 
             if [[ "$index_code" == '200' ]] \
               && [[ "$app_code" == '200' ]] \
+              && [[ "$codebook_js_code" == '200' ]] \
               && [[ "$data_code" == '200' ]] \
               && [[ "$release_code" == '200' ]] \
               && [[ "$release_version" == "$LUCKYBEAN_VERSION" ]] \
@@ -122,17 +125,15 @@ jobs:
               && grep -q '<title>富贵盒子</title>' /tmp/luckybean-index.html \
               && grep -q '拾味' /tmp/luckybean-index.html \
               && grep -q 'const PAGE_META' /tmp/luckybean-app.js \
-              && grep -q 'mergeCodebooks' /tmp/luckybean-app.js /tmp/luckybean-codebook.json 2>/dev/null || \
-                 { grep -q 'mergeCodebooks' /tmp/luckybean-app.js || true; }; then
-              if grep -q '"countries"' /tmp/luckybean-codebook.json; then
-                ok='true'
-                break
-              fi
+              && grep -q 'mergeCodebooks' /tmp/luckybean-codebook.js \
+              && grep -q '"countries"' /tmp/luckybean-codebook.json; then
+              ok='true'
+              break
             fi
             sleep 10
           done
 
-          export ok index_code app_code data_code release_code release_version release_source_sha base
+          export ok index_code app_code codebook_js_code data_code release_code release_version release_source_sha base
           python - <<'PY'
           import json, os
           from datetime import datetime, timezone
@@ -144,6 +145,7 @@ jobs:
               'expected_source_sha': os.environ['LUCKYBEAN_SOURCE_SHA'],
               'index_http': os.environ['index_code'],
               'app_js_http': os.environ['app_code'],
+              'codebook_js_http': os.environ['codebook_js_code'],
               'codebook_http': os.environ['data_code'],
               'release_http': os.environ['release_code'],
               'release_version': os.environ.get('release_version', ''),
