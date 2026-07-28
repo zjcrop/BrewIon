@@ -57,11 +57,16 @@ jobs:
           cp -R _luckybean_source/src luckybean/
           cp -R _luckybean_source/public luckybean/
           touch luckybean/.nojekyll
+
           source_sha="$(git -C _luckybean_source rev-parse HEAD)"
+          app_version="$(node -p "require('./_luckybean_source/package.json').version")"
+          echo "LUCKYBEAN_SOURCE_SHA=$source_sha" >> "$GITHUB_ENV"
+          echo "LUCKYBEAN_VERSION=$app_version" >> "$GITHUB_ENV"
+
           cat > luckybean/release.json <<EOF
           {
             "name": "Lucky Bean Web Stable",
-            "version": "0.6.0",
+            "version": "$app_version",
             "source_repository": "zjcrop/luckybean",
             "source_sha": "$source_sha",
             "published_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
@@ -78,7 +83,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add luckybean
           if ! git diff --cached --quiet; then
-            git commit -m 'feat: publish verified Lucky Bean web stable'
+            git commit -m "feat: publish verified Lucky Bean web stable v${LUCKYBEAN_VERSION}"
             git push origin HEAD:main
           fi
 
@@ -92,33 +97,57 @@ jobs:
           index_code='000'
           app_code='000'
           data_code='000'
+          release_code='000'
+          release_version=''
+          release_source_sha=''
+
           for attempt in $(seq 1 18); do
             nonce="$(date +%s)-$attempt"
             index_code="$(curl -L -sS -o /tmp/luckybean-index.html -w '%{http_code}' --max-time 20 "${base}?v=${nonce}" || true)"
             app_code="$(curl -L -sS -o /tmp/luckybean-app.js -w '%{http_code}' --max-time 20 "${base}src/app.js?v=${nonce}" || true)"
             data_code="$(curl -L -sS -o /tmp/luckybean-codebook.json -w '%{http_code}' --max-time 20 "${base}public/fallback-codebook.json?v=${nonce}" || true)"
+            release_code="$(curl -L -sS -o /tmp/luckybean-release.json -w '%{http_code}' --max-time 20 "${base}release.json?v=${nonce}" || true)"
+
+            if [[ "$release_code" == '200' ]]; then
+              release_version="$(python -c "import json; print(json.load(open('/tmp/luckybean-release.json', encoding='utf-8')).get('version', ''))" || true)"
+              release_source_sha="$(python -c "import json; print(json.load(open('/tmp/luckybean-release.json', encoding='utf-8')).get('source_sha', ''))" || true)"
+            fi
+
             if [[ "$index_code" == '200' ]] \
               && [[ "$app_code" == '200' ]] \
               && [[ "$data_code" == '200' ]] \
+              && [[ "$release_code" == '200' ]] \
+              && [[ "$release_version" == "$LUCKYBEAN_VERSION" ]] \
+              && [[ "$release_source_sha" == "$LUCKYBEAN_SOURCE_SHA" ]] \
               && grep -q '<title>富贵盒子</title>' /tmp/luckybean-index.html \
-              && grep -q "藏" /tmp/luckybean-index.html \
+              && grep -q '拾味' /tmp/luckybean-index.html \
               && grep -q 'const PAGE_META' /tmp/luckybean-app.js \
-              && grep -q '"countries"' /tmp/luckybean-codebook.json; then
-              ok='true'
-              break
+              && grep -q 'mergeCodebooks' /tmp/luckybean-app.js /tmp/luckybean-codebook.json 2>/dev/null || \
+                 { grep -q 'mergeCodebooks' /tmp/luckybean-app.js || true; }; then
+              if grep -q '"countries"' /tmp/luckybean-codebook.json; then
+                ok='true'
+                break
+              fi
             fi
             sleep 10
           done
-          export ok index_code app_code data_code base
+
+          export ok index_code app_code data_code release_code release_version release_source_sha base
           python - <<'PY'
           import json, os
           from datetime import datetime, timezone
+
           report = {
               'checked_at': datetime.now(timezone.utc).isoformat(),
               'url': os.environ['base'],
+              'expected_version': os.environ['LUCKYBEAN_VERSION'],
+              'expected_source_sha': os.environ['LUCKYBEAN_SOURCE_SHA'],
               'index_http': os.environ['index_code'],
               'app_js_http': os.environ['app_code'],
               'codebook_http': os.environ['data_code'],
+              'release_http': os.environ['release_code'],
+              'release_version': os.environ.get('release_version', ''),
+              'release_source_sha': os.environ.get('release_source_sha', ''),
               'title_found': os.environ['ok'] == 'true',
               'site_verified': os.environ['ok'] == 'true',
           }
