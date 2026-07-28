@@ -32,18 +32,11 @@
   </section>
 
   <div id="appShell" class="app-shell hidden">
-    <header class="app-header">
-      <div>
-        <p class="eyebrow">富贵盒子</p>
-        <p id="syncStatus" class="sync-status">正在载入本地数据…</p>
-      </div>
-      <button id="profileBtn" class="icon-button profile-button" type="button" aria-label="打开本机身份设置">客</button>
-    </header>
 
     <main id="mainContent" class="main-content">
       <section id="pageBeans" class="page active" data-page="beans" aria-labelledby="titleBeans">
         <div class="page-heading">
-          <div><p class="page-kicker">藏</p><h1 id="titleBeans">豆藏</h1></div>
+          <div><h1 id="titleBeans" class="page-seal">豆藏</h1></div>
           <div class="top-controls">
             <button class="small-control" id="groupBtn" type="button">分组</button>
             <button class="small-control" id="filterSummaryBtn" type="button">筛选</button>
@@ -55,17 +48,17 @@
       </section>
 
       <section id="pageBrew" class="page" data-page="brew" aria-labelledby="titleBrew">
-        <div class="page-heading"><div><p class="page-kicker">烹</p><h1 id="titleBrew">手作</h1></div></div>
+        <div class="page-heading"><div><h1 id="titleBrew" class="page-seal">拾味</h1></div></div>
         <div id="brewContent"></div>
       </section>
 
       <section id="pageSensory" class="page" data-page="sensory" aria-labelledby="titleSensory">
-        <div class="page-heading"><div><p class="page-kicker">鉴</p><h1 id="titleSensory">品鉴</h1></div></div>
+        <div class="page-heading"><div><h1 id="titleSensory" class="page-seal">品鉴</h1></div></div>
         <div id="sensoryContent"></div>
       </section>
 
       <section id="pageSettings" class="page" data-page="settings" aria-labelledby="titleSettings">
-        <div class="page-heading"><div><p class="page-kicker">器</p><h1 id="titleSettings">器设</h1></div></div>
+        <div class="page-heading"><div><h1 id="titleSettings" class="page-seal">器设</h1></div></div>
         <div id="settingsContent"></div>
       </section>
     </main>
@@ -74,28 +67,16 @@
       <button id="fabSearchBtn" class="fab small-fab" type="button" aria-label="搜索豆卡">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5 21 21"></path></svg>
       </button>
-      <button id="fabRecommendBtn" class="fab small-fab" type="button" aria-label="推荐豆卡">
-        <svg class="heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21S3 15.4 3 8.6C3 5.5 5.2 3.5 8 3.5c1.7 0 3.2.8 4 2 0.8-1.2 2.3-2 4-2 2.8 0 5 2 5 5.1C21 15.4 12 21 12 21Z"></path></svg>
-      </button>
-      <button id="fabHistoryBtn" class="fab small-fab" type="button" aria-label="打开老黄历">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg>
-      </button>
-      <button id="fabAddBtn" class="fab add-fab" type="button" aria-label="新增豆卡">+1</button>
+      <button id="fabRecommendBtn" class="fab small-fab text-fab" type="button" aria-label="推荐豆卡">荐</button>
+      <button id="fabHistoryBtn" class="fab small-fab text-fab" type="button" aria-label="打开诹吉">诹吉</button>
+      <button id="fabAddBtn" class="fab add-fab" type="button" aria-label="新增豆卡">添</button>
     </div>
 
     <nav id="bottomNav" class="bottom-nav" aria-label="主页面">
-      <button class="nav-button active" type="button" data-page-target="beans" aria-label="豆藏：咖啡豆管理" aria-current="page">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14"></rect></svg><span>藏</span>
-      </button>
-      <button class="nav-button" type="button" data-page-target="brew" aria-label="手作：冲煮制作">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="4,6 20,6 12,20"></polygon></svg><span>烹</span>
-      </button>
-      <button class="nav-button" type="button" data-page-target="sensory" aria-label="品鉴：感官评价">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle></svg><span>鉴</span>
-      </button>
-      <button class="nav-button" type="button" data-page-target="settings" aria-label="器设：设备与系统设置">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,3.5 19.4,7.8 19.4,16.2 12,20.5 4.6,16.2 4.6,7.8"></polygon></svg><span>器</span>
-      </button>
+      <button class="nav-button active" type="button" data-page-target="beans" aria-label="豆藏：咖啡豆管理" aria-current="page"><span>藏</span></button>
+      <button class="nav-button" type="button" data-page-target="brew" aria-label="拾味：冲煮制作"><span>拾</span></button>
+      <button class="nav-button" type="button" data-page-target="sensory" aria-label="品鉴：感官评价"><span>鉴</span></button>
+      <button class="nav-button" type="button" data-page-target="settings" aria-label="器设：设备与系统设置"><span>器</span></button>
     </nav>
   </div>
 

@@ -6,7 +6,7 @@ import { computeFallbackPlan, requestPrivatePlan, validatePlan, FALLBACK_ENGINE_
 
 const PAGE_META = {
   beans: { nav: '藏', title: '豆藏', browser: '豆藏' },
-  brew: { nav: '烹', title: '手作', browser: '手作' },
+  brew: { nav: '拾', title: '拾味', browser: '拾味' },
   sensory: { nav: '鉴', title: '品鉴', browser: '品鉴' },
   settings: { nav: '器', title: '器设', browser: '器设' }
 };
@@ -19,8 +19,10 @@ const ROAST_NAME = new Map(ROASTS);
 const STATUS_COLOR = { resting: '#5f8a73', peak: '#de9a42', good: '#bc8d55', decline: '#77736c', urgent: '#575757' };
 const DEFAULT_SETTINGS = {
   ui: { planVisualsExpanded: true },
-  brew: { apiEndpoint: '', method: 'pourover', doseG: 15, ratio: 15.5, segments: 4, dripper: '平底滤杯', grinder: '', water: '平衡水' },
-  identity: { mode: 'guest', nickname: '游客', publicId: '', verified: false, email: '', phone: '', wechat: '', qq: '' },
+  brew: { apiEndpoint: '', mode: 'simple', method: 'pourover', doseG: 15, ratio: 15.5, segmentMode: 'auto', segments: 4, lowTempFirst: true, dripper: '平底滤杯', grinder: '', water: '平衡水' },
+  identity: { mode: 'guest', nickname: '访客', publicId: '', idSalt: '', verified: false, email: '', phone: '', wechat: '', qq: '' },
+  gear: { filterTypes: '', filterStock: '', drippers: '平底滤杯', grinders: '' },
+  sensoryRecentLimit: 50,
   groupMethod: 'country'
 };
 const SENSORY_NODES = [
@@ -45,11 +47,11 @@ const state = {
   db: null, codebook: null, codebookIndex: null, codebookMeta: null,
   beans: [], brewSessions: [], sensoryRecords: [], inventoryEvents: [],
   settings: structuredClone(DEFAULT_SETTINGS), page: 'beans', selectedBeanId: null,
-  filter: { search: '', country: '', process: '', flavors: [], sort: 'freshness', dir: 'asc' },
+  filter: { search: '', country: '', variety: '', process: '', flavors: [], sort: 'freshness', dir: 'asc' },
   recommendedBeanId: null, currentPlan: null, currentBrewInput: null,
   beanFormSource: null, beanFormDraft: null, cameraScanner: null,
   timer: { interval: null, paused: false, stageIndex: 0, remaining: 0 },
-  evaluation: null, sensoryFilter: { beanId: '', minScore: '', maxScore: '', start: '', end: '', expanded: false }
+  evaluation: null, sensoryHistoryOpen: false, sensoryFilter: { beanId: '', minScore: '', maxScore: '', start: '', end: '', expanded: false }
 };
 
 let toastTimer;
@@ -65,9 +67,10 @@ function showOverlay(content, { full = false, id = 'dialog' } = {}) {
   const root = $('#overlayRoot');
   root.innerHTML = `<div class="overlay${full ? ' full' : ''}" data-overlay="${esc(id)}"><div class="dialog">${content}</div></div>`;
   const overlay = root.firstElementChild;
-  overlay.addEventListener('click', event => { if (event.target === overlay) closeOverlay(); });
+  requestAnimationFrame(() => bindControlStates(overlay));
   return overlay;
 }
+
 function closeOverlay() {
   state.cameraScanner?.stop();
   state.cameraScanner = null;
@@ -84,9 +87,12 @@ async function loadSettings() {
     ...structuredClone(DEFAULT_SETTINGS), ...(saved || {}),
     ui: { ...DEFAULT_SETTINGS.ui, ...(saved?.ui || {}) },
     brew: { ...DEFAULT_SETTINGS.brew, ...(saved?.brew || {}) },
-    identity: { ...DEFAULT_SETTINGS.identity, ...(saved?.identity || {}) }
+    identity: { ...DEFAULT_SETTINGS.identity, ...(saved?.identity || {}) },
+    gear: { ...DEFAULT_SETTINGS.gear, ...(saved?.gear || {}) }
   };
+  state.settings.sensoryRecentLimit = clamp(state.settings.sensoryRecentLimit || 50, 5, 200);
 }
+
 async function saveSettings() { await setSetting('app.settings', state.settings); }
 
 async function refreshData() {
@@ -142,25 +148,22 @@ function switchPage(page, { preserveOverlay = false } = {}) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function identityLabel() {
-  const identity = state.settings.identity;
-  return identity.nickname?.trim()?.slice(0, 1) || (identity.mode === 'guest' ? '客' : '富');
-}
 function enterApp() {
   $('#loginScreen').classList.add('hidden');
   $('#appShell').classList.remove('hidden');
-  $('#profileBtn').textContent = identityLabel();
   switchPage('beans');
+  bindControlStates(document);
 }
 
 async function setIdentity(mode, details = {}) {
-  const nickname = details.nickname || $('#loginNickname')?.value?.trim() || (mode === 'guest' ? '游客' : '本机用户');
+  const nickname = details.nickname || $('#loginNickname')?.value?.trim() || (mode === 'guest' ? '访客' : '本机用户');
   if (mode === 'wechat') {
-    showInfoDialog('微信注册尚未接通', '微信 OAuth 需要后端回调、会话和隐私协议。本版本不伪造注册成功，可先以游客或本机邮箱身份使用。');
+    showInfoDialog('微信注册尚未接通', '微信 OAuth 需要后端回调、会话和隐私协议。本版本不伪造注册成功，可先使用访客或本机邮箱身份。');
     return;
   }
-  const publicId = state.settings.identity.publicId || `LB-${crypto.randomUUID?.().slice(0, 8).toUpperCase() || Date.now().toString(36).toUpperCase()}`;
-  state.settings.identity = { ...state.settings.identity, ...details, mode, nickname, publicId, verified: false };
+  const nextIdentity = { ...state.settings.identity, ...details, mode, nickname, verified: false };
+  Object.assign(nextIdentity, await derivePublicId(nextIdentity));
+  state.settings.identity = nextIdentity;
   await saveSettings();
   enterApp();
 }
@@ -206,9 +209,74 @@ async function seedDemo() {
 }
 
 function codeName(table, code, fallback = '—') { return displayName(state.codebookIndex, table, code, fallback); }
-function beanNameSummary(bean) {
-  return `${codeName('countries', bean.countryCode, '未定产地')} · ${codeName('varieties', bean.varietyCode, '未定豆种')}`;
+function beanDisplayName(bean) {
+  return `${codeName('countries', bean.countryCode, '未定国家')} · ${codeName('varieties', bean.varietyCode, '未定豆种')}`;
 }
+function roastFromColor(value) {
+  const color = Number(value);
+  if (!Number.isFinite(color) || color <= 0) return '';
+  if (color >= 95) return 'RL-L0';
+  if (color >= 85) return 'RL-L1';
+  if (color >= 75) return 'RL-L2';
+  if (color >= 65) return 'RL-L3';
+  if (color >= 55) return 'RL-L4';
+  if (color >= 45) return 'RL-L5';
+  return 'RL-L6';
+}
+function uniqueRowsFromBeans(table, field, beans = state.beans.filter(bean => !bean.archived)) {
+  const codes = new Set(beans.map(bean => bean[field]).filter(Boolean));
+  return (state.codebook?.[table] || []).filter(row => codes.has(row[0]));
+}
+function availableFlavorRows(beans = state.beans.filter(bean => !bean.archived)) {
+  const codes = new Set(beans.flatMap(bean => bean.flavorCodes || []).filter(Boolean));
+  return (state.codebook?.flavors || []).filter(row => codes.has(row[0]));
+}
+function refreshControlState(control) {
+  if (!control?.classList?.contains('control')) return;
+  const empty = !String(control.value ?? '').trim();
+  control.classList.toggle('is-empty', empty);
+  control.classList.toggle('is-filled', !empty);
+}
+function bindControlStates(root = document) {
+  $$('input.control,select.control,textarea.control', root).forEach(control => {
+    refreshControlState(control);
+    if (!control.dataset.stateBound) {
+      control.dataset.stateBound = '1';
+      control.addEventListener('input', () => refreshControlState(control));
+      control.addEventListener('change', () => refreshControlState(control));
+    }
+  });
+}
+async function derivePublicId(identity) {
+  const salt = identity.idSalt || crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+  const seed = [salt, identity.nickname, identity.email, identity.phone, identity.wechat, identity.qq, identity.mode].map(value => String(value || '').trim().toLocaleLowerCase('zh-CN')).join('|');
+  let token = '';
+  if (crypto?.subtle) {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(seed));
+    token = [...new Uint8Array(digest)].slice(0, 6).map(value => value.toString(16).padStart(2, '0')).join('').toUpperCase();
+  } else token = Math.abs([...seed].reduce((hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0, 0)).toString(36).toUpperCase().padStart(10, '0').slice(0, 12);
+  return { publicId: `LB-${token}`, idSalt: salt };
+}
+function resolvedSegmentCount(bean, mode = 'auto') {
+  if (mode !== 'auto') return clamp(Number(mode) || Number(state.settings.brew.segments) || 4, 2, 5);
+  const roast = Number(String(bean?.roastCode || 'RL-L2').replace(/\D/g, '')) || 2;
+  const dose = parseNumber($('#brewDose')?.value, state.settings.brew.doseG || 15);
+  if (roast <= 1 && dose >= 18) return 5;
+  if (roast >= 4) return 3;
+  return 4;
+}
+function trajectorySvg(plan) {
+  const points = plan.trajectory || [];
+  if (!points.length) return '<p class="muted small">当前方案没有轨迹数据</p>';
+  const width = 320, height = 150, pad = 18;
+  const xy = points.map(point => ({ x: pad + clamp(point.x, 0, 1) * (width - pad * 2), y: height - pad - clamp(point.y, 0, 1) * (height - pad * 2) }));
+  const path = xy.map((point, index) => `${index ? 'L' : 'M'}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' ');
+  return `<svg class="trajectory-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="萃取轨迹图"><path class="trajectory-axis" d="M${pad},${pad}V${height-pad}H${width-pad}"/><path class="trajectory-line" d="${path}"/>${xy.map((point,index)=>`<circle cx="${point.x}" cy="${point.y}" r="4"><title>阶段${index+1} · ${Math.round(points[index].y*100)}</title></circle>`).join('')}</svg>`;
+}
+function beanNameSummary(bean) {
+  return [codeName('regions', bean.regionCode, ''), codeName('processes', bean.processCode, '')].filter(Boolean).join(' · ') || '产区与处理法未记录';
+}
+
 function scoreForBean(beanId) {
   const records = state.sensoryRecords.filter(r => r.beanId === beanId && Number.isFinite(Number(r.score)));
   if (!records.length) return 0;
@@ -227,13 +295,14 @@ function recommendationScore(bean) {
 function filteredBeans({ includeArchived = false } = {}) {
   let beans = state.beans.filter(bean => includeArchived ? Boolean(bean.archived) : !bean.archived && Number(bean.remainingWeight) > 0);
   const query = state.filter.search.trim().toLocaleLowerCase('zh-CN');
-  if (query) beans = beans.filter(bean => [bean.name, bean.roasterName, bean.notes, codeName('countries', bean.countryCode, ''), codeName('regions', bean.regionCode, ''), codeName('entities', bean.entityCode, ''), codeName('varieties', bean.varietyCode, ''), codeName('processes', bean.processCode, '')].join(' ').toLocaleLowerCase('zh-CN').includes(query));
+  if (query) beans = beans.filter(bean => [beanDisplayName(bean), bean.roasterName, bean.notes, codeName('regions', bean.regionCode, ''), codeName('entities', bean.entityCode, ''), codeName('processes', bean.processCode, ''), ...(bean.flavorCodes || []).map(code => codeName('flavors', code, ''))].join(' ').toLocaleLowerCase('zh-CN').includes(query));
   if (state.filter.country) beans = beans.filter(bean => bean.countryCode === state.filter.country);
+  if (state.filter.variety) beans = beans.filter(bean => bean.varietyCode === state.filter.variety);
   if (state.filter.process) beans = beans.filter(bean => bean.processCode === state.filter.process);
   if (state.filter.flavors?.length) beans = beans.filter(bean => state.filter.flavors.some(code => (bean.flavorCodes || []).includes(code)));
   const direction = state.filter.dir === 'desc' ? -1 : 1;
   const value = bean => {
-    if (state.filter.sort === 'name') return bean.name || '';
+    if (state.filter.sort === 'name') return beanDisplayName(bean);
     if (state.filter.sort === 'roastDate') return bean.roastDate || '';
     if (state.filter.sort === 'remaining') return Number(bean.remainingWeight) || 0;
     if (state.filter.sort === 'price') return Number(bean.price) || 0;
@@ -257,10 +326,12 @@ function groupKey(bean, method) {
 function beanCardHtml(bean) {
   const fresh = freshness(bean);
   const score = scoreForBean(bean.id);
+  const flavors = (bean.flavorCodes || []).slice(0, 3).map(code => `<span>${esc(codeName('flavors', code, code))}</span>`).join('');
   return `<article class="bean-card${bean.id === state.recommendedBeanId ? ' recommended' : ''}${bean.archived ? ' archived' : ''}" data-bean-id="${esc(bean.id)}" tabindex="0">
     <span class="bean-status-line" style="--status:${STATUS_COLOR[fresh.key] || '#777'}"></span>
-    <div class="bean-card-header"><div class="grow"><h3>${esc(bean.name)}</h3><div class="origin">${esc(beanNameSummary(bean))}</div></div><button class="cup-action" type="button" data-brew-bean="${esc(bean.id)}" aria-label="用这只豆整一杯"><svg viewBox="0 0 24 24"><path d="M5 5h14l-2 10H7L5 5Z"></path><path d="M8 19h8M9 15v4M15 15v4"></path></svg></button></div>
+    <div class="bean-card-header"><div class="grow"><h3>${esc(beanDisplayName(bean))}</h3><div class="origin">${esc(beanNameSummary(bean))}</div></div><button class="cup-action" type="button" data-brew-bean="${esc(bean.id)}" aria-label="用这只豆拾一味">拾</button></div>
     <div class="meta"><span>${esc(ROAST_NAME.get(bean.roastCode) || '烘焙度未记')}</span><span>${esc(codeName('processes', bean.processCode, '工法未记'))}</span>${bean.refrigerated ? '<span>冷藏</span>' : ''}</div>
+    ${flavors ? `<div class="bean-card-flavors">${flavors}</div>` : '<div class="bean-card-flavors muted">风味待录</div>'}
     <div class="bean-card-footer"><div><div class="small muted">${esc(fresh.label)} · ${formatDate(bean.roastDate)}</div><strong>${Number(bean.remainingWeight || 0).toFixed(1)}g</strong></div><div class="small muted">${score ? `${score.toFixed(1)} 分` : '暂无评分'}</div></div>
   </article>`;
 }
@@ -271,14 +342,15 @@ function renderBeans() {
   const filterParts = [];
   if (state.filter.search) filterParts.push(`关键词：${state.filter.search}`);
   if (state.filter.country) filterParts.push(`国家：${codeName('countries', state.filter.country)}`);
+  if (state.filter.variety) filterParts.push(`豆种：${codeName('varieties', state.filter.variety)}`);
   if (state.filter.process) filterParts.push(`工法：${codeName('processes', state.filter.process)}`);
   if (state.filter.flavors?.length) filterParts.push(`风味：${state.filter.flavors.length}项`);
   const bar = $('#activeFilterBar');
   bar.classList.toggle('hidden', !filterParts.length);
-  bar.innerHTML = filterParts.length ? `${filterParts.map(v => `<span class="tag">${esc(v)}</span>`).join('')}<button class="button subtle small" id="clearActiveFilters" type="button">清除</button>` : '';
+  bar.innerHTML = filterParts.length ? `${filterParts.map(value => `<span class="tag">${esc(value)}</span>`).join('')}<button class="button subtle small" id="clearActiveFilters" type="button">清除</button>` : '';
   $('#filterSummaryBtn').textContent = filterParts.length ? `筛选 ${filterParts.length}` : '筛选';
   if (!beans.length) {
-    container.innerHTML = `<div class="empty-state"><strong>盒子里没有符合条件的豆卡</strong><p>使用右下角 +1 录入，或清除筛选条件。</p></div>`;
+    container.innerHTML = `<div class="empty-state"><strong>没有符合条件的豆卡</strong><p>点击“添”录入，或清除筛选。</p></div>`;
     return;
   }
   const groupMethod = state.settings.groupMethod || 'country';
@@ -320,34 +392,40 @@ function openGroupMenu() {
 function openManageMenu() {
   closePopups();
   const popup = document.createElement('div'); popup.className = 'popup-menu';
-  popup.innerHTML = `<button type="button" data-manage-action="export">导出数据</button><button type="button" data-manage-action="import">导入数据</button><button type="button" data-manage-action="history">打开老黄历</button>`;
+  popup.innerHTML = `<button type="button" data-manage-action="export">导出数据</button><button type="button" data-manage-action="import">导入数据</button><button type="button" data-manage-action="history">诹吉</button>`;
   document.body.append(popup); positionPopup($('#manageBtn'), popup);
 }
 
 function openSearchDialog() {
   closePopups();
+  const activeBeans = state.beans.filter(bean => !bean.archived && Number(bean.remainingWeight) > 0);
+  const countryRows = uniqueRowsFromBeans('countries', 'countryCode', activeBeans);
+  const varietyRows = uniqueRowsFromBeans('varieties', 'varietyCode', activeBeans);
+  const processRows = uniqueRowsFromBeans('processes', 'processCode', activeBeans);
+  const flavorRows = availableFlavorRows(activeBeans);
   const selectedFlavors = new Set(state.filter.flavors || []);
-  const content = `${dialogHeader('搜索豆卡', '文字、标签、排序和方向统一在此设置')}
-    <div class="form-grid">
-      <div class="form-field"><label>关键词</label><input id="searchInput" class="control" value="${esc(state.filter.search)}" placeholder="豆名、产地、烘焙商等"></div>
-      <div class="form-field"><label>国家标签</label><select id="searchCountry" class="control">${optionsHtml(state.codebook.countries, state.filter.country, 1, '全部国家')}</select></div>
-      <div class="form-field"><label>处理工法</label><select id="searchProcess" class="control">${optionsHtml(state.codebook.processes, state.filter.process, 1, '全部工法')}</select></div>
-      <div class="form-field"><label>排序方式</label><select id="searchSort" class="control">${[['recommended','推荐'],['freshness','赏味期'],['name','名称'],['roastDate','烘焙日期'],['remaining','剩余克重'],['price','价格'],['score','品鉴得分']].map(([v,l])=>`<option value="${v}"${state.filter.sort===v?' selected':''}>${l}</option>`).join('')}</select></div>
+  const content = `${dialogHeader('搜索', '选项只来自当前豆藏中的豆卡')}
+    <div class="form-grid search-grid">
+      <div class="form-field"><label>关键词</label><input id="searchInput" class="control" value="${esc(state.filter.search)}" placeholder="产区、烘焙商、风味等"></div>
+      <div class="form-field"><label>国家</label><select id="searchCountry" class="control">${optionsHtml(countryRows, state.filter.country, 1, '全部现有国家')}</select></div>
+      <div class="form-field"><label>豆种</label><select id="searchVariety" class="control">${optionsHtml(varietyRows, state.filter.variety, 1, '全部现有豆种')}</select></div>
+      <div class="form-field"><label>处理法</label><select id="searchProcess" class="control">${optionsHtml(processRows, state.filter.process, 1, '全部现有处理法')}</select></div>
+      <div class="form-field"><label>排序</label><select id="searchSort" class="control">${[['recommended','推荐'],['freshness','赏味期'],['name','名称'],['roastDate','烘焙日期'],['remaining','剩余克重'],['price','价格'],['score','品鉴得分']].map(([value,label])=>`<option value="${value}"${state.filter.sort===value?' selected':''}>${label}</option>`).join('')}</select></div>
       <div class="form-field"><label>方向</label><select id="searchDir" class="control"><option value="asc"${state.filter.dir==='asc'?' selected':''}>升序</option><option value="desc"${state.filter.dir==='desc'?' selected':''}>降序</option></select></div>
     </div>
-    <details class="details-block"${selectedFlavors.size ? ' open' : ''}><summary>风味标签（多选，任一匹配）</summary><div class="details-content"><div class="flavor-grid compact">${state.codebook.flavors.map(row=>`<button type="button" class="flavor-button filter-flavor${selectedFlavors.has(row[0])?' selected':''}" data-filter-flavor="${esc(row[0])}">${esc(row[1])}</button>`).join('')}</div></div></details>
+    <details class="details-block"${selectedFlavors.size ? ' open' : ''}><summary>现有风味</summary><div class="details-content"><div class="flavor-grid compact">${flavorRows.length ? flavorRows.map(row=>`<button type="button" class="flavor-button filter-flavor${selectedFlavors.has(row[0])?' selected':''}" data-filter-flavor="${esc(row[0])}">${esc(row[1])}</button>`).join('') : '<span class="muted small">当前豆卡尚无风味标签</span>'}</div></div></details>
     <div class="row end"><button id="resetSearchBtn" class="button subtle" type="button">重置</button><button id="applySearchBtn" class="button primary" type="button">确认</button></div>`;
-  const overlay = showOverlay(content, { full: true, id: 'bean-search' }); bindClose(overlay);
+  const overlay = showOverlay(content, { id: 'bean-search' }); bindClose(overlay);
   overlay.addEventListener('click', event => {
     const button = event.target.closest('[data-filter-flavor]');
     if (button) button.classList.toggle('selected');
   });
   $('#resetSearchBtn').addEventListener('click', () => {
-    state.filter = { search: '', country: '', process: '', flavors: [], sort: 'freshness', dir: 'asc' }; closeOverlay(); renderBeans();
+    state.filter = { search: '', country: '', variety: '', process: '', flavors: [], sort: 'freshness', dir: 'asc' }; closeOverlay(); renderBeans();
   });
   $('#applySearchBtn').addEventListener('click', () => {
     state.filter = {
-      search: $('#searchInput').value.trim(), country: $('#searchCountry').value, process: $('#searchProcess').value,
+      search: $('#searchInput').value.trim(), country: $('#searchCountry').value, variety: $('#searchVariety').value, process: $('#searchProcess').value,
       flavors: $$('[data-filter-flavor].selected', overlay).map(button => button.dataset.filterFlavor),
       sort: $('#searchSort').value, dir: $('#searchDir').value
     };
@@ -387,7 +465,7 @@ async function recommendBean(mode) {
   }
   state.recommendedBeanId = selected.id; renderBeans();
   requestAnimationFrame(() => document.querySelector(`[data-bean-id="${CSS.escape(selected.id)}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
-  toast(`推荐：${selected.name}`);
+  toast(`推荐：${beanDisplayName(selected)}`);
 }
 
 function openAddMenu() {
@@ -405,16 +483,18 @@ function beanFormHtml(bean = {}, source = {}) {
   const regions = relatedRows(state.codebook, 'regions', bean.countryCode);
   const entities = relatedRows(state.codebook, 'entities', bean.countryCode);
   const flavors = bean.flavorCodes || [];
-  return `${dialogHeader(bean.id ? '编辑豆卡' : '新增豆卡', `来源：${source.type || bean.source || '手工录入'} · 编码表 v${state.codebookMeta?.version || state.codebook.version || '6'}`)}
+  const colorValue = bean.roastColor || '';
+  const roastValue = colorValue ? roastFromColor(colorValue) : (bean.roastCode || '');
+  return `${dialogHeader(bean.id ? '编辑豆卡' : '新增豆卡', `来源：${source.type || bean.source || '手工录入'}`)}
     <form id="beanForm" novalidate>
       <div class="form-grid">
-        ${fieldHtml('beanName','豆卡名称',`<input id="beanName" class="control" maxlength="40" value="${esc(bean.name || '')}">`,'required')}
         ${fieldHtml('beanCountry','国家',`<select id="beanCountry" class="control">${selectOptions(state.codebook.countries,bean.countryCode)}</select>`,'required')}
-        ${fieldHtml('beanRegion','产区',`<select id="beanRegion" class="control">${selectOptions(regions,bean.regionCode)}</select>`)}
-        ${fieldHtml('beanEntity','庄园 / 处理站',`<select id="beanEntity" class="control">${selectOptions(entities,bean.entityCode,3)}</select>`)}
+        ${fieldHtml('beanRegion','产区',`<select id="beanRegion" class="control">${selectOptions(regions,bean.regionCode,1,bean.countryCode?'请选择产区':'先选择国家')}</select>`)}
+        ${fieldHtml('beanEntity','庄园 / 处理站',`<select id="beanEntity" class="control">${selectOptions(entities,bean.entityCode,3,bean.countryCode?'请选择庄园 / 处理站':'先选择国家')}</select>`)}
         ${fieldHtml('beanVariety','豆种',`<select id="beanVariety" class="control">${selectOptions(state.codebook.varieties,bean.varietyCode)}</select>`,'required')}
         ${fieldHtml('beanProcess','处理法',`<select id="beanProcess" class="control">${selectOptions(state.codebook.processes,bean.processCode)}</select>`,'required')}
-        ${fieldHtml('beanRoast','烘焙度',`<select id="beanRoast" class="control">${ROASTS.map(([v,l])=>`<option value="${v}"${bean.roastCode===v?' selected':''}>${l}</option>`).join('')}</select>`,'required')}
+        ${fieldHtml('beanRoastColor','烘焙色值',`<input id="beanRoastColor" class="control" type="number" min="20" max="120" step="1" value="${esc(colorValue)}" placeholder="Agtron 20–120">`,'recommended')}
+        ${fieldHtml('beanRoast','烘焙度',`<select id="beanRoast" class="control"><option value="">填写色值自动生成</option>${ROASTS.map(([value,label])=>`<option value="${value}"${roastValue===value?' selected':''}>${label}</option>`).join('')}</select>`,'required')}
         ${fieldHtml('beanRoastDate','烘焙日期',`<input id="beanRoastDate" class="control" type="date" value="${esc(bean.roastDate || todayISO())}">`,'required')}
         ${fieldHtml('beanInitialWeight','初始克重',`<input id="beanInitialWeight" class="control" type="number" min="1" max="10000" step="0.1" value="${esc(bean.initialWeight || '')}">`,'required')}
         ${fieldHtml('beanRefrigerated','是否冷藏',`<select id="beanRefrigerated" class="control"><option value="false"${!bean.refrigerated?' selected':''}>否</option><option value="true"${bean.refrigerated?' selected':''}>是</option></select>`,'recommended')}
@@ -423,15 +503,17 @@ function beanFormHtml(bean = {}, source = {}) {
         ${fieldHtml('beanAltitude','海拔',`<input id="beanAltitude" class="control" type="number" min="0" max="5000" value="${esc(bean.altitude || '')}">`)}
         ${fieldHtml('beanNotes','备注',`<input id="beanNotes" class="control" maxlength="300" value="${esc(bean.notes || '')}">`)}
       </div>
-      <section class="panel"><div class="panel-title"><div><h3>风味标签</h3><p>统一使用 BrewIon 风味编码</p></div><button id="editFlavorsBtn" class="button" type="button">编辑风味标签</button></div><div id="formFlavorSummary" class="flavor-summary">${flavors.map(code=>`<span class="tag" data-summary-code="${esc(code)}">${esc(codeName('flavors',code,code))}</span>`).join('') || '<span class="muted small">尚未选择</span>'}</div></section>
+      <section class="panel"><div class="panel-title"><div><h3>风味标签</h3><p>${state.codebook.flavors?.length || 0}项可用</p></div><button id="editFlavorsBtn" class="button" type="button">编辑</button></div><div id="formFlavorSummary" class="flavor-summary">${flavors.map(code=>`<span class="tag" data-summary-code="${esc(code)}">${esc(codeName('flavors',code,code))}</span>`).join('') || '<span class="muted small">尚未选择</span>'}</div></section>
       ${source.evidence ? evidenceHtml(source.evidence, source.confidence) : ''}
-      <div class="row"><button id="beanFormBackBtn" class="button subtle" type="button">返回</button><span class="grow"></span><button class="button primary" type="submit">保存豆卡</button></div>
+      <div class="row"><button id="beanFormBackBtn" class="button subtle" type="button">返回</button><span class="grow"></span><button class="button primary" type="submit">保存</button></div>
     </form>`;
 }
+
 function fieldHtml(id, label, control, level = '') {
-  const badge = level === 'required' ? '<span class="badge required">*必填</span>' : (level === 'recommended' ? '<span class="badge">推荐</span>' : '');
+  const badge = level === 'required' ? '<span class="badge required">必填</span>' : (level === 'recommended' ? '<span class="badge">建议</span>' : '');
   return `<div class="form-field${level === 'required' ? ' required' : ''}${level === 'recommended' ? ' is-recommended' : ''}" data-field="${id}"><label for="${id}"><span>${label}</span>${badge}</label>${control}</div>`;
 }
+
 function evidenceHtml(evidence = {}, confidence = {}) {
   const labels = { countryCode:'国家',regionCode:'产区',entityCode:'庄园/处理站',varietyCode:'豆种',processCode:'处理法',roastCode:'烘焙度',roastDate:'烘焙日期',altitude:'海拔',initialWeight:'初始克重',price:'价格' };
   const rows = Object.entries(evidence).map(([key, value]) => `<div class="evidence-row"><span>${esc(labels[key]||key)}</span><span>${esc(value)}</span><span>${Math.round((confidence[key]||0)*100)}%</span></div>`).join('');
@@ -443,42 +525,66 @@ function openBeanForm(bean = {}, source = { type: 'manual' }) {
   state.beanFormDraft = structuredClone(bean);
   const overlay = showOverlay(beanFormHtml(bean, source), { full: true, id: 'bean-form' }); bindClose(overlay);
   const form = $('#beanForm');
+  const syncRoastColor = () => {
+    const color = formValue('beanRoastColor');
+    const select = $('#beanRoast');
+    if (color) {
+      select.value = roastFromColor(color);
+      select.dataset.autoFromColor = 'true';
+      select.disabled = true;
+    } else if (select.dataset.autoFromColor === 'true') {
+      select.value = '';
+      delete select.dataset.autoFromColor;
+      select.disabled = false;
+    }
+    refreshControlState(select);
+  };
   $('#beanCountry').addEventListener('change', () => {
     const country = $('#beanCountry').value;
-    $('#beanRegion').innerHTML = selectOptions(relatedRows(state.codebook, 'regions', country), '');
-    $('#beanEntity').innerHTML = selectOptions(relatedRows(state.codebook, 'entities', country), '', 3);
+    $('#beanRegion').innerHTML = selectOptions(relatedRows(state.codebook, 'regions', country), '', 1, country ? '请选择产区' : '先选择国家');
+    $('#beanEntity').innerHTML = selectOptions(relatedRows(state.codebook, 'entities', country), '', 3, country ? '请选择庄园 / 处理站' : '先选择国家');
+    bindControlStates(form);
   });
+  $('#beanRoastColor').addEventListener('input', syncRoastColor);
+  if (formValue('beanRoastColor')) { $('#beanRoast').dataset.autoFromColor = 'true'; syncRoastColor(); }
   $('#editFlavorsBtn').addEventListener('click', () => openFlavorEditor(selectedSummaryCodes(), bean, source));
   $('#beanFormBackBtn').addEventListener('click', () => {
     if (source.type === 'text') openTextRecognition(source.text || '', captureBeanFormDraft()); else closeOverlay();
   });
   form.addEventListener('submit', async event => {
     event.preventDefault();
-    const required = [['beanName','豆卡名称'],['beanCountry','国家'],['beanVariety','豆种'],['beanProcess','处理法'],['beanRoast','烘焙度'],['beanRoastDate','烘焙日期'],['beanInitialWeight','初始克重']];
+    const required = [['beanCountry','国家'],['beanVariety','豆种'],['beanProcess','处理法'],['beanRoast','烘焙度'],['beanRoastDate','烘焙日期'],['beanInitialWeight','初始克重']];
     for (const [id,label] of required) if (!formValue(id)) return toast(`请填写${label}`, 'status-bad');
     const initialWeight = parseNumber(formValue('beanInitialWeight'));
     if (initialWeight <= 0) return toast('初始克重必须大于 0', 'status-bad');
+    const countryCode = formValue('beanCountry');
+    const varietyCode = formValue('beanVariety');
     const now = new Date().toISOString();
     const record = {
-      ...bean, id: bean.id || uid('bean'), name: formValue('beanName'), countryCode: formValue('beanCountry'), regionCode: formValue('beanRegion'), entityCode: formValue('beanEntity'),
-      varietyCode: formValue('beanVariety'), processCode: formValue('beanProcess'), roastCode: formValue('beanRoast'), roastDate: formValue('beanRoastDate'), initialWeight,
+      ...bean, id: bean.id || uid('bean'), name: `${codeName('countries', countryCode, '未定国家')} · ${codeName('varieties', varietyCode, '未定豆种')}`,
+      countryCode, regionCode: formValue('beanRegion'), entityCode: formValue('beanEntity'), varietyCode, processCode: formValue('beanProcess'),
+      roastColor: parseNumber(formValue('beanRoastColor'), 0) || '', roastCode: formValue('beanRoast'), roastDate: formValue('beanRoastDate'), initialWeight,
       remainingWeight: bean.id ? Number(bean.remainingWeight) : initialWeight, refrigerated: formValue('beanRefrigerated') === 'true', freezeDate: formValue('beanRefrigerated') === 'true' ? (bean.freezeDate || todayISO()) : '',
       price: parseNumber(formValue('beanPrice'), 0), roasterName: formValue('beanRoaster'), altitude: parseNumber(formValue('beanAltitude'), 0), notes: formValue('beanNotes'),
       flavorCodes: selectedSummaryCodes(), archived: Boolean(bean.archived), source: source.type || bean.source || 'manual',
       codebookSchemaVersion: Number(state.codebook._schemaVersion || 1), codebookDataVersion: String(state.codebook.version || '6'),
       createdAt: bean.createdAt || now, updatedAt: now
     };
-    await put('beans', record); await refreshData(); closeOverlay(); renderBeans(); toast(bean.id ? '豆卡已更新' : '豆卡已加入盒子', 'status-good');
+    await put('beans', record); await refreshData(); closeOverlay(); renderBeans(); toast(bean.id ? '豆卡已更新' : '豆卡已加入豆藏', 'status-good');
   });
+  bindControlStates(form);
 }
+
 function selectedSummaryCodes() { return $$('#formFlavorSummary [data-summary-code]').map(node => node.dataset.summaryCode); }
 function captureBeanFormDraft() {
-  return { ...state.beanFormDraft, name: formValue('beanName'), countryCode: formValue('beanCountry'), regionCode: formValue('beanRegion'), entityCode: formValue('beanEntity'), varietyCode: formValue('beanVariety'), processCode: formValue('beanProcess'), roastCode: formValue('beanRoast'), roastDate: formValue('beanRoastDate'), initialWeight: formValue('beanInitialWeight'), refrigerated: formValue('beanRefrigerated') === 'true', price: formValue('beanPrice'), roasterName: formValue('beanRoaster'), altitude: formValue('beanAltitude'), notes: formValue('beanNotes'), flavorCodes: selectedSummaryCodes() };
+  return { ...state.beanFormDraft, countryCode: formValue('beanCountry'), regionCode: formValue('beanRegion'), entityCode: formValue('beanEntity'), varietyCode: formValue('beanVariety'), processCode: formValue('beanProcess'), roastColor: formValue('beanRoastColor'), roastCode: formValue('beanRoast'), roastDate: formValue('beanRoastDate'), initialWeight: formValue('beanInitialWeight'), refrigerated: formValue('beanRefrigerated') === 'true', price: formValue('beanPrice'), roasterName: formValue('beanRoaster'), altitude: formValue('beanAltitude'), notes: formValue('beanNotes'), flavorCodes: selectedSummaryCodes() };
 }
+
 function openFlavorEditor(selected, bean, source) {
   const draft = captureBeanFormDraft();
   const set = new Set(selected);
-  const content = `${dialogHeader('编辑风味标签', '选择后返回豆卡表单，最多 12 项')}<div class="flavor-grid">${state.codebook.flavors.map(row=>`<button type="button" class="flavor-button${set.has(row[0])?' selected':''}" data-flavor-code="${esc(row[0])}">${esc(row[1])}</button>`).join('')}</div><div class="row end"><button id="clearFlavorsBtn" class="button subtle" type="button">清空</button><button id="confirmFlavorsBtn" class="button primary" type="button">确定</button></div>`;
+  const rows = state.codebook.flavors || [];
+  const content = `${dialogHeader('风味标签', `可用 ${rows.length} 项，最多选择 12 项`)}<div class="flavor-grid">${rows.length ? rows.map(row=>`<button type="button" class="flavor-button${set.has(row[0])?' selected':''}" data-flavor-code="${esc(row[0])}">${esc(row[1])}</button>`).join('') : '<p class="status-bad">风味数据库未载入，请到器设 → 数藏检查数据源。</p>'}</div><div class="row end"><button id="clearFlavorsBtn" class="button subtle" type="button">清空</button><button id="confirmFlavorsBtn" class="button primary" type="button">确定</button></div>`;
   const overlay = showOverlay(content, { full: true, id: 'flavors' }); bindClose(overlay);
   overlay.addEventListener('click', event => {
     const button = event.target.closest('[data-flavor-code]'); if (!button) return;
@@ -548,20 +654,20 @@ function detailBean(beanId) {
   const totalRange = 85;
   const marker = clamp(((Math.max(0, -fresh.remaining) + 25) / totalRange) * 100, 2, 98);
   const flavors = (bean.flavorCodes || []).map(code => `<span class="tag">${esc(codeName('flavors', code, code))}</span>`).join('');
-  const records = state.sensoryRecords.filter(r => r.beanId === bean.id).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))).slice(0,3);
-  const content = `${dialogHeader(bean.name, beanNameSummary(bean))}
+  const records = state.sensoryRecords.filter(record => record.beanId === bean.id).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))).slice(0,3);
+  const content = `${dialogHeader(beanDisplayName(bean), beanNameSummary(bean))}
     <div class="detail-layout"><div class="freshness-card"><div><div class="small muted">赏味状态</div><h2>${esc(fresh.label)}</h2><p class="muted small">烘焙日期 ${formatDate(bean.roastDate)} · 剩余 ${Number(bean.remainingWeight||0).toFixed(1)}g</p></div><div><div class="freshness-bar"><span class="freshness-marker" style="left:${marker}%"></span></div><div class="row small muted"><span>养豆</span><span class="grow"></span><span>高峰</span><span class="grow"></span><span>衰减</span></div></div></div>
-    <div class="management-stack"><button id="correctWeightBtn" class="button" type="button">修正克重</button><button id="toggleColdBtn" class="button${bean.refrigerated?' bluegray':''}" type="button">${bean.refrigerated?'解除冷藏':'设为冷藏'}</button><button id="archiveBeanBtn" class="button brown" type="button">${bean.archived?'移出老黄历':'放老黄历'}</button></div></div>
-    <div class="detail-tags">${flavors}</div>
-    <section class="panel"><div class="panel-title"><div><h3>最近品鉴</h3></div></div>${records.length ? records.map(r=>`<div class="record-item"><span>${formatDate(r.createdAt)}</span><span>${esc((r.summary||[]).join(' · '))}</span><strong>${Number(r.score||0).toFixed(1)}</strong></div>`).join('') : '<p class="muted small">尚无品鉴记录</p>'}</section>
-    <div class="detail-actions"><button id="brewThisBeanBtn" class="button primary" type="button">整一杯</button><button id="editBeanBtn" class="square-icon-button" type="button" aria-label="编辑"><svg viewBox="0 0 24 24"><path d="m4 16 12-12 4 4L8 20H4v-4Z"></path></svg></button><button id="copyBeanBtn" class="square-icon-button" type="button" aria-label="复制豆卡"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"></rect><path d="M16 8V5H5v11h3"></path></svg></button><button id="shareBeanBtn" class="square-icon-button" type="button" aria-label="分享"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2"></circle><circle cx="18" cy="6" r="2"></circle><circle cx="18" cy="18" r="2"></circle><path d="m8 11 8-4M8 13l8 4"></path></svg></button></div>`;
+    <div class="management-stack"><button id="correctWeightBtn" class="button" type="button">修正克重</button><button id="toggleColdBtn" class="button${bean.refrigerated?' active':''}" type="button">${bean.refrigerated?'解除冷藏':'设为冷藏'}</button><button id="archiveBeanBtn" class="button" type="button">${bean.archived?'移出诹吉':'放入诹吉'}</button></div></div>
+    <div class="detail-tags">${flavors || '<span class="muted small">风味待录</span>'}</div>
+    <section class="panel"><div class="panel-title"><div><h3>最近品鉴</h3></div></div>${records.length ? records.map(record=>`<div class="record-item"><span>${formatDate(record.createdAt)}</span><span>${esc((record.summary||[]).join(' · '))}</span><strong>${Number(record.score||0).toFixed(1)}</strong></div>`).join('') : '<p class="muted small">尚无品鉴记录</p>'}</section>
+    <div class="detail-actions"><button id="brewThisBeanBtn" class="button primary" type="button">拾一味</button><button id="editBeanBtn" class="button" type="button">编辑</button><button id="copyBeanBtn" class="button" type="button">复制</button><button id="shareBeanBtn" class="button" type="button">分享</button></div>`;
   const overlay = showOverlay(content, { id: 'bean-detail' }); bindClose(overlay);
   $('#correctWeightBtn').addEventListener('click', () => correctWeightDialog(bean));
   $('#toggleColdBtn').addEventListener('click', async () => { bean.refrigerated = !bean.refrigerated; bean.freezeDate = bean.refrigerated ? todayISO() : ''; bean.updatedAt = new Date().toISOString(); await put('beans', bean); await refreshData(); detailBean(bean.id); });
-  $('#archiveBeanBtn').addEventListener('click', async () => { bean.archived = !bean.archived; bean.updatedAt = new Date().toISOString(); await put('beans', bean); await refreshData(); closeOverlay(); renderBeans(); toast(bean.archived?'已放入老黄历':'已恢复到豆藏'); });
+  $('#archiveBeanBtn').addEventListener('click', async () => { bean.archived = !bean.archived; bean.updatedAt = new Date().toISOString(); await put('beans', bean); await refreshData(); closeOverlay(); renderBeans(); toast(bean.archived?'已放入诹吉':'已恢复到豆藏'); });
   $('#brewThisBeanBtn').addEventListener('click', () => { closeOverlay(); state.selectedBeanId = bean.id; switchPage('brew'); });
   $('#editBeanBtn').addEventListener('click', () => openBeanForm(bean, { type: 'manual' }));
-  $('#copyBeanBtn').addEventListener('click', async () => { const copy = { ...bean, id: undefined, name: `${bean.name} 复制`, createdAt: undefined, updatedAt: undefined, remainingWeight: bean.initialWeight }; openBeanForm(copy, { type: 'copy' }); });
+  $('#copyBeanBtn').addEventListener('click', () => { const copy = { ...bean, id: undefined, createdAt: undefined, updatedAt: undefined, remainingWeight: bean.initialWeight }; openBeanForm(copy, { type: 'copy' }); });
   $('#shareBeanBtn').addEventListener('click', () => openShareDialog(bean));
 }
 
@@ -577,10 +683,12 @@ function correctWeightDialog(bean) {
 }
 
 function buildBrewInput(bean) {
+  const segmentMode = $('#brewSegments')?.value || 'auto';
+  const segments = resolvedSegmentCount(bean, segmentMode);
   return {
     schemaVersion: 1,
-    bean: { countryCode: bean.countryCode, regionCode: bean.regionCode, entityCode: bean.entityCode, varietyCode: bean.varietyCode, processCode: bean.processCode, roastCode: bean.roastCode, roastDate: bean.roastDate },
-    brew: { method: $('#brewMethod')?.value || 'pourover', doseG: parseNumber($('#brewDose')?.value, 15), ratio: parseNumber($('#brewRatio')?.value, 15.5), segments: parseNumber($('#brewSegments')?.value, 4), dripperCode: $('#brewDripper')?.value || '平底滤杯', grinder: $('#brewGrinder')?.value || '' },
+    bean: { countryCode: bean.countryCode, regionCode: bean.regionCode, entityCode: bean.entityCode, varietyCode: bean.varietyCode, processCode: bean.processCode, roastCode: bean.roastCode, roastColor: bean.roastColor || null, roastDate: bean.roastDate },
+    brew: { mode: state.settings.brew.mode || 'simple', method: $('#brewMethod')?.value || 'pourover', doseG: parseNumber($('#brewDose')?.value, 15), ratio: parseNumber($('#brewRatio')?.value, 15.5), segmentMode, segments, lowTempFirst: $('#lowTempFirst')?.checked ?? true, dripperCode: $('#brewDripper')?.value || '平底滤杯', grinder: $('#brewGrinder')?.value || '' },
     water: { profile: $('#brewWater')?.value || '平衡水', tdsMgL: parseNumber($('#brewTds')?.value, 85) },
     targets: { floral: parseNumber($('#targetFloral')?.value, 2), acidity: parseNumber($('#targetAcidity')?.value, 1), sweetness: parseNumber($('#targetSweet')?.value, 2), body: parseNumber($('#targetBody')?.value, 1) }
   };
@@ -588,20 +696,25 @@ function buildBrewInput(bean) {
 
 function renderBrew() {
   const container = $('#brewContent');
-  const activeBeans = state.beans.filter(b => !b.archived && Number(b.remainingWeight) > 0);
+  const activeBeans = state.beans.filter(bean => !bean.archived && Number(bean.remainingWeight) > 0);
   if (!state.selectedBeanId && activeBeans.length) state.selectedBeanId = activeBeans[0].id;
-  const selected = activeBeans.find(b => b.id === state.selectedBeanId);
+  const selected = activeBeans.find(bean => bean.id === state.selectedBeanId);
   const settings = state.settings.brew;
-  container.innerHTML = `<section class="panel"><div class="brew-inputs"><div class="brew-main-row"><label class="field"><span>制作方法</span><select id="brewMethod" class="control"><option value="pourover">手冲咖啡</option><option value="aeropress">爱乐压</option><option value="coldbrew">冷萃</option><option value="espresso">意式</option></select></label><label class="field"><span>粉量</span><input id="brewDose" class="control" type="number" min="5" max="40" step="0.1" value="${settings.doseG}"></label></div>
-  <div class="grid-2"><label class="field"><span>豆卡</span><select id="brewBean" class="control">${activeBeans.map(bean=>`<option value="${esc(bean.id)}"${bean.id===state.selectedBeanId?' selected':''}>${esc(bean.name)}</option>`).join('')}</select></label><label class="field"><span>粉水比</span><input id="brewRatio" class="control" type="number" min="8" max="25" step="0.1" value="${settings.ratio}"></label><label class="field"><span>滤杯</span><select id="brewDripper" class="control"><option>平底滤杯</option><option>锥形滤杯</option><option>混合式滤杯</option></select></label><label class="field"><span>研磨设备 / 刻度</span><input id="brewGrinder" class="control" value="${esc(settings.grinder)}" placeholder="例如 C40 22格"></label><label class="field"><span>调水方案</span><select id="brewWater" class="control"><option>平衡水</option><option>花香水</option><option>抑酸水</option></select></label><label class="field"><span>TDS mg/L</span><input id="brewTds" class="control" type="number" min="20" max="250" value="85"></label><label class="field"><span>分段</span><select id="brewSegments" class="control">${[2,3,4,5].map(v=>`<option value="${v}"${Number(settings.segments)===v?' selected':''}>${v+1}段（含闷蒸）</option>`).join('')}</select></label><label class="field"><span>目标：花香 / 酸 / 甜 / 体感</span><div class="grid-3"><input id="targetFloral" class="control" type="number" min="0" max="3" value="2"><input id="targetAcidity" class="control" type="number" min="0" max="3" value="1"><input id="targetSweet" class="control" type="number" min="0" max="3" value="2"></div><input id="targetBody" class="control hidden" type="number" value="1"></label></div>
+  const mode = settings.mode || 'simple';
+  const recommendedSegments = resolvedSegmentCount(selected, 'auto');
+  container.innerHTML = `<section class="panel"><div class="mode-switch"><button type="button" class="button${mode==='simple'?' active':''}" data-brew-mode="simple">简</button><button type="button" class="button${mode==='pro'?' active':''}" data-brew-mode="pro">专</button></div><div class="brew-inputs">
+  <div class="brew-main-row"><label class="field"><span>豆卡</span><select id="brewBean" class="control">${activeBeans.map(bean=>`<option value="${esc(bean.id)}"${bean.id===state.selectedBeanId?' selected':''}>${esc(beanDisplayName(bean))}</option>`).join('')}</select></label><label class="field"><span>粉量</span><input id="brewDose" class="control" type="number" min="5" max="40" step="0.1" value="${settings.doseG}"></label></div>
+  <div class="grid-2"><label class="field"><span>粉水比</span><input id="brewRatio" class="control" type="number" min="8" max="25" step="0.1" value="${settings.ratio}"></label><label class="field"><span>滤杯</span><select id="brewDripper" class="control"><option${settings.dripper==='平底滤杯'?' selected':''}>平底滤杯</option><option${settings.dripper==='锥形滤杯'?' selected':''}>锥形滤杯</option><option${settings.dripper==='混合式滤杯'?' selected':''}>混合式滤杯</option></select></label><label class="field"><span>研磨设备 / 刻度</span><input id="brewGrinder" class="control" value="${esc(settings.grinder)}" placeholder="例如 C40 22格"></label><label class="field"><span>调水方案</span><select id="brewWater" class="control"><option${settings.water==='平衡水'?' selected':''}>平衡水</option><option${settings.water==='花香水'?' selected':''}>花香水</option><option${settings.water==='抑酸水'?' selected':''}>抑酸水</option></select></label><label class="field"><span>分段方式</span><select id="brewSegments" class="control"><option value="auto"${settings.segmentMode==='auto'?' selected':''}>模型自动推荐：${recommendedSegments+1}段</option>${[2,3,4,5].map(value=>`<option value="${value}"${String(settings.segmentMode)===String(value)?' selected':''}>${value+1}段（含闷蒸）</option>`).join('')}</select></label><label class="field low-temp-field"><span>第一段低温注水</span><span class="toggle"><input id="lowTempFirst" type="checkbox"${settings.lowTempFirst!==false?' checked':''}>启用</span></label></div>
+  <div class="pro-fields${mode==='pro'?'':' hidden'}"><div class="grid-2"><label class="field"><span>制作方法</span><select id="brewMethod" class="control"><option value="pourover">手冲咖啡</option><option value="aeropress">爱乐压</option><option value="coldbrew">冷萃</option><option value="espresso">意式</option></select></label><label class="field"><span>TDS mg/L</span><input id="brewTds" class="control" type="number" min="20" max="250" value="85"></label></div><label class="field"><span>目标：花香 / 酸 / 甜 / 体感</span><div class="grid-4"><input id="targetFloral" class="control" type="number" min="0" max="3" value="2"><input id="targetAcidity" class="control" type="number" min="0" max="3" value="1"><input id="targetSweet" class="control" type="number" min="0" max="3" value="2"><input id="targetBody" class="control" type="number" min="0" max="3" value="1"></div></label></div>
   <button id="generatePlanBtn" class="button primary" type="button"${selected?'':' disabled'}>生成方案</button></div></section><div id="planResult">${state.currentPlan && state.currentPlan.beanId === state.selectedBeanId ? planHtml(state.currentPlan) : ''}</div>`;
+  $$('[data-brew-mode]', container).forEach(button => button.addEventListener('click', async () => { state.settings.brew.mode = button.dataset.brewMode; await saveSettings(); renderBrew(); }));
   $('#brewBean')?.addEventListener('change', event => { state.selectedBeanId = event.target.value; state.currentPlan = null; renderBrew(); });
   $('#generatePlanBtn')?.addEventListener('click', generatePlan);
-  bindPlanActions();
+  bindPlanActions(); bindControlStates(container);
 }
 
 async function generatePlan() {
-  const bean = state.beans.find(b => b.id === $('#brewBean').value); if (!bean) return toast('请先选择豆卡');
+  const bean = state.beans.find(item => item.id === $('#brewBean').value); if (!bean) return toast('请先选择豆卡');
   const button = $('#generatePlanBtn');
   state.selectedBeanId = bean.id;
   const input = buildBrewInput(bean); state.currentBrewInput = input;
@@ -611,28 +724,32 @@ async function generatePlan() {
     try { plan = await requestPrivatePlan(state.settings.brew.apiEndpoint, input); }
     catch (error) { apiError = error.message; plan = await computeFallbackPlan(input); }
     plan.beanId = bean.id; plan.id = uid('brew'); plan.createdAt = new Date().toISOString();
-    if (apiError) plan.warnings = [...(plan.warnings || []), `私有 API：${apiError}`];
+    if (apiError) plan.warnings = [...(plan.warnings || []), '私有冲煮服务当前未接通，已使用完整离线模型。'];
     validatePlan(plan); state.currentPlan = plan;
     const session = { ...plan, input, status: 'planned' }; await put('brewSessions', session); await refreshData();
-    state.settings.brew = { ...state.settings.brew, method: input.brew.method, doseG: input.brew.doseG, ratio: input.brew.ratio, segments: input.brew.segments, grinder: input.brew.grinder }; await saveSettings();
+    state.settings.brew = { ...state.settings.brew, method: input.brew.method, doseG: input.brew.doseG, ratio: input.brew.ratio, segmentMode: input.brew.segmentMode, segments: input.brew.segments, lowTempFirst: input.brew.lowTempFirst, dripper: input.brew.dripperCode, grinder: input.brew.grinder, water: input.water.profile }; await saveSettings();
     $('#planResult').innerHTML = planHtml(plan); bindPlanActions();
     requestAnimationFrame(() => $('#planResult').scrollIntoView({ behavior: 'smooth', block: 'start' }));
   } catch (error) {
     console.error(error);
     toast(`方案生成失败：${error.message}`, 'status-bad');
   } finally {
-    if (button?.isConnected) { button.disabled = false; button.textContent = state.currentPlan ? '重新生成方案' : '生成方案'; }
+    if (button?.isConnected) { button.disabled = false; button.textContent = state.currentPlan ? '重新生成' : '生成方案'; }
   }
 }
+
 function planHtml(plan) {
-  const expanded = state.settings.ui.planVisualsExpanded ? ' open' : '';
   const flavor = plan.flavorFit || {};
-  return `<section class="panel" id="generatedPlan"><div class="panel-title"><div><h2>冲煮方案</h2><p>${esc(plan.engineVersion)} · ${esc(plan.profileVersion)} · ${plan.source === 'private-api' ? '私有引擎' : '本地回退'}</p></div></div>${(plan.warnings||[]).map(w=>`<p class="small status-warn">${esc(w)}</p>`).join('')}
+  const first = plan.stages?.[0];
+  return `<section class="panel" id="generatedPlan"><div class="panel-title"><div><h2>冲煮方案</h2><p>${Number(plan.totals?.doseG||0).toFixed(1)}g · ${Number(plan.totals?.waterG||0).toFixed(0)}g · ${formatSeconds(plan.totals?.targetTimeSec||0)}</p></div></div>
+  ${(plan.warnings||[]).map(warning=>`<p class="small status-warn">${esc(warning)}</p>`).join('')}
+  ${first ? `<p class="low-temp-note">首段建议 ${Number(first.temperatureC).toFixed(0)}°C：${esc(plan.firstPourReason || '降低初段过快释放，保留香气与甜感。')}</p>` : ''}
   <div>${plan.stages.map(stage=>`<article class="plan-stage"><div class="stage-index">${stage.index}</div><div class="stage-lines"><div class="stage-line"><div class="stage-cell"><span>本段注水</span><strong>${Number(stage.stageWaterG).toFixed(0)}g</strong></div><div class="stage-cell"><span>累计注水</span><strong>${Number(stage.cumulativeWaterG).toFixed(0)}g</strong></div><div class="stage-cell"><span>阶段</span><strong>${esc(stage.name)}</strong></div></div><div class="stage-line"><div class="stage-cell"><span>水温</span><strong>${Number(stage.temperatureC).toFixed(0)}°C</strong></div><div class="stage-cell"><span>时间</span><strong>${Number(stage.durationSec).toFixed(0)}s</strong></div><div class="stage-cell"><span>注水方法</span><strong>${esc(stage.method)}</strong></div></div></div></article>`).join('')}</div>
-  <details class="details-block"${expanded}><summary>萃取轨迹</summary><div class="details-content">${(plan.trajectory||[]).map((p,i)=>`<div class="bar-row"><span>阶段${i+1}</span><div class="bar-track"><div class="bar-fill" style="width:${clamp(p.y*100,0,100)}%"></div></div><strong>${Math.round(p.y*100)}</strong></div>`).join('') || '<p class="muted small">远程方案未提供轨迹数据</p>'}</div></details>
-  <details class="details-block"${expanded}><summary>风味拟合</summary><div class="details-content bar-chart">${Object.entries({花香:flavor.floral,酸质:flavor.acidity,甜感:flavor.sweetness,体感:flavor.body}).map(([k,v])=>`<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${clamp(Number(v||0)*100,0,100)}%"></div></div><strong>${Math.round(Number(v||0)*100)}</strong></div>`).join('')}</div></details>
-  <div class="row"><button id="startBrewBtn" class="button primary grow" type="button">开始制作</button><button id="planToSensoryBtn" class="button" type="button">完成并品鉴</button></div></section>`;
+  <section class="visual-section"><h3>萃取轨迹</h3>${trajectorySvg(plan)}</section>
+  <section class="visual-section"><h3>风味拟合</h3><div class="bar-chart">${Object.entries({花香:flavor.floral,酸质:flavor.acidity,甜感:flavor.sweetness,体感:flavor.body}).map(([key,value])=>`<div class="bar-row"><span>${key}</span><div class="bar-track"><div class="bar-fill" style="width:${clamp(Number(value||0)*100,0,100)}%"></div></div><strong>${Math.round(Number(value||0)*100)}</strong></div>`).join('')}</div></section>
+  <div class="row"><button id="startBrewBtn" class="button primary grow" type="button">开始计时</button><button id="planToSensoryBtn" class="button" type="button">完成并品鉴</button></div></section>`;
 }
+
 function bindPlanActions() {
   $('#startBrewBtn')?.addEventListener('click', startTimer);
   $('#planToSensoryBtn')?.addEventListener('click', () => promptRecordConsumption('complete'));
@@ -647,6 +764,7 @@ function startTimer() {
   state.timer.stageIndex = 0; state.timer.remaining = Number(state.currentPlan.stages[0].durationSec); state.timer.paused = false;
   renderTimerDialog(); startTimerInterval(); speak(`第一段，${state.currentPlan.stages[0].name}，${state.timer.remaining}秒`);
 }
+
 function startTimerInterval() {
   clearInterval(state.timer.interval);
   state.timer.interval = setInterval(() => {
@@ -659,27 +777,56 @@ function startTimerInterval() {
 }
 function renderTimerDialog() {
   const stage = state.currentPlan.stages[state.timer.stageIndex];
-  const content = `${dialogHeader('制作计时', `${stage.name} · ${stage.stageWaterG}g · ${stage.temperatureC}°C`)}<div class="timer-card"><div id="timerClock" class="timer-clock">${formatSeconds(state.timer.remaining)}</div><p id="timerStageText">${esc(stage.method)}</p><div class="timer-actions"><button id="timerPauseBtn" class="button" type="button" aria-label="暂停">⏸</button><button id="timerSkipBtn" class="button" type="button" aria-label="跳过并结束">&gt;&gt;</button><button id="timerExitBtn" class="button" type="button" aria-label="退出">🔙</button></div></div>`;
-  const overlay = showOverlay(content, { id: 'timer' }); bindClose(overlay);
-  $('#timerPauseBtn').addEventListener('click', () => { state.timer.paused = !state.timer.paused; $('#timerPauseBtn').textContent = state.timer.paused ? '▶' : '⏸'; if (state.timer.paused) speak('已暂停'); });
-  $('#timerSkipBtn').addEventListener('click', () => promptRecordConsumption('skip'));
+  const content = `<div class="timer-full"><div class="timer-top"><button id="timerExitBtn" class="button" type="button">退出</button><span id="timerStageCounter">${state.timer.stageIndex+1}/${state.currentPlan.stages.length}</span></div><div class="timer-stage-name" id="timerStageName">${esc(stage.name)}</div><div id="timerClock" class="timer-clock">${formatSeconds(state.timer.remaining)}</div><div class="timer-totals"><span>总时长 <strong id="timerTotal">${formatSeconds(state.currentPlan.totals?.targetTimeSec||0)}</strong></span><span>已进行 <strong id="timerElapsed">00:00</strong></span><span>总剩余 <strong id="timerTotalRemaining">${formatSeconds(state.currentPlan.totals?.targetTimeSec||0)}</strong></span></div><div class="timer-stage-grid"><div><span>本段</span><strong id="timerStageWater">${Number(stage.stageWaterG).toFixed(0)}g</strong></div><div><span>累计</span><strong id="timerCumulativeWater">${Number(stage.cumulativeWaterG).toFixed(0)}g</strong></div><div><span>水温</span><strong id="timerTemperature">${Number(stage.temperatureC).toFixed(0)}°C</strong></div></div><p id="timerStageText">${esc(stage.method)}</p><div class="timer-progress"><span id="timerProgressFill"></span></div><div class="timer-actions"><button id="timerPrevBtn" class="button" type="button">上段</button><button id="timerPauseBtn" class="button active" type="button">暂停</button><button id="timerNextBtn" class="button" type="button">下段</button></div></div>`;
+  const overlay = showOverlay(content, { full: true, id: 'timer' });
+  $('#timerPauseBtn').addEventListener('click', () => { state.timer.paused = !state.timer.paused; $('#timerPauseBtn').textContent = state.timer.paused ? '继续' : '暂停'; $('#timerPauseBtn').classList.toggle('active', state.timer.paused); if (state.timer.paused) speak('已暂停'); });
+  $('#timerPrevBtn').addEventListener('click', () => moveTimerStage(-1));
+  $('#timerNextBtn').addEventListener('click', () => moveTimerStage(1));
   $('#timerExitBtn').addEventListener('click', () => promptRecordConsumption('exit'));
+  renderTimerValues();
 }
+
 function formatSeconds(seconds) { const value = Math.max(0, Number(seconds)||0); return `${Math.floor(value/60).toString().padStart(2,'0')}:${(value%60).toString().padStart(2,'0')}`; }
-function renderTimerValues() { const clock = $('#timerClock'); if (clock) clock.textContent = formatSeconds(state.timer.remaining); }
-function advanceTimerStage() {
-  const next = state.timer.stageIndex + 1;
+function renderTimerValues() {
+  const clock = $('#timerClock'); if (!clock || !state.currentPlan) return;
+  const stages = state.currentPlan.stages;
+  const stage = stages[state.timer.stageIndex];
+  const elapsedBefore = stages.slice(0, state.timer.stageIndex).reduce((sum,item)=>sum+Number(item.durationSec||0),0);
+  const stageElapsed = Math.max(0, Number(stage.durationSec||0)-state.timer.remaining);
+  const elapsed = elapsedBefore + stageElapsed;
+  const total = Number(state.currentPlan.totals?.targetTimeSec || stages.reduce((sum,item)=>sum+Number(item.durationSec||0),0));
+  clock.textContent = formatSeconds(state.timer.remaining);
+  $('#timerElapsed').textContent = formatSeconds(elapsed);
+  $('#timerTotalRemaining').textContent = formatSeconds(Math.max(0,total-elapsed));
+  $('#timerStageCounter').textContent = `${state.timer.stageIndex+1}/${stages.length}`;
+  $('#timerStageName').textContent = stage.name;
+  $('#timerStageText').textContent = stage.method;
+  $('#timerStageWater').textContent = `${Number(stage.stageWaterG).toFixed(0)}g`;
+  $('#timerCumulativeWater').textContent = `${Number(stage.cumulativeWaterG).toFixed(0)}g`;
+  $('#timerTemperature').textContent = `${Number(stage.temperatureC).toFixed(0)}°C`;
+  $('#timerProgressFill').style.width = `${clamp((1-state.timer.remaining/Math.max(1,Number(stage.durationSec)))*100,0,100)}%`;
+}
+
+function advanceTimerStage() { moveTimerStage(1, true); }
+function moveTimerStage(direction = 1, automatic = false) {
+  const next = state.timer.stageIndex + direction;
+  if (next < 0) return;
   if (next >= state.currentPlan.stages.length) { clearInterval(state.timer.interval); promptRecordConsumption('complete'); return; }
   state.timer.stageIndex = next; state.timer.remaining = Number(state.currentPlan.stages[next].durationSec); state.timer.paused = false;
-  const stage = state.currentPlan.stages[next]; $('#timerStageText').textContent = stage.method; speak(`第${stage.index}段，${stage.name}，${stage.stageWaterG}克，${stage.durationSec}秒`);
+  const stage = state.currentPlan.stages[next];
+  if ($('#timerPauseBtn')) { $('#timerPauseBtn').textContent = '暂停'; $('#timerPauseBtn').classList.remove('active'); }
+  renderTimerValues();
+  speak(`${automatic?'进入':'切换到'}第${stage.index}段，${stage.name}，${stage.stageWaterG}克，${stage.durationSec}秒`);
 }
+
 function promptRecordConsumption(reason) {
   clearInterval(state.timer.interval); state.timer.paused = true;
-  const bean = state.beans.find(b => b.id === state.selectedBeanId); const dose = Number(state.currentPlan?.totals?.doseG || state.currentBrewInput?.brew?.doseG || 15);
-  const overlay = showOverlay(`${dialogHeader('是否记录咖啡豆消耗', `${bean?.name || '当前豆卡'} · ${dose}g`)}<p class="muted">记录后扣除本次粉量并进入品鉴；不记录则返回方案编辑状态。</p><div class="grid-2"><button id="recordConsumptionBtn" class="button primary" type="button">记录</button><button id="skipConsumptionBtn" class="button" type="button">不记录</button></div>`, { id: 'consume-confirm' }); bindClose(overlay);
+  const bean = state.beans.find(item => item.id === state.selectedBeanId); const dose = Number(state.currentPlan?.totals?.doseG || state.currentBrewInput?.brew?.doseG || 15);
+  const overlay = showOverlay(`${dialogHeader('记录本次消耗', `${bean ? beanDisplayName(bean) : '当前豆卡'} · ${dose}g`)}<p class="muted">记录后扣除粉量并进入品鉴；不记录则返回拾味。</p><div class="grid-2"><button id="recordConsumptionBtn" class="button primary" type="button">记录</button><button id="skipConsumptionBtn" class="button" type="button">不记录</button></div>`, { id: 'consume-confirm' }); bindClose(overlay);
   $('#recordConsumptionBtn').addEventListener('click', async () => { await consumeBean(bean, dose, state.currentPlan?.id, reason); closeOverlay(); startEvaluation(bean.id); switchPage('sensory', { preserveOverlay: true }); renderSensory(); });
   $('#skipConsumptionBtn').addEventListener('click', () => { closeOverlay(); switchPage('brew'); });
 }
+
 async function consumeBean(bean, amount, sessionId, note = '') {
   if (!bean) return;
   const consumed = Math.min(Number(bean.remainingWeight)||0, amount); bean.remainingWeight = Math.max(0, Number(bean.remainingWeight||0) - consumed); bean.updatedAt = new Date().toISOString();
@@ -691,35 +838,38 @@ function startEvaluation(beanId = state.selectedBeanId) {
   state.selectedBeanId = beanId;
   state.evaluation = { id: uid('sensory'), beanId, brewSessionId: state.currentPlan?.id || '', engineVersion: state.currentPlan?.engineVersion || '', profileVersion: state.currentPlan?.profileVersion || '', nodeIndex: 0, answers: {}, score: 80, createdAt: new Date().toISOString() };
 }
-function filteredSensoryRecords() {
-  const f = state.sensoryFilter;
+function filteredSensoryRecords(limit = null) {
+  const filter = state.sensoryFilter;
   let records = [...state.sensoryRecords];
-  if (f.beanId) records = records.filter(r => r.beanId === f.beanId);
-  if (f.minScore !== '') records = records.filter(r => Number(r.score) >= Number(f.minScore));
-  if (f.maxScore !== '') records = records.filter(r => Number(r.score) <= Number(f.maxScore));
-  if (f.start) records = records.filter(r => String(r.createdAt).slice(0,10) >= f.start);
-  if (f.end) records = records.filter(r => String(r.createdAt).slice(0,10) <= f.end);
+  if (filter.beanId) records = records.filter(record => record.beanId === filter.beanId);
+  if (filter.minScore !== '') records = records.filter(record => Number(record.score) >= Number(filter.minScore));
+  if (filter.maxScore !== '') records = records.filter(record => Number(record.score) <= Number(filter.maxScore));
+  if (filter.start) records = records.filter(record => String(record.createdAt).slice(0,10) >= filter.start);
+  if (filter.end) records = records.filter(record => String(record.createdAt).slice(0,10) <= filter.end);
   records.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
-  return records.slice(0, f.expanded ? 50 : 10);
+  return limit == null ? records : records.slice(0, limit);
 }
+
 function renderSensory() {
   const container = $('#sensoryContent');
-  const records = filteredSensoryRecords();
+  const recent = filteredSensoryRecords(5);
   const current = state.evaluation;
-  container.innerHTML = `<section class="panel"><div class="panel-title"><div><h2>最近品鉴记录</h2><p>默认显示最近 10 条</p></div><div class="row"><button id="sensoryFilterBtn" class="button" type="button">筛选</button><button id="sensoryExpandBtn" class="button" type="button" aria-label="展开更多记录">⌄</button></div></div><div class="record-list">${records.length?records.map(recordHtml).join(''):'<p class="muted small">尚无品鉴记录</p>'}</div></section>
-  ${current ? evaluationHtml(current) : `<section class="panel"><div class="panel-title"><div><h2>开始品鉴</h2><p>九节点：花香、果香、其他、甜、酸、苦、口感、负面、总分</p></div></div><label class="field"><span>豆卡</span><select id="sensoryBeanSelect" class="control">${state.beans.filter(b=>!b.archived).map(b=>`<option value="${esc(b.id)}"${b.id===state.selectedBeanId?' selected':''}>${esc(b.name)}</option>`).join('')}</select></label><button id="startSensoryBtn" class="button primary" type="button">开始九节点品鉴</button></section>`}`;
-  $('#sensoryFilterBtn').addEventListener('click', openSensoryFilter);
-  $('#sensoryExpandBtn').addEventListener('click', () => { state.sensoryFilter.expanded = !state.sensoryFilter.expanded; renderSensory(); });
+  container.innerHTML = `<section class="panel sensory-history"><button id="sensoryHistoryToggle" class="history-toggle${state.sensoryHistoryOpen?' active':''}" type="button"><span>往昔……</span><span>${state.sensoryHistoryOpen?'⌃':'⌄'}</span></button>${state.sensoryHistoryOpen ? `<div class="record-list">${recent.length?recent.map(recordHtml).join(''):'<p class="muted small">尚无品鉴记录</p>'}</div><button id="sensoryMoreBtn" class="button" type="button">更多</button>` : ''}</section>
+  ${current ? evaluationHtml(current) : `<section class="panel"><div class="panel-title"><div><h2>开始品鉴</h2><p>花香、果香、其他、甜、酸、苦、口感、负面、总分</p></div></div><label class="field"><span>豆卡</span><select id="sensoryBeanSelect" class="control">${state.beans.filter(bean=>!bean.archived).map(bean=>`<option value="${esc(bean.id)}"${bean.id===state.selectedBeanId?' selected':''}>${esc(beanDisplayName(bean))}</option>`).join('')}</select></label><button id="startSensoryBtn" class="button primary" type="button">开始品鉴</button></section>`}`;
+  $('#sensoryHistoryToggle').addEventListener('click', () => { state.sensoryHistoryOpen = !state.sensoryHistoryOpen; renderSensory(); });
+  $('#sensoryMoreBtn')?.addEventListener('click', openSensoryRecordsPage);
   $('#startSensoryBtn')?.addEventListener('click', () => { const beanId = $('#sensoryBeanSelect').value; if (!beanId) return toast('请先选择豆卡'); startEvaluation(beanId); renderSensory(); });
-  bindEvaluationEvents();
+  bindEvaluationEvents(); bindControlStates(container);
 }
+
 function recordHtml(record) {
-  const bean = state.beans.find(b=>b.id===record.beanId);
-  return `<div class="record-item"><span>${formatDate(record.createdAt)}</span><span>${esc(bean?.name || '已删除豆卡')} · ${esc((record.summary||[]).slice(0,3).join(' / '))}</span><strong>${Number(record.score||0).toFixed(1)}</strong></div>`;
+  const bean = state.beans.find(item=>item.id===record.beanId);
+  return `<div class="record-item"><span>${formatDate(record.createdAt)}</span><span>${esc(bean ? beanDisplayName(bean) : '已删除豆卡')} · ${esc((record.summary||[]).slice(0,3).join(' / '))}</span><strong>${Number(record.score||0).toFixed(1)}</strong></div>`;
 }
+
 function evaluationHtml(evaluation) {
   const node = SENSORY_NODES[evaluation.nodeIndex];
-  return `<section class="panel"><div class="panel-title"><div><h2>${evaluation.nodeIndex+1}. ${node.label}</h2><p>${state.beans.find(b=>b.id===evaluation.beanId)?.name || ''}</p></div><button id="cancelEvaluationBtn" class="button subtle" type="button">取消</button></div><div class="sensory-progress">${SENSORY_NODES.map((_,i)=>`<span class="${i<evaluation.nodeIndex?'done':i===evaluation.nodeIndex?'current':''}"></span>`).join('')}</div>${node.type==='score'?scoreNodeHtml(evaluation):node.groups.map((group,index)=>questionGroupHtml(node,group,index,evaluation.answers[node.id]||{})).join('')}<div class="row"><button id="prevSensoryNodeBtn" class="button" type="button"${evaluation.nodeIndex===0?' disabled':''}>上一步</button><span class="grow"></span><button id="nextSensoryNodeBtn" class="button primary" type="button">${evaluation.nodeIndex===SENSORY_NODES.length-1?'完成品鉴':'下一步'}</button></div></section>`;
+  return `<section class="panel"><div class="panel-title"><div><h2>${evaluation.nodeIndex+1}. ${node.label}</h2><p>${beanDisplayName(state.beans.find(b=>b.id===evaluation.beanId) || {})}</p></div><button id="cancelEvaluationBtn" class="button subtle" type="button">取消</button></div><div class="sensory-progress">${SENSORY_NODES.map((_,i)=>`<span class="${i<evaluation.nodeIndex?'done':i===evaluation.nodeIndex?'current':''}"></span>`).join('')}</div>${node.type==='score'?scoreNodeHtml(evaluation):node.groups.map((group,index)=>questionGroupHtml(node,group,index,evaluation.answers[node.id]||{})).join('')}<div class="row"><button id="prevSensoryNodeBtn" class="button" type="button"${evaluation.nodeIndex===0?' disabled':''}>上一步</button><span class="grow"></span><button id="nextSensoryNodeBtn" class="button primary" type="button">${evaluation.nodeIndex===SENSORY_NODES.length-1?'完成品鉴':'下一步'}</button></div></section>`;
 }
 function questionGroupHtml(node, group, groupIndex, answer) {
   const selected = new Set(answer[groupIndex] || []);
@@ -763,9 +913,22 @@ async function saveEvaluation() {
   switchPage('beans'); requestAnimationFrame(()=>detailBean(record.beanId));
   if (Number(record.score) < 75) toast('品鉴已保存；建议检查研磨均匀度、水温和尾段萃取', 'status-warn'); else toast('品鉴记录已保存', 'status-good');
 }
+function openSensoryRecordsPage() {
+  const limit = clamp(state.settings.sensoryRecentLimit || 50, 5, 200);
+  const records = filteredSensoryRecords(limit);
+  const overlay = showOverlay(`${dialogHeader('品鉴记录', `显示最近 ${limit} 条，较早记录可在诹吉中查找`)}<div class="row end"><button id="sensoryRecordSettingsBtn" class="button active" type="button">设</button><button id="sensoryRecordFilterBtn" class="button" type="button">筛选</button></div><div class="record-list">${records.length?records.map(recordHtml).join(''):'<p class="muted">尚无记录</p>'}</div>`, { full: true, id: 'sensory-records' });
+  bindClose(overlay);
+  $('#sensoryRecordSettingsBtn').addEventListener('click', openSensoryRetentionSettings);
+  $('#sensoryRecordFilterBtn').addEventListener('click', openSensoryFilter);
+}
+function openSensoryRetentionSettings() {
+  const overlay = showOverlay(`${dialogHeader('记录保留显示数', '可设 5–200 条；更早记录不会删除，统一进入诹吉')}<label class="field"><span>显示条数</span><input id="sensoryRecentLimitInput" class="control" type="number" min="5" max="200" step="5" value="${clamp(state.settings.sensoryRecentLimit || 50,5,200)}"></label><button id="saveSensoryLimitBtn" class="button primary" type="button">保存</button>`, { id: 'sensory-limit' });
+  bindClose(overlay);
+  $('#saveSensoryLimitBtn').addEventListener('click', async () => { state.settings.sensoryRecentLimit = clamp(parseNumber($('#sensoryRecentLimitInput').value,50),5,200); await saveSettings(); closeOverlay(); openSensoryRecordsPage(); });
+}
 function openSensoryFilter() {
   const f = state.sensoryFilter;
-  const overlay = showOverlay(`${dialogHeader('筛选品鉴记录')}<div class="form-grid"><label class="field"><span>咖啡豆</span><select id="filterSensoryBean" class="control"><option value="">全部豆卡</option>${state.beans.map(b=>`<option value="${esc(b.id)}"${f.beanId===b.id?' selected':''}>${esc(b.name)}</option>`).join('')}</select></label><label class="field"><span>最低分</span><input id="filterMinScore" class="control" type="number" min="0" max="100" value="${esc(f.minScore)}"></label><label class="field"><span>最高分</span><input id="filterMaxScore" class="control" type="number" min="0" max="100" value="${esc(f.maxScore)}"></label><label class="field"><span>开始日期</span><input id="filterStartDate" class="control" type="date" value="${esc(f.start)}"></label><label class="field"><span>结束日期</span><input id="filterEndDate" class="control" type="date" value="${esc(f.end)}"></label></div><div class="row end"><button id="resetSensoryFilter" class="button subtle" type="button">重置</button><button id="applySensoryFilter" class="button primary" type="button">应用</button></div>`);
+  const overlay = showOverlay(`${dialogHeader('筛选品鉴记录')}<div class="form-grid"><label class="field"><span>咖啡豆</span><select id="filterSensoryBean" class="control"><option value="">全部豆卡</option>${state.beans.map(b=>`<option value="${esc(b.id)}"${f.beanId===b.id?' selected':''}>${esc(beanDisplayName(b))}</option>`).join('')}</select></label><label class="field"><span>最低分</span><input id="filterMinScore" class="control" type="number" min="0" max="100" value="${esc(f.minScore)}"></label><label class="field"><span>最高分</span><input id="filterMaxScore" class="control" type="number" min="0" max="100" value="${esc(f.maxScore)}"></label><label class="field"><span>开始日期</span><input id="filterStartDate" class="control" type="date" value="${esc(f.start)}"></label><label class="field"><span>结束日期</span><input id="filterEndDate" class="control" type="date" value="${esc(f.end)}"></label></div><div class="row end"><button id="resetSensoryFilter" class="button subtle" type="button">重置</button><button id="applySensoryFilter" class="button primary" type="button">应用</button></div>`);
   bindClose(overlay);
   $('#resetSensoryFilter').addEventListener('click',()=>{state.sensoryFilter={beanId:'',minScore:'',maxScore:'',start:'',end:'',expanded:false};closeOverlay();renderSensory();});
   $('#applySensoryFilter').addEventListener('click',()=>{state.sensoryFilter={...state.sensoryFilter,beanId:$('#filterSensoryBean').value,minScore:$('#filterMinScore').value,maxScore:$('#filterMaxScore').value,start:$('#filterStartDate').value,end:$('#filterEndDate').value};closeOverlay();renderSensory();});
@@ -778,13 +941,13 @@ async function ensureQrCodeLibrary() {
 function sharePayload(bean) {
   const sessions = state.brewSessions.filter(s=>s.beanId===bean.id).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))).slice(0,1);
   const records = state.sensoryRecords.filter(r=>r.beanId===bean.id).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))).slice(0,1);
-  return { schemaVersion:1, appVersion:APP_VERSION, sharedAt:new Date().toISOString(), user:{publicId:state.settings.identity.publicId||'',nickname:state.settings.identity.nickname||'匿名'}, bean:{name:bean.name,country:codeName('countries',bean.countryCode,''),region:codeName('regions',bean.regionCode,''),entity:codeName('entities',bean.entityCode,''),variety:codeName('varieties',bean.varietyCode,''),process:codeName('processes',bean.processCode,''),roast:ROAST_NAME.get(bean.roastCode)||'',roastDate:bean.roastDate,flavors:(bean.flavorCodes||[]).map(c=>codeName('flavors',c,c))}, plan:sessions[0]?{engineVersion:sessions[0].engineVersion,profileVersion:sessions[0].profileVersion,stages:sessions[0].stages,totals:sessions[0].totals}:null, sensory:records[0]?{score:records[0].score,summary:records[0].summary}:null };
+  return { schemaVersion:1, appVersion:APP_VERSION, sharedAt:new Date().toISOString(), user:{publicId:state.settings.identity.publicId||'',nickname:state.settings.identity.nickname||'匿名'}, bean:{name:beanDisplayName(bean),country:codeName('countries',bean.countryCode,''),region:codeName('regions',bean.regionCode,''),entity:codeName('entities',bean.entityCode,''),variety:codeName('varieties',bean.varietyCode,''),process:codeName('processes',bean.processCode,''),roast:ROAST_NAME.get(bean.roastCode)||'',roastDate:bean.roastDate,flavors:(bean.flavorCodes||[]).map(c=>codeName('flavors',c,c))}, plan:sessions[0]?{engineVersion:sessions[0].engineVersion,profileVersion:sessions[0].profileVersion,stages:sessions[0].stages,totals:sessions[0].totals}:null, sensory:records[0]?{score:records[0].score,summary:records[0].summary}:null };
 }
 function encodeShare(payload) { const bytes=new TextEncoder().encode(JSON.stringify(payload)); let binary=''; bytes.forEach(v=>binary+=String.fromCharCode(v)); return btoa(binary).replaceAll('+','-').replaceAll('/','_').replaceAll('=',''); }
 function decodeShare(encoded) { const base64=encoded.replaceAll('-','+').replaceAll('_','/')+'='.repeat((4-encoded.length%4)%4); const binary=atob(base64); return JSON.parse(new TextDecoder().decode(Uint8Array.from(binary,c=>c.charCodeAt(0)))); }
 function shareHtmlDocument(payload) {
   const plan = payload.plan?.stages?.map(s=>`<li>${esc(s.name)}：${Number(s.stageWaterG).toFixed(0)}g，累计${Number(s.cumulativeWaterG).toFixed(0)}g，${Number(s.temperatureC).toFixed(0)}°C，${Number(s.durationSec).toFixed(0)}s，${esc(s.method)}</li>`).join('') || '<li>未分享方案</li>';
-  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(payload.bean.name)} · 富贵盒子</title><style>body{max-width:680px;margin:auto;padding:24px;background:#090a0a;color:#f4f2eb;font-family:system-ui;line-height:1.7}.card{border:1px solid #333;border-radius:20px;padding:18px;margin:12px 0;background:#121414}.muted{color:#9aa}li{margin:8px 0}</style></head><body><h1>${esc(payload.bean.name)}</h1><p class="muted">由 ${esc(payload.user.nickname||'匿名')} 分享 · ${formatDate(payload.sharedAt)}</p><section class="card"><h2>豆卡</h2><p>${esc([payload.bean.country,payload.bean.region,payload.bean.variety,payload.bean.process,payload.bean.roast].filter(Boolean).join(' · '))}</p><p>${esc((payload.bean.flavors||[]).join('、'))}</p></section><section class="card"><h2>冲煮方案</h2><ol>${plan}</ol></section><section class="card"><h2>品鉴</h2><p>${payload.sensory?`${Number(payload.sensory.score).toFixed(1)} 分 · ${esc((payload.sensory.summary||[]).join('；'))}`:'未分享品鉴记录'}</p></section><p class="muted">生成于富贵盒子 ${esc(payload.appVersion)}</p></body></html>`;
+  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(payload.bean.name)} · 富贵盒子</title><style>body{max-width:680px;margin:auto;padding:24px;background:#090a0a;color:#f4f2eb;font-family:system-ui;line-height:1.7}.card{padding:10px 0;margin:16px 0;background:#090a0a}.muted{color:#9aa}li{margin:8px 0}</style></head><body><h1>${esc(payload.bean.name)}</h1><p class="muted">由 ${esc(payload.user.nickname||'匿名')} 分享 · ${formatDate(payload.sharedAt)}</p><section class="card"><h2>豆卡</h2><p>${esc([payload.bean.country,payload.bean.region,payload.bean.variety,payload.bean.process,payload.bean.roast].filter(Boolean).join(' · '))}</p><p>${esc((payload.bean.flavors||[]).join('、'))}</p></section><section class="card"><h2>冲煮方案</h2><ol>${plan}</ol></section><section class="card"><h2>品鉴</h2><p>${payload.sensory?`${Number(payload.sensory.score).toFixed(1)} 分 · ${esc((payload.sensory.summary||[]).join('；'))}`:'未分享品鉴记录'}</p></section><p class="muted">生成于富贵盒子</p></body></html>`;
 }
 
 function openShareDialog(bean) {
@@ -794,11 +957,11 @@ function openShareDialog(bean) {
   const showTab = tab => { $('#shareQrPanel').classList.toggle('hidden',tab!=='qr');$('#shareLinkPanel').classList.toggle('hidden',tab!=='link');$('#shareQrTab').classList.toggle('primary',tab==='qr');$('#shareLinkTab').classList.toggle('primary',tab==='link'); };
   $('#shareQrTab').addEventListener('click',()=>showTab('qr'));$('#shareLinkTab').addEventListener('click',()=>showTab('link'));
   $('#copyShareLinkBtn').addEventListener('click',async()=>{await navigator.clipboard.writeText(link);toast('完整链接已复制');});
-  $('#saveShareHtmlBtn').addEventListener('click',()=>downloadBlob(`${bean.name}_富贵盒子分享.html`,shareHtmlDocument(payload),'text/html;charset=utf-8'));
+  $('#saveShareHtmlBtn').addEventListener('click',()=>downloadBlob(`${beanDisplayName(bean)}_富贵盒子分享.html`,shareHtmlDocument(payload),'text/html;charset=utf-8'));
   get('shareDrafts', bean.id).then(draft => { if (draft?.note && $('#shareLocalNote')) $('#shareLocalNote').value = draft.note; }).catch(() => {});
   $('#shareLocalNote').addEventListener('change', () => put('shareDrafts', { id: bean.id, note: $('#shareLocalNote').value.slice(0, 1000), updatedAt: new Date().toISOString() }));
   if (!tooLong) ensureQrCodeLibrary().then(()=>{const box=$('#shareQrBox');box.innerHTML='';new QRCode(box,{text:link,width:220,height:220,correctLevel:QRCode.CorrectLevel.L});}).catch(error=>$('#shareQrBox').textContent=error.message);
-  $('#saveQrBtn').addEventListener('click',()=>{const canvas=$('#shareQrBox canvas');const image=$('#shareQrBox img');if(canvas)canvas.toBlob(blob=>downloadBlob(`${bean.name}_分享二维码.png`,blob,'image/png'));else if(image)fetch(image.src).then(r=>r.blob()).then(blob=>downloadBlob(`${bean.name}_分享二维码.png`,blob,'image/png'));else toast('二维码尚未生成');});
+  $('#saveQrBtn').addEventListener('click',()=>{const canvas=$('#shareQrBox canvas');const image=$('#shareQrBox img');if(canvas)canvas.toBlob(blob=>downloadBlob(`${beanDisplayName(bean)}_分享二维码.png`,blob,'image/png'));else if(image)fetch(image.src).then(r=>r.blob()).then(blob=>downloadBlob(`${beanDisplayName(bean)}_分享二维码.png`,blob,'image/png'));else toast('二维码尚未生成');});
 }
 function renderSharedPayload(payload) {
   assertPlainObject(payload,'分享数据');
@@ -807,29 +970,37 @@ function renderSharedPayload(payload) {
 }
 
 function openHistory() {
-  const archived = state.beans.filter(b=>b.archived || Number(b.remainingWeight)<=0);
-  const content = `${dialogHeader('老黄历', '归档或余量为零的豆卡')}<div class="bean-grid">${archived.length?archived.map(beanCardHtml).join(''):'<p class="muted">老黄历为空</p>'}</div>`;
-  const overlay = showOverlay(content,{id:'history'});bindClose(overlay);
+  const archived = state.beans.filter(bean=>bean.archived || Number(bean.remainingWeight)<=0);
+  const recentLimit = clamp(state.settings.sensoryRecentLimit || 50, 5, 200);
+  const oldSensory = [...state.sensoryRecords].sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))).slice(recentLimit);
+  const oldBrews = [...state.brewSessions].sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))).slice(recentLimit);
+  const content = `${dialogHeader('诹吉', '归档豆卡与较早记录')}<details class="details-block" open><summary>豆卡旧藏 · ${archived.length}</summary><div class="details-content"><div class="bean-grid">${archived.length?archived.map(beanCardHtml).join(''):'<p class="muted">暂无归档豆卡</p>'}</div></div></details><details class="details-block"><summary>旧品鉴 · ${oldSensory.length}</summary><div class="details-content record-list">${oldSensory.length?oldSensory.slice(0,200).map(recordHtml).join(''):'<p class="muted">暂无较早品鉴</p>'}</div></details><details class="details-block"><summary>旧冲煮 · ${oldBrews.length}</summary><div class="details-content record-list">${oldBrews.length?oldBrews.slice(0,200).map(session=>`<div class="record-item"><span>${formatDate(session.createdAt)}</span><span>${esc(beanDisplayName(state.beans.find(bean=>bean.id===session.beanId)||{}))}</span><strong>${Number(session.totals?.waterG||0).toFixed(0)}g</strong></div>`).join(''):'<p class="muted">暂无较早冲煮</p>'}</div></details>`;
+  const overlay = showOverlay(content,{full:true,id:'history'});bindClose(overlay);
   overlay.addEventListener('click', event => { const card = event.target.closest('[data-bean-id]'); if (card) detailBean(card.dataset.beanId); });
 }
 
 function renderSettings() {
   const meta = state.codebookMeta || {};
-  $('#settingsContent').innerHTML = `<section class="panel"><div class="panel-title"><div><h2>数据与接口</h2><p>BrewIon 负责公开编码表；私有冲煮通过服务端 API</p></div></div><div class="setting-list"><div class="setting-row"><div><h3>BrewIon 编码表</h3><p>版本 ${esc(meta.version||state.codebook.version||'6')} · ${esc(meta.source||'embedded')} · ${esc(meta.checkedAt||'尚未检查')}</p></div><button id="updateCodebookBtn" class="button" type="button">检查更新</button></div><div class="setting-row"><div class="grow"><h3>私有冲煮 API</h3><p>不得填写 GitHub Token；填写由服务端托管的 HTTPS 端点。</p><input id="brewApiEndpoint" class="control" type="url" placeholder="https://your-worker.example.com/api/brew" value="${esc(state.settings.brew.apiEndpoint||'')}"></div><button id="saveApiBtn" class="button" type="button">保存</button></div><div class="setting-row"><div><h3>萃取轨迹与风味拟合</h3><p>控制生成方案后默认展开或折叠</p></div><label class="toggle"><input id="planVisualToggle" type="checkbox"${state.settings.ui.planVisualsExpanded?' checked':''}>默认展开</label></div></div></section>
-  <section class="panel"><div class="panel-title"><div><h2>本机身份</h2><p>${esc(state.settings.identity.mode)} · ${esc(state.settings.identity.publicId||'无公开 ID')} · 仅本机保存，未经服务端验证</p></div></div><div class="grid-2"><label class="field"><span>昵称</span><input id="settingsNickname" class="control" maxlength="24" value="${esc(state.settings.identity.nickname||'')}"></label><label class="field"><span>邮箱</span><input id="settingsEmail" class="control" type="email" value="${esc(state.settings.identity.email||'')}"></label><label class="field"><span>手机</span><input id="settingsPhone" class="control" inputmode="tel" value="${esc(state.settings.identity.phone||'')}"></label><label class="field"><span>微信</span><input id="settingsWechat" class="control" value="${esc(state.settings.identity.wechat||'')}"></label><label class="field"><span>QQ</span><input id="settingsQq" class="control" inputmode="numeric" value="${esc(state.settings.identity.qq||'')}"></label></div><p class="muted small">这些联系方式不会进入分享链接；正式绑定仍需后端验证。</p><button id="saveIdentityBtn" class="button" type="button">保存本机身份</button></section>
-  <section class="panel"><div class="panel-title"><div><h2>器具偏好</h2></div></div><div class="grid-2"><label class="field"><span>默认滤杯</span><select id="defaultDripper" class="control"><option>平底滤杯</option><option>锥形滤杯</option><option>混合式滤杯</option></select></label><label class="field"><span>磨豆机与刻度</span><input id="defaultGrinder" class="control" value="${esc(state.settings.brew.grinder||'')}"></label></div></section>
-  <section class="panel"><div class="panel-title"><div><h2>数据管理</h2><p>导出文件包含版本和 Schema；导入前校验结构。</p></div></div><div class="grid-2"><button id="settingsExportBtn" class="button" type="button">导出备份</button><button id="settingsImportBtn" class="button" type="button">导入备份</button><button id="clearAllDataBtn" class="button danger" type="button">清空本地数据</button><button id="aboutVersionBtn" class="button subtle" type="button">版本 ${APP_VERSION}</button></div></section>`;
+  const identity = state.settings.identity;
+  const gear = state.settings.gear || DEFAULT_SETTINGS.gear;
+  $('#settingsContent').innerHTML = `<div class="settings-categories">
+  <details class="settings-category"><summary><span>账户</span><small>${esc(identity.nickname || '访客')}</small></summary><div class="settings-category-body"><div class="grid-2"><label class="field"><span>昵称</span><input id="settingsNickname" class="control" maxlength="24" value="${esc(identity.nickname||'')}"></label><label class="field"><span>邮箱</span><input id="settingsEmail" class="control" type="email" value="${esc(identity.email||'')}"></label><label class="field"><span>手机</span><input id="settingsPhone" class="control" inputmode="tel" value="${esc(identity.phone||'')}"></label><label class="field"><span>微信</span><input id="settingsWechat" class="control" value="${esc(identity.wechat||'')}"></label><label class="field"><span>QQ</span><input id="settingsQq" class="control" inputmode="numeric" value="${esc(identity.qq||'')}"></label><div class="field"><span>个人 ID</span><div class="static-value mono">${esc(identity.publicId||'保存账户后生成')}</div></div></div><p class="muted small">个人 ID 由本机随机盐、昵称和账户信息生成，用于分享时标记来源，不公开原始联系方式。</p><button id="saveIdentityBtn" class="button primary" type="button">保存账户</button></div></details>
+  <details class="settings-category"><summary><span>私器</span><small>滤纸 · 滤杯 · 磨豆机</small></summary><div class="settings-category-body"><div class="grid-2"><label class="field"><span>滤纸种类</span><input id="gearFilterTypes" class="control" value="${esc(gear.filterTypes||'')}" placeholder="例如 漂白纸、原木纸"></label><label class="field"><span>滤纸数量</span><input id="gearFilterStock" class="control" type="number" min="0" step="1" value="${esc(gear.filterStock||'')}"></label><label class="field"><span>滤杯</span><input id="gearDrippers" class="control" value="${esc(gear.drippers||'')}" placeholder="多个器具用顿号分隔"></label><label class="field"><span>磨豆机 / 刻度</span><input id="gearGrinders" class="control" value="${esc(gear.grinders||'')}" placeholder="例如 C40 22格"></label></div><button id="saveGearBtn" class="button primary" type="button">保存私器</button></div></details>
+  <details class="settings-category"><summary><span>数藏</span><small>备份 · 恢复 · 数据源</small></summary><div class="settings-category-body"><div class="text-actions"><button id="settingsExportBtn" class="button" type="button">导出备份</button><button id="settingsImportBtn" class="button" type="button">导入备份</button><button id="clearAllDataBtn" class="button danger" type="button">清空本地数据</button></div><details class="nested-settings"><summary>数据源与接口</summary><div class="nested-content"><div class="setting-row"><div><h3>数据源</h3><p>仅在需要时检查更新；技术信息请见本物。</p></div><button id="updateCodebookBtn" class="button" type="button">检查更新</button></div><label class="field"><span>私有冲煮 API</span><input id="brewApiEndpoint" class="control" type="url" placeholder="HTTPS 服务端地址" value="${esc(state.settings.brew.apiEndpoint||'')}"></label><button id="saveApiBtn" class="button" type="button">保存接口</button><label class="toggle"><input id="planVisualToggle" type="checkbox"${state.settings.ui.planVisualsExpanded?' checked':''}>默认显示萃取图</label></div></details></div></details>
+  <details class="settings-category"><summary><span>本物</span><small>关于富贵盒子</small></summary><div class="settings-category-body about-content"><h2>富贵盒子</h2><p>咖啡豆管理、拾味冲煮辅助、品鉴记录与本地数据归档工具。</p><dl><dt>版本</dt><dd>${APP_VERSION}</dd><dt>数据结构</dt><dd>${SCHEMA_VERSION}</dd><dt>离线引擎</dt><dd>${esc(FALLBACK_ENGINE_VERSION)}</dd><dt>数据源</dt><dd>公开编码数据 ${esc(meta.version||state.codebook.version||'6')}</dd><dt>开发与维护</dt><dd>zjcrop</dd><dt>微信</dt><dd>zj_crop</dd><dt>小红书</dt><dd>端茶倒水的秦始皇🐻</dd></dl><p class="muted small">真实注册、跨设备同步和私有冲煮服务需要独立后端。当前数据默认保存在本机浏览器。</p></div></details>
+  </div>`;
   $('#updateCodebookBtn').addEventListener('click', updateCodebook);
-  $('#saveApiBtn').addEventListener('click',async()=>{state.settings.brew.apiEndpoint=$('#brewApiEndpoint').value.trim();await saveSettings();toast('API 地址已保存');});
-  $('#planVisualToggle').addEventListener('change',async e=>{state.settings.ui.planVisualsExpanded=e.target.checked;await saveSettings();});
-  $('#saveIdentityBtn').addEventListener('click',async()=>{state.settings.identity={...state.settings.identity,nickname:$('#settingsNickname').value.trim()||'游客',email:$('#settingsEmail').value.trim(),phone:$('#settingsPhone').value.trim(),wechat:$('#settingsWechat').value.trim(),qq:$('#settingsQq').value.trim()};await saveSettings();$('#profileBtn').textContent=identityLabel();toast('本机身份已保存');});
-  $('#defaultGrinder').addEventListener('change',async e=>{state.settings.brew.grinder=e.target.value.trim();await saveSettings();});
+  $('#saveApiBtn').addEventListener('click',async()=>{state.settings.brew.apiEndpoint=$('#brewApiEndpoint').value.trim();await saveSettings();toast('接口地址已保存');});
+  $('#planVisualToggle').addEventListener('change',async event=>{state.settings.ui.planVisualsExpanded=event.target.checked;await saveSettings();});
+  $('#saveIdentityBtn').addEventListener('click',async()=>{const next={...state.settings.identity,nickname:$('#settingsNickname').value.trim()||'访客',email:$('#settingsEmail').value.trim(),phone:$('#settingsPhone').value.trim(),wechat:$('#settingsWechat').value.trim(),qq:$('#settingsQq').value.trim()};Object.assign(next,await derivePublicId(next));state.settings.identity=next;await saveSettings();renderSettings();toast('账户信息与个人 ID 已保存');});
+  $('#saveGearBtn').addEventListener('click',async()=>{state.settings.gear={filterTypes:$('#gearFilterTypes').value.trim(),filterStock:$('#gearFilterStock').value.trim(),drippers:$('#gearDrippers').value.trim(),grinders:$('#gearGrinders').value.trim()};if(state.settings.gear.drippers)state.settings.brew.dripper=state.settings.gear.drippers.split(/[、,，]/)[0].trim();if(state.settings.gear.grinders)state.settings.brew.grinder=state.settings.gear.grinders.split(/[、,，]/)[0].trim();await saveSettings();toast('私器已保存');});
   $('#settingsExportBtn').addEventListener('click',exportData); $('#settingsImportBtn').addEventListener('click',()=>$('#importInput').click());
-  $('#clearAllDataBtn').addEventListener('click',confirmClearAll); $('#aboutVersionBtn').addEventListener('click',()=>showInfoDialog('富贵盒子',`版本 ${APP_VERSION} · 数据 Schema ${SCHEMA_VERSION} · 回退引擎 ${FALLBACK_ENGINE_VERSION}`));
+  $('#clearAllDataBtn').addEventListener('click',confirmClearAll); bindControlStates($('#settingsContent'));
 }
+
 async function updateCodebook() {
   const button=$('#updateCodebookBtn');button.disabled=true;button.textContent='检查中…';
-  try { const result=await checkCodebookUpdate({force:true});state.codebook=result.data;state.codebookIndex=makeIndex(result.data);state.codebookMeta=result.meta;$('#syncStatus').textContent=`编码表 v${result.meta.version} · ${result.updated?'已更新':'已是最新'}`;renderSettings();toast(result.updated?'编码表已更新':'编码表已是最新','status-good'); }
+  try { const result=await checkCodebookUpdate({force:true});state.codebook=result.data;state.codebookIndex=makeIndex(result.data);state.codebookMeta=result.meta;renderSettings();toast(result.updated?'数据源已更新':'数据源已是最新','status-good'); }
   catch(error){button.disabled=false;button.textContent='检查更新';toast(`更新失败：${error.message}`,'status-bad');}
 }
 
@@ -845,23 +1016,19 @@ async function importData(file) {
   } catch(error){toast(`导入失败：${error.message}`,'status-bad');} finally{$('#importInput').value='';}
 }
 function confirmClearAll() {
-  const overlay=showOverlay(`${dialogHeader('清空本地数据','此操作不可撤销')}<p class="status-bad">将删除豆卡、库存、方案、品鉴、设置和编码表缓存。</p><label class="field"><span>输入“清空”确认</span><input id="clearConfirmInput" class="control"></label><button id="confirmClearBtn" class="button danger" type="button">永久清空</button>`);bindClose(overlay);
+  const overlay=showOverlay(`${dialogHeader('清空本地数据','此操作不可撤销')}<p class="status-bad">将删除豆卡、库存、方案、品鉴、设置和本地数据缓存。</p><label class="field"><span>输入“清空”确认</span><input id="clearConfirmInput" class="control"></label><button id="confirmClearBtn" class="button danger" type="button">永久清空</button>`);bindClose(overlay);
   $('#confirmClearBtn').addEventListener('click',async()=>{if($('#clearConfirmInput').value!=='清空')return toast('请输入“清空”');await clearAll();location.reload();});
 }
 
-function openProfileDialog() {
-  const identity=state.settings.identity;
-  const overlay=showOverlay(`${dialogHeader('本机身份','真实邮箱、微信、QQ、手机绑定需要后端账号服务')}<div class="panel"><p><strong>${esc(identity.nickname)}</strong></p><p class="mono">${esc(identity.publicId||'未生成公开 ID')}</p><p class="muted small">状态：${identity.verified?'已验证':'仅本机，未验证'}</p></div><button id="goIdentitySettings" class="button primary" type="button">前往器设</button>`);bindClose(overlay);$('#goIdentitySettings').addEventListener('click',()=>{closeOverlay();switchPage('settings');});
-}
+function openProfileDialog() { switchPage('settings'); }
 
 function bindGlobalEvents() {
   $('#guestBtn').addEventListener('click',()=>setIdentity('guest')); $('#emailIdentityBtn').addEventListener('click',openEmailIdentityDialog); $('#wechatIdentityBtn').addEventListener('click',()=>setIdentity('wechat'));
   $('#testBtn').addEventListener('click',async()=>{await setIdentity('guest');await seedDemo();renderBeans();});
-  $('#profileBtn').addEventListener('click',openProfileDialog);
   $('#bottomNav').addEventListener('click',event=>{const button=event.target.closest('[data-page-target]');if(button)switchPage(button.dataset.pageTarget);});
   $('#beanGroups').addEventListener('click',event=>{const brew=event.target.closest('[data-brew-bean]');if(brew){event.stopPropagation();state.selectedBeanId=brew.dataset.brewBean;switchPage('brew');return;}const card=event.target.closest('[data-bean-id]');if(card)detailBean(card.dataset.beanId);});
   $('#beanGroups').addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&event.target.matches('[data-bean-id]'))detailBean(event.target.dataset.beanId);});
-  $('#activeFilterBar').addEventListener('click',event=>{if(event.target.id==='clearActiveFilters'){state.filter={search:'',country:'',process:'',flavors:[],sort:'freshness',dir:'asc'};renderBeans();}});
+  $('#activeFilterBar').addEventListener('click',event=>{if(event.target.id==='clearActiveFilters'){state.filter={search:'',country:'',variety:'',process:'',flavors:[],sort:'freshness',dir:'asc'};renderBeans();}});
   $('#groupBtn').addEventListener('click',openGroupMenu); $('#filterSummaryBtn').addEventListener('click',openSearchDialog); $('#manageBtn').addEventListener('click',openManageMenu);
   $('#fabSearchBtn').addEventListener('click',openSearchDialog); $('#fabRecommendBtn').addEventListener('click',openRecommendMenu); $('#fabHistoryBtn').addEventListener('click',openHistory); $('#fabAddBtn').addEventListener('click',openAddMenu);
   document.addEventListener('click',event=>{
@@ -882,13 +1049,17 @@ async function handleSharedHash() {
 
 async function init() {
   if (await handleSharedHash()) return;
-  state.db = await openDb(); const migration = await migrateLegacy().catch(error=>({error:error.message}));
-  await loadSettings(); const loaded = await loadCodebook(); state.codebook=loaded.data;state.codebookMeta=loaded.meta;state.codebookIndex=makeIndex(loaded.data);
-  await refreshData(); const flavorMigration = await migrateLegacyFlavorCodes(); bindGlobalEvents();
-  $('#syncStatus').textContent=`编码表 v${state.codebookMeta?.version||state.codebook.version||'6'} · ${loaded.source}${migration?.migrated?` · 已迁移${migration.beans}只豆卡`:''}${flavorMigration.migrated?` · 风味迁移${flavorMigration.migrated}只`:''}`;
+  state.db = await openDb();
+  await migrateLegacy().catch(error=>({error:error.message}));
+  await loadSettings();
+  const loaded = await loadCodebook(); state.codebook=loaded.data;state.codebookMeta=loaded.meta;state.codebookIndex=makeIndex(loaded.data);
+  await refreshData(); await migrateLegacyFlavorCodes(); bindGlobalEvents();
   if (state.settings.identity.publicId) enterApp();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
-  setTimeout(()=>checkCodebookUpdate().then(result=>{state.codebook=result.data;state.codebookIndex=makeIndex(result.data);state.codebookMeta=result.meta;$('#syncStatus').textContent=`编码表 v${result.meta.version} · ${result.updated?'已更新':'已校验'}`;}).catch(()=>{}),800);
+  setTimeout(()=>checkCodebookUpdate().then(result=>{state.codebook=result.data;state.codebookIndex=makeIndex(result.data);state.codebookMeta=result.meta;if(state.page==='settings')renderSettings();}).catch(()=>{}),800);
 }
 
-init().catch(error=>{console.error(error);showInfoDialog('初始化失败',error.message);});
+init().catch(error => {
+  console.error(error);
+  showInfoDialog('初始化失败', error.message);
+});

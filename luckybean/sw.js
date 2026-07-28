@@ -1,4 +1,4 @@
-const CACHE_NAME = 'luckybean-v0.6.0';
+const CACHE_NAME = 'luckybean-v0.7.0';
 const CORE = [
   './', './index.html', './styles.css', './manifest.webmanifest',
   './src/app.js', './src/utils.js', './src/db.js', './src/codebook.js', './src/qr.js', './src/brew-engine.js',

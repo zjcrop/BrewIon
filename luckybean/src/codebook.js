@@ -20,6 +20,25 @@ export function validateCodebook(book) {
   return book;
 }
 
+
+export function mergeCodebooks(primary, fallback) {
+  const main = validateCodebook(structuredClone(primary));
+  const reserve = validateCodebook(fallback);
+  const merged = { ...reserve, ...main };
+  for (const table of REQUIRED_TABLES) {
+    const rows = [];
+    const seen = new Set();
+    for (const row of [...(main[table] || []), ...(reserve[table] || [])]) {
+      if (!row?.[0] || seen.has(row[0])) continue;
+      rows.push(row);
+      seen.add(row[0]);
+    }
+    merged[table] = rows;
+  }
+  merged._fallbackMerged = true;
+  return validateCodebook(merged);
+}
+
 export function makeIndex(book) {
   const index = {};
   for (const table of REQUIRED_TABLES) {
@@ -57,30 +76,38 @@ async function fetchJson(url, timeoutMs = 8000) {
 }
 
 export async function loadCodebook() {
+  const fallbackResponse = await fetchJson(FALLBACK_CODEBOOK_URL, 5000);
+  const fallback = validateCodebook(fallbackResponse.data);
   const cached = await get('codebookCache', 'active').catch(() => null);
   if (cached?.data) {
-    try { return { data: validateCodebook(cached.data), source: 'cache', meta: cached }; } catch { /* fall through */ }
+    try {
+      const data = mergeCodebooks(cached.data, fallback);
+      const record = { ...cached, data, checkedAt: cached.checkedAt || new Date().toISOString() };
+      if (JSON.stringify(data) !== JSON.stringify(cached.data)) await put('codebookCache', record).catch(() => {});
+      return { data, source: 'cache', meta: record };
+    } catch { /* 使用内置回退表 */ }
   }
-  const fallback = await fetchJson(FALLBACK_CODEBOOK_URL, 5000);
-  const data = validateCodebook(fallback.data);
-  const hash = await sha256Hex(fallback.text);
-  const record = { id: 'active', data, source: 'embedded', hash, version: String(data.version || '6'), updatedAt: data.updatedAt || '', checkedAt: new Date().toISOString() };
+  const data = fallback;
+  const hash = await sha256Hex(JSON.stringify(data));
+  const record = { id: 'active', data, source: 'embedded', hash, version: String(data.version || data._version || '6'), updatedAt: data.updatedAt || '', checkedAt: new Date().toISOString() };
   await put('codebookCache', record).catch(() => {});
   return { data, source: 'embedded', meta: record };
 }
 
 export async function checkCodebookUpdate({ force = false } = {}) {
-  const remote = await fetchJson(REMOTE_CODEBOOK_URL, force ? 12000 : 8000);
-  const data = validateCodebook(remote.data);
-  const hash = await sha256Hex(remote.text);
+  const [remote, fallbackResponse] = await Promise.all([
+    fetchJson(REMOTE_CODEBOOK_URL, force ? 12000 : 8000),
+    fetchJson(FALLBACK_CODEBOOK_URL, 5000)
+  ]);
+  const data = mergeCodebooks(remote.data, fallbackResponse.data);
+  const hash = await sha256Hex(JSON.stringify(data));
   const active = await get('codebookCache', 'active').catch(() => null);
   if (active?.hash === hash) {
-    active.checkedAt = new Date().toISOString();
-    active.source = 'remote';
-    await put('codebookCache', active);
-    return { updated: false, data: active.data, meta: active };
+    const record = { ...active, data, checkedAt: new Date().toISOString(), source: 'remote+fallback' };
+    await put('codebookCache', record);
+    return { updated: false, data, meta: record };
   }
-  const candidate = { id: 'candidate', data, source: 'remote', hash, version: String(data.version || data._version || 'unknown'), updatedAt: data.updatedAt || '', checkedAt: new Date().toISOString() };
+  const candidate = { id: 'candidate', data, source: 'remote+fallback', hash, version: String(data.version || data._version || 'unknown'), updatedAt: data.updatedAt || '', checkedAt: new Date().toISOString() };
   await activateCodebook(candidate);
   return { updated: true, data, meta: candidate };
 }
