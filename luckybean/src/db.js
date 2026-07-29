@@ -12,22 +12,53 @@ function requestToPromise(request) {
   });
 }
 
+function keyPathForStore(name) {
+  if (['settings', 'codebookCache', 'syncMetadata'].includes(name)) return 'id';
+  if (name === 'customCodes') return 'code';
+  return 'id';
+}
+
+function createMissingStores(db) {
+  for (const name of STORES) {
+    if (!db.objectStoreNames.contains(name)) db.createObjectStore(name, { keyPath: keyPathForStore(name) });
+  }
+}
+
+function missingStores(db) {
+  return STORES.filter(name => !db.objectStoreNames.contains(name));
+}
+
+function attachVersionChangeHandler(db) {
+  db.onversionchange = () => db.close();
+  return db;
+}
+
+function openDatabase(version) {
+  return new Promise((resolve, reject) => {
+    const request = version == null ? indexedDB.open(DB_NAME) : indexedDB.open(DB_NAME, version);
+    request.onupgradeneeded = () => createMissingStores(request.result);
+    request.onsuccess = () => resolve(attachVersionChangeHandler(request.result));
+    request.onerror = () => reject(request.error || new Error('数据库打开失败'));
+    request.onblocked = () => reject(new Error('数据库升级被其他页面占用，请关闭其他富贵盒子页面后重试'));
+  });
+}
+
 export function openDb() {
   if (dbPromise) return dbPromise;
-  dbPromise = new Promise((resolve, reject) => {
-    if (!globalThis.indexedDB) return reject(new Error('当前浏览器不支持 IndexedDB'));
-    const request = indexedDB.open(DB_NAME, SCHEMA_VERSION);
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      for (const name of STORES) {
-        if (!db.objectStoreNames.contains(name)) {
-          const keyPath = ['settings', 'codebookCache', 'syncMetadata'].includes(name) ? 'id' : (name === 'customCodes' ? 'code' : 'id');
-          db.createObjectStore(name, { keyPath });
-        }
-      }
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error || new Error('数据库打开失败'));
+  dbPromise = (async () => {
+    if (!globalThis.indexedDB) throw new Error('当前浏览器不支持 IndexedDB');
+
+    const current = await openDatabase();
+    const missing = missingStores(current);
+
+    if (current.version >= SCHEMA_VERSION && missing.length === 0) return current;
+
+    const targetVersion = Math.max(SCHEMA_VERSION, current.version + (missing.length ? 1 : 0));
+    current.close();
+    return openDatabase(targetVersion);
+  })().catch(error => {
+    dbPromise = undefined;
+    throw error;
   });
   return dbPromise;
 }

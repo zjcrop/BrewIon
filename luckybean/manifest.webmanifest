@@ -1,6 +1,6 @@
 {
-  "name": "富贵盒子 Lucky Bean",
-  "short_name": "富贵盒子",
+  "name": "富贵盒子 0.9 Beta",
+  "short_name": "富贵盒子β",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -8,6 +8,12 @@
   "theme_color": "#080909",
   "lang": "zh-CN",
   "icons": [
-    { "src": "./public/app-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
-  ]
+    {
+      "src": "./public/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "description": "富贵盒子 0.9：咖啡豆管理、专业冲煮计算、品鉴与器具库存"
 }

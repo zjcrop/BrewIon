@@ -1,7 +1,7 @@
-const CACHE_NAME = 'luckybean-v0.7.0';
+const CACHE_NAME = 'luckybean-v0.9.1';
 const CORE = [
   './', './index.html', './styles.css', './manifest.webmanifest',
-  './src/app.js', './src/utils.js', './src/db.js', './src/codebook.js', './src/qr.js', './src/brew-engine.js',
+  './src/app.js', './src/utils.js', './src/brew-model-v09.js', './src/db.js', './src/codebook.js', './src/qr.js', './src/water-profiles.js', './src/preference-model.js', './src/share-codec.js', './src/brew-engine.js',
   './public/fallback-codebook.json', './public/legacy-flavor-map.json', './public/app-icon.svg'
 ];
 
@@ -20,7 +20,10 @@ self.addEventListener('fetch', event => {
     return;
   }
   if (url.origin === self.location.origin) {
-    event.respondWith(caches.match(request).then(cached => cached || fetch(request).then(response => { if (response.ok) { const copy = response.clone(); caches.open(CACHE_NAME).then(cache => cache.put(request, copy)); } return response; })));
+    event.respondWith(fetch(request).then(response => {
+      if (response.ok) { const copy = response.clone(); caches.open(CACHE_NAME).then(cache => cache.put(request, copy)); }
+      return response;
+    }).catch(() => caches.match(request)));
     return;
   }
   if (url.hostname === 'cdn.jsdelivr.net') {

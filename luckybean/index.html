@@ -39,7 +39,6 @@
           <div><h1 id="titleBeans" class="page-seal">豆藏</h1></div>
           <div class="top-controls">
             <button class="small-control" id="groupBtn" type="button">分组</button>
-            <button class="small-control" id="filterSummaryBtn" type="button">筛选</button>
             <button class="small-control" id="manageBtn" type="button">管理</button>
           </div>
         </div>
@@ -48,28 +47,26 @@
       </section>
 
       <section id="pageBrew" class="page" data-page="brew" aria-labelledby="titleBrew">
-        <div class="page-heading"><div><h1 id="titleBrew" class="page-seal">拾味</h1></div></div>
+        <div class="page-heading brew-page-heading"><div><h1 id="titleBrew" class="page-seal">拾味</h1></div><div id="brewHeadingBean" class="brew-heading-bean"></div></div>
         <div id="brewContent"></div>
       </section>
 
       <section id="pageSensory" class="page" data-page="sensory" aria-labelledby="titleSensory">
-        <div class="page-heading"><div><h1 id="titleSensory" class="page-seal">品鉴</h1></div></div>
+        <div class="page-heading centered-page-heading"><div><h1 id="titleSensory" class="page-seal">品鉴</h1></div></div>
         <div id="sensoryContent"></div>
       </section>
 
       <section id="pageSettings" class="page" data-page="settings" aria-labelledby="titleSettings">
-        <div class="page-heading"><div><h1 id="titleSettings" class="page-seal">器设</h1></div></div>
+        <div class="page-heading centered-page-heading"><div><h1 id="titleSettings" class="page-seal">器设</h1></div></div>
         <div id="settingsContent"></div>
       </section>
     </main>
 
-    <div id="fabWrap" class="fab-wrap" aria-label="豆藏快捷操作">
-      <button id="fabSearchBtn" class="fab small-fab" type="button" aria-label="搜索豆卡">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5 21 21"></path></svg>
-      </button>
-      <button id="fabRecommendBtn" class="fab small-fab text-fab" type="button" aria-label="推荐豆卡">荐</button>
-      <button id="fabHistoryBtn" class="fab small-fab text-fab" type="button" aria-label="打开诹吉">诹吉</button>
-      <button id="fabAddBtn" class="fab add-fab" type="button" aria-label="新增豆卡">添</button>
+    <div id="fabWrap" class="fab-wrap action-grid" aria-label="豆藏快捷操作">
+      <button id="fabSearchBtn" class="fab text-fab" type="button" aria-label="寻找豆卡">寻</button>
+      <button id="fabAddBtn" class="fab text-fab" type="button" aria-label="新增豆卡">添</button>
+      <button id="fabHistoryBtn" class="fab text-fab" type="button" aria-label="撷取往昔记录">撷</button>
+      <button id="fabRecommendBtn" class="fab text-fab" type="button" aria-label="选择推荐豆卡">择</button>
     </div>
 
     <nav id="bottomNav" class="bottom-nav" aria-label="主页面">
