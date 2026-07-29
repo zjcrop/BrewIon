@@ -12,22 +12,57 @@ function requestToPromise(request) {
   });
 }
 
+function keyPathForStore(name) {
+  if (['settings', 'codebookCache', 'syncMetadata'].includes(name)) return 'id';
+  if (name === 'customCodes') return 'code';
+  return 'id';
+}
+
+function createMissingStores(db) {
+  for (const name of STORES) {
+    if (!db.objectStoreNames.contains(name)) db.createObjectStore(name, { keyPath: keyPathForStore(name) });
+  }
+}
+
+function missingStores(db) {
+  return STORES.filter(name => !db.objectStoreNames.contains(name));
+}
+
+function attachVersionChangeHandler(db) {
+  db.onversionchange = () => db.close();
+  return db;
+}
+
+function openDatabase(version) {
+  return new Promise((resolve, reject) => {
+    const request = version == null ? indexedDB.open(DB_NAME) : indexedDB.open(DB_NAME, version);
+    request.onupgradeneeded = () => createMissingStores(request.result);
+    request.onsuccess = () => resolve(attachVersionChangeHandler(request.result));
+    request.onerror = () => reject(request.error || new Error('数据库打开失败'));
+    request.onblocked = () => reject(new Error('数据库升级被其他页面占用，请关闭其他富贵盒子页面后重试'));
+  });
+}
+
 export function openDb() {
   if (dbPromise) return dbPromise;
-  dbPromise = new Promise((resolve, reject) => {
-    if (!globalThis.indexedDB) return reject(new Error('当前浏览器不支持 IndexedDB'));
-    const request = indexedDB.open(DB_NAME, SCHEMA_VERSION);
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      for (const name of STORES) {
-        if (!db.objectStoreNames.contains(name)) {
-          const keyPath = ['settings', 'codebookCache', 'syncMetadata'].includes(name) ? 'id' : (name === 'customCodes' ? 'code' : 'id');
-          db.createObjectStore(name, { keyPath });
-        }
-      }
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error || new Error('数据库打开失败'));
+  dbPromise = (async () => {
+    if (!globalThis.indexedDB) throw new Error('当前浏览器不支持 IndexedDB');
+
+    // 先不指定版本打开，以兼容浏览器中已经被更高版本应用升级过的数据库。
+    // IndexedDB 不允许降级；直接 indexedDB.open(name, 较低版本) 会抛 VersionError。
+    const current = await openDatabase();
+    const missing = missingStores(current);
+
+    // 当前数据库版本不低于应用最低版本且表结构完整时，直接沿用现有数据库。
+    if (current.version >= SCHEMA_VERSION && missing.length === 0) return current;
+
+    // 仅允许向上迁移。若当前版本更高但缺表，则在现有版本基础上再升一级。
+    const targetVersion = Math.max(SCHEMA_VERSION, current.version + (missing.length ? 1 : 0));
+    current.close();
+    return openDatabase(targetVersion);
+  })().catch(error => {
+    dbPromise = undefined;
+    throw error;
   });
   return dbPromise;
 }
