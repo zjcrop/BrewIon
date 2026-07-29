@@ -1,51 +1,43 @@
 import { clamp } from './utils.js';
 
 const POSITIVE = Object.freeze({
-  '白花': .45, '茉莉': .55, '玫瑰': .40, '橙花': .45, '紫罗兰': .40, '洋甘菊': .30,
-  '柑橘': .35, '莓果': .40, '桃子': .35, '苹果': .25, '葡萄': .30, '热带水果': .40, '干果': .20,
-  '蜂蜜': .40, '蔗糖': .35, '红糖': .30, '焦糖': .25, '枫糖': .30, '糖浆': .20, '太妃糖': .25,
-  '顺滑': .60, '圆润': .45, '奶油感': .35, '轻盈': .25, '厚重': .20, '圆润舒适': .60,
-  '低': .20, '适中': .35, '高': .45, '微酸': .25
+  '白花': 1.2, '茉莉': 1.4, '玫瑰': 1.0, '橙花': 1.2, '紫罗兰': 1.0, '洋甘菊': 0.8,
+  '柑橘': 0.9, '莓果': 1.0, '桃子': 0.9, '苹果': 0.7, '葡萄': 0.8, '热带水果': 1.0, '干果': 0.5,
+  '蜂蜜': 0.9, '蔗糖': 0.8, '红糖': 0.7, '焦糖': 0.6, '枫糖': 0.7, '糖浆': 0.5, '太妃糖': 0.6,
+  '顺滑': 1.1, '圆润': 0.9, '奶油感': 0.7, '轻盈': 0.6, '厚重': 0.4, '圆润舒适': 1.1,
+  '低': 0.5, '适中': 0.8, '高': 0.9, '微酸': 0.7
+});
+const NEGATIVE = Object.freeze({
+  '尖锐': 2.5, '偏高': 1.8, '焦苦': 3.2, '干涩': 2.8, '收敛': 2.3,
+  '纸味': 3.0, '木质': 2.2, '土味': 3.2, '霉味': 5.0, '发酵过度': 3.5,
+  '药感': 3.4, '橡胶': 4.0, '金属感': 3.8, '醋酸': 1.8
 });
 
-// Defect penalties deliberately dominate positive descriptors. The structure follows
-// cupping practice: clean cup is assumed; taints/faults and harshness remove several
-// points at once instead of being offset by stacking positive aroma tags.
-const NEGATIVE = Object.freeze({
-  '尖锐': 4.0, '偏高': 3.0, '焦苦': 7.0, '干涩': 5.0, '收敛': 4.5,
-  '纸味': 5.0, '木质': 4.5, '土味': 6.5, '霉味': 11.0, '发酵过度': 7.0,
-  '药感': 9.0, '橡胶': 9.5, '金属感': 8.0, '醋酸': 6.0,
-  '焦糊': 8.0, '青草': 4.5, '脏杯': 10.0, '异味': 8.0
-});
 function flattenAnswers(answers = {}) {
   return Object.entries(answers).flatMap(([node, groups]) => Object.values(groups || {}).flat().map(value => ({ node, value: String(value) })));
 }
 
 export function computeAutomaticScore(answers = {}) {
   const values = flattenAnswers(answers);
-  let score = 80;
-  const completedNodes = new Set(values.map(item => item.node));
-  score += Math.min(2.5, completedNodes.size * .2);
-  let positiveTotal = 0;
-  let defectPenalty = 0;
+  let score = 78;
+  const uniqueNodes = new Set(values.map(item => item.node));
+  score += Math.min(5, uniqueNodes.size * 0.35);
   for (const { node, value } of values) {
     if (value === '无') {
-      if (node === 'negative') score += 1.0;
-      if (node === 'bitter') score += .3;
+      if (node === 'negative') score += 2.4;
+      if (node === 'bitter') score += 1.0;
       continue;
     }
-    positiveTotal += POSITIVE[value] || 0;
-    defectPenalty += NEGATIVE[value] || 0;
-    if (node === 'bitter' && value === '高') defectPenalty += 4;
-    if (node === 'bitter' && value === '适中') defectPenalty += 1.5;
-    if (node === 'mouthfeel' && /粗糙|干涩|收敛/.test(value)) defectPenalty += 2.5;
-    if (node === 'acid' && /尖锐|醋酸/.test(value)) defectPenalty += 2.0;
+    score += POSITIVE[value] || 0;
+    score -= NEGATIVE[value] || 0;
+    if (node === 'floral' || node === 'fruit') score += 0.35;
+    if (node === 'sweet' && value === '高') score += 1.1;
+    if (node === 'acid' && value === '圆润舒适') score += 1.4;
+    if (node === 'bitter' && value === '低') score += 0.7;
   }
-  // Positive descriptors are capped; defects remain uncapped within the final range.
-  score += Math.min(5, positiveTotal);
-  score -= defectPenalty;
-  if (!values.some(({ value }) => NEGATIVE[value])) score += 1.5;
-  return Number(clamp(score, 45, 94).toFixed(1));
+  const negativeCount = values.filter(({ value }) => NEGATIVE[value]).length;
+  if (!negativeCount) score += 1.5;
+  return Number(clamp(score, 50, 96).toFixed(1));
 }
 
 export function sensoryPreferenceTags(record = {}, bean = {}) {

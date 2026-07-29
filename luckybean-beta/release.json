@@ -1,9 +1,9 @@
 {
   "name": "Lucky Bean Web Beta",
-  "version": "0.9.0-beta.1",
+  "version": "0.8.0-beta.1",
   "source_repository": "zjcrop/luckybean",
-  "source_branch": "beta/v0.9.0",
-  "source_sha": "4550d4c4461a0b12d70c4256b367c05a62a959d7",
-  "published_at": "2026-07-28T17:48:38Z",
+  "source_branch": "beta/v0.8.0",
+  "source_sha": "df1113436a72f4f3025e777d977ea5077dfe8825",
+  "published_at": "2026-07-29T02:06:31Z",
   "url": "https://zjcrop.github.io/BrewIon/luckybean-beta/"
 }

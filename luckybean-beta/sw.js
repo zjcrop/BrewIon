@@ -1,7 +1,7 @@
-const CACHE_NAME = 'luckybean-v0.9.0-beta.1';
+const CACHE_NAME = 'luckybean-v0.8.0-beta.1';
 const CORE = [
   './', './index.html', './styles.css', './manifest.webmanifest',
-  './src/app.js', './src/utils.js', './src/brew-model-v09.js', './src/db.js', './src/codebook.js', './src/qr.js', './src/water-profiles.js', './src/preference-model.js', './src/share-codec.js', './src/brew-engine.js',
+  './src/app.js', './src/utils.js', './src/db.js', './src/codebook.js', './src/qr.js', './src/water-profiles.js', './src/preference-model.js', './src/share-codec.js', './src/brew-engine.js',
   './public/fallback-codebook.json', './public/legacy-flavor-map.json', './public/app-icon.svg'
 ];
 
