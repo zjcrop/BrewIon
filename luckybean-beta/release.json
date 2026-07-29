@@ -1,9 +1,11 @@
 {
   "name": "Lucky Bean Web Beta",
   "version": "0.8.0-beta.1",
+  "patch": "indexeddb-rollback-safe-1",
   "source_repository": "zjcrop/luckybean",
   "source_branch": "beta/v0.8.0",
-  "source_sha": "df1113436a72f4f3025e777d977ea5077dfe8825",
-  "published_at": "2026-07-29T02:06:31Z",
+  "source_sha": "214e4366eda9282bb709a6e1a17b64a042b4fd1d",
+  "indexeddb_schema_floor": 6,
+  "published_at": "2026-07-29T07:25:00Z",
   "url": "https://zjcrop.github.io/BrewIon/luckybean-beta/"
 }
