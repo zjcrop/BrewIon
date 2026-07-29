@@ -1,0 +1,15 @@
+{
+  "checked_at": "2026-07-29T07:52:11.222388+00:00",
+  "url": "https://zjcrop.github.io/BrewIon/luckybean/",
+  "expected_version": "0.9.1",
+  "expected_source_sha": "8525388f5b9dcd15d9aa6cf7c407a0a44fbd4291",
+  "index_http": "200",
+  "app_js_http": "200",
+  "codebook_js_http": "200",
+  "codebook_http": "200",
+  "release_http": "200",
+  "release_version": "0.9.1",
+  "release_source_sha": "8525388f5b9dcd15d9aa6cf7c407a0a44fbd4291",
+  "title_found": true,
+  "site_verified": true
+}
