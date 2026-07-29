@@ -33,6 +33,13 @@ jobs:
           ref: beta/v0.8.0
           path: _luckybean_beta
 
+      - name: Capture source metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "EXPECTED_SOURCE_SHA=$(git -C _luckybean_beta rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "EXPECTED_VERSION=$(node -p \"require('./_luckybean_beta/package.json').version\")" >> "$GITHUB_ENV"
+
       - name: Validate Beta source
         working-directory: _luckybean_beta
         shell: bash
@@ -44,11 +51,16 @@ jobs:
           test -s index.html
           test -s styles.css
           test -s src/app.js
+          test -s src/db.js
+          test -s src/utils.js
           test -s src/brew-engine.js
           test -s src/water-profiles.js
           test -s src/preference-model.js
           test -s src/share-codec.js
           test -s public/fallback-codebook.json
+          grep -q 'SCHEMA_VERSION = 6' src/utils.js
+          grep -q 'current.version >= SCHEMA_VERSION' src/db.js
+          grep -q 'luckybean-v0.8.0-beta.1-dbfix1' sw.js
           grep -q 'lucky-brew-compat-0.8.0-beta' src/brew-engine.js
           grep -q 'brew-water-2.7-compat-0.8.0-beta' src/water-profiles.js
           grep -q 'LB8' src/share-codec.js
@@ -67,22 +79,20 @@ jobs:
           cp -R _luckybean_beta/src luckybean-beta/
           cp -R _luckybean_beta/public luckybean-beta/
           touch luckybean-beta/.nojekyll
-          source_sha="$(git -C _luckybean_beta rev-parse HEAD)"
-          version="$(node -p "require('./_luckybean_beta/package.json').version")"
           cat > luckybean-beta/release.json <<EOF
           {
             "name": "Lucky Bean Web Beta",
-            "version": "$version",
+            "version": "$EXPECTED_VERSION",
             "source_repository": "zjcrop/luckybean",
             "source_branch": "beta/v0.8.0",
-            "source_sha": "$source_sha",
+            "source_sha": "$EXPECTED_SOURCE_SHA",
             "published_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "url": "https://zjcrop.github.io/BrewIon/luckybean-beta/"
           }
           EOF
           rm -rf _luckybean_beta
 
-      - name: Commit verified Beta rollback release
+      - name: Commit verified Beta compatibility release
         shell: bash
         run: |
           set -euo pipefail
@@ -90,7 +100,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add luckybean-beta
           if ! git diff --cached --quiet; then
-            git commit -m 'fix: rollback Lucky Bean web beta to v0.8.0-beta.1'
+            git commit -m 'fix: publish Lucky Bean beta IndexedDB compatibility patch'
             git push origin HEAD:main
           fi
 
@@ -100,11 +110,14 @@ jobs:
         run: |
           set -euo pipefail
           base='https://zjcrop.github.io/BrewIon/luckybean-beta/'
-          expected_version='0.8.0-beta.1'
-          expected_source_sha='df1113436a72f4f3025e777d977ea5077dfe8825'
+          expected_version="$EXPECTED_VERSION"
+          expected_source_sha="$EXPECTED_SOURCE_SHA"
           ok='false'
           index_code='000'
           app_code='000'
+          db_code='000'
+          utils_code='000'
+          sw_code='000'
           engine_code='000'
           water_code='000'
           preference_code='000'
@@ -117,6 +130,9 @@ jobs:
             nonce="$(date +%s)-$attempt"
             index_code="$(curl -L -sS -o /tmp/lb-beta-index.html -w '%{http_code}' --max-time 20 "${base}?v=${nonce}" || true)"
             app_code="$(curl -L -sS -o /tmp/lb-beta-app.js -w '%{http_code}' --max-time 20 "${base}src/app.js?v=${nonce}" || true)"
+            db_code="$(curl -L -sS -o /tmp/lb-beta-db.js -w '%{http_code}' --max-time 20 "${base}src/db.js?v=${nonce}" || true)"
+            utils_code="$(curl -L -sS -o /tmp/lb-beta-utils.js -w '%{http_code}' --max-time 20 "${base}src/utils.js?v=${nonce}" || true)"
+            sw_code="$(curl -L -sS -o /tmp/lb-beta-sw.js -w '%{http_code}' --max-time 20 "${base}sw.js?v=${nonce}" || true)"
             engine_code="$(curl -L -sS -o /tmp/lb-beta-engine.js -w '%{http_code}' --max-time 20 "${base}src/brew-engine.js?v=${nonce}" || true)"
             water_code="$(curl -L -sS -o /tmp/lb-beta-water.js -w '%{http_code}' --max-time 20 "${base}src/water-profiles.js?v=${nonce}" || true)"
             preference_code="$(curl -L -sS -o /tmp/lb-beta-preference.js -w '%{http_code}' --max-time 20 "${base}src/preference-model.js?v=${nonce}" || true)"
@@ -127,10 +143,12 @@ jobs:
               release_version="$(python -c "import json; print(json.load(open('/tmp/lb-beta-release.json')).get('version',''))" 2>/dev/null || true)"
               release_source_sha="$(python -c "import json; print(json.load(open('/tmp/lb-beta-release.json')).get('source_sha',''))" 2>/dev/null || true)"
             fi
-            if [[ "$index_code" == '200' && "$app_code" == '200' && "$engine_code" == '200' && "$water_code" == '200' && "$preference_code" == '200' && "$share_code" == '200' && "$data_code" == '200' && "$release_code" == '200' ]] \
+            if [[ "$index_code" == '200' && "$app_code" == '200' && "$db_code" == '200' && "$utils_code" == '200' && "$sw_code" == '200' && "$engine_code" == '200' && "$water_code" == '200' && "$preference_code" == '200' && "$share_code" == '200' && "$data_code" == '200' && "$release_code" == '200' ]] \
               && grep -q '<title>富贵盒子' /tmp/lb-beta-index.html \
               && grep -q '拾味' /tmp/lb-beta-index.html \
-              && grep -q '撷' /tmp/lb-beta-index.html \
+              && grep -q 'current.version >= SCHEMA_VERSION' /tmp/lb-beta-db.js \
+              && grep -q 'SCHEMA_VERSION = 6' /tmp/lb-beta-utils.js \
+              && grep -q 'luckybean-v0.8.0-beta.1-dbfix1' /tmp/lb-beta-sw.js \
               && grep -q 'lucky-brew-compat-0.8.0-beta' /tmp/lb-beta-engine.js \
               && grep -q 'brew-water-2.7-compat-0.8.0-beta' /tmp/lb-beta-water.js \
               && grep -q 'LB8' /tmp/lb-beta-share.js \
@@ -141,7 +159,7 @@ jobs:
             fi
             sleep 10
           done
-          export base expected_version expected_source_sha ok index_code app_code engine_code water_code preference_code share_code data_code release_code release_version release_source_sha
+          export base expected_version expected_source_sha ok index_code app_code db_code utils_code sw_code engine_code water_code preference_code share_code data_code release_code release_version release_source_sha
           python - <<'PY'
           import json, os
           from datetime import datetime, timezone
@@ -152,6 +170,9 @@ jobs:
               'expected_source_sha': os.environ['expected_source_sha'],
               'index_http': os.environ['index_code'],
               'app_js_http': os.environ['app_code'],
+              'db_js_http': os.environ['db_code'],
+              'utils_js_http': os.environ['utils_code'],
+              'service_worker_http': os.environ['sw_code'],
               'brew_engine_http': os.environ['engine_code'],
               'water_profiles_http': os.environ['water_code'],
               'preference_model_http': os.environ['preference_code'],
@@ -160,6 +181,8 @@ jobs:
               'release_http': os.environ['release_code'],
               'release_version': os.environ['release_version'],
               'release_source_sha': os.environ['release_source_sha'],
+              'indexeddb_schema_floor': 6,
+              'rollback_safe_open': True,
               'site_verified': os.environ['ok'] == 'true',
           }
           with open('luckybean-beta/deployment-status.json', 'w', encoding='utf-8') as fh:
@@ -177,6 +200,6 @@ jobs:
           git pull --rebase origin main
           git add luckybean-beta/deployment-status.json
           if ! git diff --cached --quiet; then
-            git commit -m 'chore: record Lucky Bean beta rollback status [skip ci]'
+            git commit -m 'chore: record Lucky Bean beta compatibility status [skip ci]'
             git push origin HEAD:main
           fi
