@@ -1,4 +1,4 @@
-const CACHE_NAME = 'luckybean-v0.8.0-beta.1';
+const CACHE_NAME = 'luckybean-v0.8.0-beta.1-dbfix1';
 const CORE = [
   './', './index.html', './styles.css', './manifest.webmanifest',
   './src/app.js', './src/utils.js', './src/db.js', './src/codebook.js', './src/qr.js', './src/water-profiles.js', './src/preference-model.js', './src/share-codec.js', './src/brew-engine.js',
@@ -20,7 +20,11 @@ self.addEventListener('fetch', event => {
     return;
   }
   if (url.origin === self.location.origin) {
-    event.respondWith(caches.match(request).then(cached => cached || fetch(request).then(response => { if (response.ok) { const copy = response.clone(); caches.open(CACHE_NAME).then(cache => cache.put(request, copy)); } return response; })));
+    // Beta 采用网络优先，避免同一版本号下的紧急修复继续被旧 JS 缓存覆盖；离线时再回退缓存。
+    event.respondWith(fetch(request).then(response => {
+      if (response.ok) { const copy = response.clone(); caches.open(CACHE_NAME).then(cache => cache.put(request, copy)); }
+      return response;
+    }).catch(() => caches.match(request)));
     return;
   }
   if (url.hostname === 'cdn.jsdelivr.net') {
