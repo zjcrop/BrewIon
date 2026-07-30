@@ -642,3 +642,92 @@ input[type="checkbox"] { accent-color: var(--active); }
 .sensory-title-centered p { margin:8px 0 0; text-align:center; }
 .sensory-title-centered .button { align-self:flex-start; }
 .sensory-navigation { margin-top:26px; }
+
+
+/* v0.9.2 — 居中题注、荐榜、择豆动画、轨迹配色与分差滑轮 */
+.page-heading.centered-page-heading { position: relative; justify-content: flex-end; }
+.page-heading.centered-page-heading .page-seal-slot,
+.page-heading.centered-page-heading > div:first-child {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+.beans-page-heading .top-controls, .brew-page-heading .brew-heading-bean { position: relative; z-index: 2; max-width: 42%; }
+
+.preference-board-strip { display: grid; grid-template-columns: 54px minmax(0,1fr); align-items: center; gap: 12px; width: 100%; }
+.preference-board-title { appearance:none; border:0; background:transparent; color:var(--text); text-align:left; font-family:FangSong,STFangsong,serif; font-size:30px; line-height:1; padding:6px 0; }
+.preference-board-top3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; min-width:0; }
+.preference-board-top3 button { min-width:0; border:0; background:transparent; color:var(--clickable); padding:4px 6px; text-align:center; }
+.preference-board-top3 small { display:block; color:var(--active); font-size:11px; }
+.preference-board-top3 span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+.recommendation-board.top-three { grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.recommendation-board.top-three button { min-width:0; }
+.recommendation-board.top-three strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.recommendation-all-groups { display:grid; gap:24px; }
+.recommendation-group { animation:recommendGroupUnfold .22s ease-out both; animation-delay:calc(var(--group-order,0) * 35ms); }
+.vertical-recommendation-grid { grid-template-columns:1fr; gap:12px; }
+.group-collapse-zone { width:100%; min-height:96px; display:flex; align-items:flex-start; justify-content:center; padding:12px 0 56px; cursor:pointer; }
+.group-collapse-zone .group-collapse { pointer-events:none; }
+@keyframes recommendGroupUnfold { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
+.bean-card.recommend-step { animation:recommendLocate .8s cubic-bezier(.2,.72,.25,1); }
+@keyframes recommendLocate {
+  0% { transform:translateY(-5px); }
+  48% { transform:translateY(0); }
+  58% { transform:translateX(-4px); }
+  66% { transform:translateX(4px); }
+  74% { transform:translateX(-2px); }
+  82% { transform:translateX(2px); }
+  100% { transform:translateX(0); }
+}
+
+.trajectory-series.temperature { stroke:#ffd928 !important; }
+.trajectory-series.flow { stroke:#8fd3ff !important; }
+.trajectory-series.water { stroke:#30e3d2 !important; }
+.trajectory-series.floral { stroke:#f2ead7 !important; }
+.trajectory-series.acidity { stroke:#f3a04b !important; }
+.trajectory-series.sweetness { stroke:#75b96b !important; }
+.trajectory-series.risk { stroke:#ff5a52 !important; stroke-dasharray:9 6 !important; }
+.trajectory-legend .temperature::before { background:#ffd928 !important; }
+.trajectory-legend .flow::before { background:#8fd3ff !important; }
+.trajectory-legend .water::before { background:#30e3d2 !important; }
+.trajectory-legend .floral::before { background:#f2ead7 !important; }
+.trajectory-legend .acidity::before { background:#f3a04b !important; }
+.trajectory-legend .sweetness::before { background:#75b96b !important; }
+.trajectory-legend .risk::before { background:#ff5a52 !important; }
+.trajectory-peak rect { opacity:.20; stroke-width:1; }
+.trajectory-peak text { font-size:10px; font-weight:650; }
+.trajectory-peak.floral rect { fill:#f2ead7; stroke:#f2ead7; } .trajectory-peak.floral text { fill:#f2ead7; }
+.trajectory-peak.sweetness rect { fill:#75b96b; stroke:#75b96b; } .trajectory-peak.sweetness text { fill:#9bd494; }
+.trajectory-peak.acidity rect { fill:#f3a04b; stroke:#f3a04b; } .trajectory-peak.acidity text { fill:#ffc17d; }
+.trajectory-peak.fruit rect { fill:#d98abf; stroke:#d98abf; } .trajectory-peak.fruit text { fill:#efb6d9; }
+.trajectory-peak.bitter rect { fill:#d95a4e; stroke:#d95a4e; } .trajectory-peak.bitter text { fill:#ff8b80; }
+.trajectory-peak.astringency rect { fill:#9f3b3b; stroke:#9f3b3b; } .trajectory-peak.astringency text { fill:#d97878; }
+
+.consume-filter { margin:-8px 0 18px; text-align:center; color:var(--muted); font-size:13px; }
+.score-comparison.delta-only { display:grid; grid-template-columns:minmax(0,1fr) minmax(150px,.8fr); align-items:center; gap:20px; }
+.automatic-score { display:grid; gap:5px; text-align:center; }
+.automatic-score strong { font-size:42px; }
+.automatic-score small { color:var(--muted); }
+.subjective-delta-control { display:grid; grid-template-columns:minmax(0,1fr) 38px; align-items:center; gap:10px; min-height:190px; }
+.subjective-delta-copy { display:grid; gap:6px; text-align:center; }
+.subjective-delta-copy strong { font-size:32px; }
+.subjective-delta-copy small { color:var(--muted); }
+.subjective-delta-wheel { width:34px; height:176px; writing-mode:vertical-lr; direction:rtl; accent-color:var(--active); cursor:ns-resize; }
+.score-comparison.delta-only > p { grid-column:1/-1; text-align:center; }
+
+.settings-category > summary { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:4px; }
+.settings-category > summary > span { width:100%; text-align:center; font-size:20px; }
+.settings-category > summary > small { display:block; width:100%; text-align:center; margin:0; }
+
+@media (max-width:640px) {
+  .beans-page-heading .top-controls, .brew-page-heading .brew-heading-bean { max-width:36%; }
+  .preference-board-strip { grid-template-columns:44px minmax(0,1fr); }
+  .preference-board-title { font-size:27px; }
+  .preference-board-top3 { gap:3px; }
+  .preference-board-top3 button { padding-inline:2px; }
+  .recommendation-board.top-three { grid-template-columns:1fr; }
+  .score-comparison.delta-only { grid-template-columns:1fr minmax(140px,.75fr); }
+}

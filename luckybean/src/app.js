@@ -63,7 +63,7 @@ const state = {
   recommendedBeanId: null, currentPlan: null, currentBrewInput: null,
   beanFormSource: null, beanFormDraft: null, cameraScanner: null,
   timer: { interval: null, paused: false, stageIndex: 0, remaining: 0 },
-  activeGroupKey: null, groupAnimationMode: 'manual', recommendationTimer: null, recommendationRun: false, preferenceBoardOpen: false, settingsFocusFilterId: '',
+  activeGroupKey: null, groupAnimationMode: 'manual', recommendationTimer: null, recommendationRun: false, recommendationExpandedAll: false, recommendationPromptMemory: {}, preferenceBoardOpen: false, settingsFocusFilterId: '',
   evaluation: null, sensoryHistoryOpen: false, sensoryFilter: { beanId: '', minScore: '', maxScore: '', start: '', end: '', expanded: false }
 };
 
@@ -380,12 +380,37 @@ function trajectorySvg(plan) {
   const data = model.points;
   const width = 720, height = 330, left = 42, right = 18, top = 24, bottom = 38;
   const plotW = width - left - right, plotH = height - top - bottom;
-  const xy = (point, key) => ({ x: left + clamp(point.x, 0, 1) * plotW, y: top + (1 - clamp(point[key], 0, 1)) * plotH });
+  const valueFor = (point, key) => {
+    if (Number.isFinite(Number(point[key]))) return clamp(Number(point[key]), 0, 1);
+    if (key === 'fruit') return clamp((Number(point.floral || 0) * .42) + (Number(point.acidity || 0) * .58), 0, 1);
+    if (key === 'bitter') return clamp(Number(point.bitterRisk || 0), 0, 1);
+    if (key === 'astringency') return clamp(Number(point.astringency ?? point.bitterRisk ?? 0) * .82 + Number(point.flowN || 0) * .08, 0, 1);
+    return 0;
+  };
+  const xy = (point, key) => ({ x: left + clamp(point.x, 0, 1) * plotW, y: top + (1 - valueFor(point, key)) * plotH });
   const line = key => data.map((point, index) => { const pos = xy(point, key); return `${index ? 'L' : 'M'}${pos.x.toFixed(1)},${pos.y.toFixed(1)}`; }).join(' ');
   const windows = (model.windows || []).map(window => {
     const x = left + clamp(window.start, 0, 1) * plotW;
     const w = Math.max(0, clamp(window.end, 0, 1) - clamp(window.start, 0, 1)) * plotW;
     return `<g class="trajectory-window ${window.kind === 'risk' ? 'risk' : 'positive'}"><rect x="${x.toFixed(1)}" y="${top}" width="${w.toFixed(1)}" height="${plotH}" rx="6"></rect><text x="${(x+6).toFixed(1)}" y="${top+15}">${esc(window.label)}</text></g>`;
+  }).join('');
+  const peakDefinitions = [
+    ['floral', '花香', 'floral'], ['sweetness', '甜', 'sweetness'], ['acidity', '酸', 'acidity'],
+    ['fruit', '果香', 'fruit'], ['bitter', '苦', 'bitter'], ['astringency', '涩', 'astringency']
+  ];
+  const peakBlocks = peakDefinitions.map(([key, label, className]) => {
+    let peak = data[0], peakValue = -1;
+    for (const point of data) {
+      const value = valueFor(point, key);
+      if (value > peakValue) { peak = point; peakValue = value; }
+    }
+    const center = clamp(Number(peak?.x || 0), 0, 1);
+    const start = clamp(center - .055, 0, 1);
+    const end = clamp(center + .055, 0, 1);
+    const x = left + start * plotW;
+    const w = Math.max(18, (end - start) * plotW);
+    const y = top + (1 - clamp(peakValue, 0, 1)) * plotH;
+    return `<g class="trajectory-peak ${className}"><rect x="${x.toFixed(1)}" y="${Math.max(top, y-18).toFixed(1)}" width="${w.toFixed(1)}" height="${Math.min(34, height-bottom-Math.max(top,y-18)).toFixed(1)}" rx="5"></rect><text x="${(x+w/2).toFixed(1)}" y="${Math.max(top+12,y-5).toFixed(1)}" text-anchor="middle">${label}</text></g>`;
   }).join('');
   const phases = (model.phases || []).map(phase => {
     const x = left + clamp(phase.start, 0, 1) * plotW;
@@ -393,7 +418,7 @@ function trajectorySvg(plan) {
   }).join('');
   const grid = [0,.25,.5,.75,1].map(value => { const y = top + (1-value)*plotH; return `<line class="trajectory-grid" x1="${left}" y1="${y}" x2="${width-right}" y2="${y}"></line><text class="trajectory-tick" x="${left-8}" y="${y+4}" text-anchor="end">${Math.round(value*100)}</text>`; }).join('');
   return `<div class="trajectory-shell"><svg class="trajectory-chart detailed" viewBox="0 0 ${width} ${height}" role="img" aria-label="冲煮温度、流量、累计水量和风味窗口拟合图">
-    ${windows}${grid}${phases}
+    ${windows}${peakBlocks}${grid}${phases}
     <path class="trajectory-series temperature" d="${line('temperatureN')}"></path>
     <path class="trajectory-series flow" d="${line('flowN')}"></path>
     <path class="trajectory-series water" d="${line('cumulativeN')}"></path>
@@ -481,7 +506,7 @@ function groupCardHtml(label, items) {
   return `<button class="group-card" type="button" data-open-group="${esc(label)}"><span>${esc(label)}</span><small>${items.length}只 · ${totalWeight.toFixed(1)}g</small></button>`;
 }
 
-function recommendationLeaderboardRows(limit = 6) {
+function recommendationLeaderboardRows(limit = 3) {
   const model = currentPreferenceModel();
   return state.beans.filter(bean => !bean.archived && Number(bean.remainingWeight) > 0)
     .map(bean => ({ bean, score: model.beanStats.get(bean.id)?.preferenceScore || 0, sensory: scoreForBean(bean.id) }))
@@ -489,18 +514,19 @@ function recommendationLeaderboardRows(limit = 6) {
     .slice(0, limit);
 }
 
+const LEADERBOARD_RANKS = ['魁首', '榜眼', '探花'];
 function recommendationLeaderboardHtml() {
   const rows = recommendationLeaderboardRows(3);
   if (!state.sensoryRecords.length || !rows.length) return '';
-  return `<button class="preference-board-line" type="button" data-open-recommend-board><span>榜</span>${rows.map((row, index) => `<span>${index + 1}. ${esc(beanDisplayName(row.bean))}</span>`).join('')}</button>`;
+  return `<div class="preference-board-strip"><button class="preference-board-title" type="button" data-open-recommend-board>榜</button><div class="preference-board-top3">${rows.map((row, index) => `<button type="button" data-board-bean="${esc(row.bean.id)}"><small>${LEADERBOARD_RANKS[index]}</small><span title="${esc(beanDisplayName(row.bean))}">${esc(beanDisplayName(row.bean))}</span></button>`).join('')}</div></div>`;
 }
 
 function openRecommendationLeaderboard() {
-  const rows = recommendationLeaderboardRows(50);
-  const content = `${dialogHeader('榜', '综合主观得分、自动分差与个人标签累计', { closable: false })}<div class="recommendation-board">${rows.length ? rows.map((row, index) => `<button type="button" data-board-bean="${esc(row.bean.id)}"><span>${index + 1}</span><strong>${esc(beanDisplayName(row.bean))}</strong><small>${row.score.toFixed(1)} · 品鉴${row.sensory ? row.sensory.toFixed(1) : '—'}</small></button>`).join('') : '<p class="muted">完成品鉴后生成个人榜。</p>'}</div><button class="bottom-return" type="button" data-close-overlay>退</button>`;
+  const rows = recommendationLeaderboardRows(3);
+  const content = `${dialogHeader('榜', '仅列个人荐榜前三名', { closable: false })}<div class="recommendation-board top-three">${rows.length ? rows.map((row, index) => `<button type="button" data-board-bean="${esc(row.bean.id)}"><span>${LEADERBOARD_RANKS[index]}</span><strong>${esc(beanDisplayName(row.bean))}</strong><small>${row.score.toFixed(1)} · 品鉴${row.sensory ? row.sensory.toFixed(1) : '—'}</small></button>`).join('') : '<p class="muted">完成品鉴后生成个人榜。</p>'}</div><button class="bottom-return" type="button" data-close-overlay>退</button>`;
   const overlay = showOverlay(content, { id: 'recommendation-board', backdropClose: true, dialogClass: 'bottom-sheet' });
   bindClose(overlay);
-  overlay.addEventListener('click', event => { const button = event.target.closest('[data-board-bean]'); if (!button) return; const bean = state.beans.find(item => item.id === button.dataset.boardBean); closeOverlay(); if (bean) focusRecommendedBean(bean, { openDetail: true }); });
+  overlay.addEventListener('click', event => { const button = event.target.closest('[data-board-bean]'); if (!button) return; const bean = state.beans.find(item => item.id === button.dataset.boardBean); closeOverlay(); if (bean) focusRecommendedBean(bean, { openDetail: true, duration: 800 }); });
 }
 
 function renderBeans() {
@@ -517,6 +543,7 @@ function renderBeans() {
   bar.innerHTML = filterParts.length ? `${filterParts.map(value => `<span class="tag">${esc(value)}</span>`).join('')}<button class="button subtle small" id="clearActiveFilters" type="button">清除</button>` : '';
   if (!beans.length) {
     state.activeGroupKey = null;
+    state.recommendationExpandedAll = false;
     container.innerHTML = `<div class="empty-state"><strong>没有符合条件的豆卡</strong><p>点击“添”录入，或从“寻”调整条件。</p></div>`;
     return;
   }
@@ -534,12 +561,16 @@ function renderBeans() {
     groups.get(key).push(bean);
   }
   if (state.activeGroupKey && !groups.has(state.activeGroupKey)) state.activeGroupKey = null;
+  if (state.recommendationExpandedAll) {
+    container.innerHTML = `${board}<div class="recommendation-all-groups" data-all-groups>${[...groups.entries()].map(([label, items], index) => `<section class="recommendation-group" style="--group-order:${index}"><div class="active-group-title"><span>${esc(label)}</span><small>${items.length}只</small></div><div class="bean-grid compact-grid vertical-recommendation-grid">${items.map(beanCardHtml).join('')}</div></section>`).join('')}<div class="group-collapse-zone" data-collapse-group><button class="group-collapse" type="button">收</button></div></div>`;
+    return;
+  }
   if (!state.activeGroupKey) {
     container.innerHTML = `${board}<div class="bean-grid compact-grid group-grid bean-grid-animated ${state.groupAnimationMode === 'auto' ? 'auto-motion' : 'manual-motion'}">${[...groups.entries()].map(([label, items]) => groupCardHtml(label, items)).join('')}</div>`;
     return;
   }
   const items = groups.get(state.activeGroupKey) || [];
-  container.innerHTML = `${board}<section class="active-group-panel ${state.groupAnimationMode === 'auto' ? 'auto-motion' : 'manual-motion'}" data-active-group-panel><div class="active-group-title"><span>${esc(state.activeGroupKey)}</span><small>${items.length}只</small></div><div class="bean-grid compact-grid">${items.map(beanCardHtml).join('')}</div><button class="group-collapse" type="button" data-collapse-group>收</button></section>`;
+  container.innerHTML = `${board}<section class="active-group-panel ${state.groupAnimationMode === 'auto' ? 'auto-motion' : 'manual-motion'}" data-active-group-panel><div class="active-group-title"><span>${esc(state.activeGroupKey)}</span><small>${items.length}只</small></div><div class="bean-grid compact-grid">${items.map(beanCardHtml).join('')}</div><div class="group-collapse-zone" data-collapse-group><button class="group-collapse" type="button">收</button></div></section>`;
 }
 
 function positionPopup(anchor, popup, { above = false } = {}) {
@@ -587,7 +618,7 @@ function openSearchDialog() {
       <div class="form-field"><label>国家</label><select id="searchCountry" class="control">${optionsHtml(countryRows, state.filter.country, 1, '全部现有国家')}</select></div>
       <div class="form-field"><label>豆种</label><select id="searchVariety" class="control">${optionsHtml(varietyRows, state.filter.variety, 1, '全部现有豆种')}</select></div>
       <div class="form-field"><label>处理法</label><select id="searchProcess" class="control">${optionsHtml(processRows, state.filter.process, 1, '全部现有处理法')}</select></div>
-      <div class="form-field"><label>排序</label><select id="searchSort" class="control">${[['recommended','推荐'],['freshness','赏味期'],['name','名称'],['roastDate','烘焙日期'],['remaining','剩余克重'],['price','价格'],['score','品鉴得分']].map(([value,label])=>`<option value="${value}"${state.filter.sort===value?' selected':''}>${label}</option>`).join('')}</select></div>
+      <div class="form-field"><label>排序</label><select id="searchSort" class="control">${[['recommended','推荐'],['freshness','赏味'],['name','名称'],['roastDate','烘焙日期'],['remaining','剩余克重'],['price','价格'],['score','品鉴得分']].map(([value,label])=>`<option value="${value}"${state.filter.sort===value?' selected':''}>${label}</option>`).join('')}</select></div>
       <div class="form-field"><label>方向</label><select id="searchDir" class="control"><option value="asc"${state.filter.dir==='asc'?' selected':''}>升序</option><option value="desc"${state.filter.dir==='desc'?' selected':''}>降序</option></select></div>
     </div>
     <details class="details-block"${selectedFlavors.size ? ' open' : ''}><summary>现有风味</summary><div class="details-content"><div class="flavor-grid compact">${flavorRows.length ? flavorRows.map(row=>`<button type="button" class="flavor-button filter-flavor${selectedFlavors.has(row[0])?' selected':''}" data-filter-flavor="${esc(row[0])}">${esc(row[1])}</button>`).join('') : '<span class="muted small">当前豆卡尚无风味标签</span>'}</div></div></details>
@@ -610,12 +641,47 @@ function openSearchDialog() {
   });
 }
 
+const RECOMMENDATION_PROMPTS = Object.freeze({
+  leaderboard: [
+    '直取榜首，不问其余。', '依榜索魁，必得佳味。', '榜单在前，今朝且试头筹。',
+    '榜魁已定，此只风味精绝，不负众望。', '一举摘魁，恰逢此豆风味正酣。',
+    '众里寻它，终得榜首，宜细细品之。', '照榜点将，专挑那个第一名！'
+  ],
+  freshness: [
+    '此只风味精绝，君既选中，甚是妥当。', '正逢此只风味最盛，您这一选，再好不过。',
+    '此只正值风味精妙处，既已选定，便是良配。', '此只正得意时，恰被君眼相中，眼光不差。'
+  ],
+  price: [
+    '此只价冠诸豆，足见君之慧眼独钟。', '此只乃众豆之魁，承君青睐，身价自高。',
+    '此只位列首席，价亦昂，唯君堪配此味。', '既择此只风骨，当知众豆之中，以此最为矜贵。'
+  ],
+  remaining: [
+    '余粒无多，宜趁兴饮尽，为此豆作结。', '所剩几何，当及时啜饮，不负此豆风华。',
+    '残豆将尽，速饮之，好与此只从容作别。', '此豆见底啦，趁风味未散，快快饮尽收场！'
+  ],
+  random: [
+    '闭目拈签，任其自然。', '信手拈签，以定今日之选。', '且凭一签，决此豆归谁。',
+    '一签落地，此只当归于君。', '签指此只，风味正酣，君可安心享之。',
+    '得此签，恰逢余粒无几，缘分也。', '伸手拈一签，看天意选哪只！'
+  ]
+});
+
+function recommendationPrompt(mode) {
+  const pool = RECOMMENDATION_PROMPTS[mode] || [];
+  if (!pool.length) return '';
+  const previous = state.recommendationPromptMemory[mode] || '';
+  const choices = pool.filter(value => value !== previous);
+  const selected = choices[Math.floor(Math.random() * choices.length)] || pool[0];
+  state.recommendationPromptMemory[mode] = selected;
+  return selected;
+}
+
 function openRecommendMenu() {
   closePopups();
   const popup = document.createElement('div'); popup.className = 'recommend-menu';
   const items = [
-    ['leaderboard', '榜', '#c9a45f', false], ['preference', '喜好', '#c74f4f', false], ['freshness', '赏味期', '#5e9a68', false],
-    ['price', '价格', '#c9a45f', false], ['remaining', '余粮', '#f1f1ed', false], ['random', '点兵点将', '#e88b3d', true]
+    ['leaderboard', '榜魁', '#c9a45f', false], ['freshness', '味盛', '#5e9a68', false],
+    ['price', '价冠', '#c9a45f', false], ['remaining', '拾余', '#f1f1ed', false], ['random', '拈签', '#e88b3d', true]
   ];
   popup.innerHTML = items.map(([mode, label, color, large]) => `<button type="button" class="recommend-option" data-recommend-mode="${mode}" aria-label="${label}"><span class="recommend-label">${label}</span><span class="recommend-dot${large?' random':''}" style="background:${color}"></span></button>`).join('');
   document.body.append(popup); positionPopup($('#fabRecommendBtn'), popup, { above: true });
@@ -623,47 +689,59 @@ function openRecommendMenu() {
 
 async function recommendBean(mode) {
   closePopups();
-  if (mode === 'leaderboard') { openRecommendationLeaderboard(); return; }
   const beans = filteredBeans();
   if (!beans.length) return toast('没有可推荐的豆卡');
+  if (state.recommendationRun) return;
+  state.recommendationRun = true;
+  state.recommendationExpandedAll = beans.length > 6;
+  state.activeGroupKey = null;
+  state.groupAnimationMode = 'auto';
+  renderBeans();
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   let selected;
-  if (mode === 'preference') selected = [...beans].sort((a,b)=>recommendationScore(b)-recommendationScore(a))[0];
-  else if (mode === 'freshness') selected = [...beans].sort((a,b)=>freshness(a).remaining-freshness(b).remaining)[0];
-  else if (mode === 'price') selected = [...beans].sort((a,b)=>(Number(b.price)||0)-(Number(a.price)||0))[0];
-  else if (mode === 'remaining') selected = [...beans].sort((a,b)=>(Number(a.remainingWeight)||0)-(Number(b.remainingWeight)||0))[0];
-  else {
-    if (state.recommendationRun) return;
-    state.recommendationRun = true;
-    const ordered = [...beans];
-    const targetIndex = Math.floor(Math.random() * ordered.length);
-    const loops = ordered.length + targetIndex + 1;
-    for (let index = 0; index < loops; index += 1) {
-      const bean = ordered[index % ordered.length];
-      await focusRecommendedBean(bean, { automatic: true, settle: false });
-      await new Promise(resolve => setTimeout(resolve, 667));
+  try {
+    if (mode === 'leaderboard') selected = [...beans].sort((a,b)=>recommendationScore(b)-recommendationScore(a))[0];
+    else if (mode === 'freshness') selected = [...beans].sort((a,b)=>freshnessProfile(b).flavorScore-freshnessProfile(a).flavorScore)[0];
+    else if (mode === 'price') selected = [...beans].sort((a,b)=>(Number(b.price)||0)-(Number(a.price)||0))[0];
+    else if (mode === 'remaining') selected = [...beans].sort((a,b)=>(Number(a.remainingWeight)||0)-(Number(b.remainingWeight)||0))[0];
+    else {
+      const rounds = Math.floor(Math.random() * 6) + 4;
+      let previousId = '';
+      for (let index = 0; index < rounds; index += 1) {
+        const available = beans.length > 1 ? beans.filter(bean => bean.id !== previousId) : beans;
+        const bean = available[Math.floor(Math.random() * available.length)];
+        previousId = bean.id;
+        selected = bean;
+        await focusRecommendedBean(bean, { automatic: true, settle: true, duration: 800 });
+      }
     }
-    selected = ordered[targetIndex];
+    if (mode !== 'random') await focusRecommendedBean(selected, { automatic: true, settle: true, duration: 800 });
+    const prompt = recommendationPrompt(mode);
+    toast(prompt || `已选：${beanDisplayName(selected)}`);
+  } finally {
     state.recommendationRun = false;
   }
-  await focusRecommendedBean(selected, { automatic: mode === 'random', settle: true });
-  toast(`推荐：${beanDisplayName(selected)}`);
 }
 
-async function focusRecommendedBean(bean, { automatic = true, settle = true, openDetail = false } = {}) {
+async function focusRecommendedBean(bean, { automatic = true, settle = true, openDetail = false, duration = 800 } = {}) {
   if (!bean) return;
   state.groupAnimationMode = automatic ? 'auto' : 'manual';
   const visible = filteredBeans();
-  if (visible.length > 6) state.activeGroupKey = groupKey(bean, state.settings.groupMethod || 'country');
+  state.recommendationExpandedAll = visible.length > 6;
+  state.activeGroupKey = null;
   state.recommendedBeanId = bean.id;
   renderBeans();
   await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   const card = document.querySelector(`[data-bean-id="${CSS.escape(bean.id)}"]`);
   if (card) {
-    card.classList.add('recommend-step');
+    card.classList.remove('recommend-step');
+    void card.offsetWidth;
     card.scrollIntoView({ behavior: automatic ? 'smooth' : 'auto', block: 'center' });
-    if (settle) setTimeout(() => card.classList.remove('recommend-step'), automatic ? 200 : 500);
-  }
-  if (openDetail) setTimeout(() => detailBean(bean.id), automatic ? 220 : 520);
+    card.classList.add('recommend-step');
+    await new Promise(resolve => setTimeout(resolve, Math.max(200, duration)));
+    if (settle) card.classList.remove('recommend-step');
+  } else await new Promise(resolve => setTimeout(resolve, Math.max(200, duration)));
+  if (openDetail) detailBean(bean.id);
 }
 
 function openAddMenu() {
@@ -1109,9 +1187,10 @@ function exportCurrentPlan(format = 'json') {
   downloadBlob(`${safeName}_冲煮方案.${ext}`, planExportDocument(plan, format, bean), mime); toast(`已导出 ${ext.toUpperCase()} 方案`);
 }
 
+function stopSpeech() { if (globalThis.speechSynthesis) speechSynthesis.cancel(); }
 function speak(text) {
   if (!globalThis.speechSynthesis || !text) return;
-  speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'zh-CN'; utterance.rate = 1.05; speechSynthesis.speak(utterance);
+  stopSpeech(); const utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'zh-CN'; utterance.rate = 1.05; speechSynthesis.speak(utterance);
 }
 function startTimer() {
   if (!state.currentPlan) return;
@@ -1142,7 +1221,7 @@ function renderTimerDialog() {
   $('#timerPauseBtn').addEventListener('click', () => { state.timer.paused = !state.timer.paused; $('#timerPauseBtn').textContent = state.timer.paused ? '续' : '驻'; $('#timerPauseBtn').classList.toggle('active', state.timer.paused); if (state.timer.paused) speak('已暂停'); });
   $('#timerPrevBtn').addEventListener('click', () => moveTimerStage(-1));
   $('#timerNextBtn').addEventListener('click', () => moveTimerStage(1));
-  $('#timerEndBtn').addEventListener('click', () => { state.timer.stageIndex = state.currentPlan.stages.length - 1; state.timer.remaining = 0; renderTimerValues(); promptRecordConsumption('terminated'); });
+  $('#timerEndBtn').addEventListener('click', () => { clearInterval(state.timer.interval); stopSpeech(); state.timer.paused = true; state.timer.stageIndex = state.currentPlan.stages.length - 1; state.timer.remaining = 0; renderTimerValues(); promptRecordConsumption('terminated'); });
   renderTimerValues();
 }
 
@@ -1178,16 +1257,20 @@ function moveTimerStage(direction = 1, automatic = false) {
 }
 
 function promptRecordConsumption(reason) {
-  clearInterval(state.timer.interval); state.timer.paused = true;
+  clearInterval(state.timer.interval); stopSpeech(); state.timer.paused = true;
   const bean = state.beans.find(item => item.id === state.selectedBeanId);
   const dose = Number(state.currentPlan?.totals?.doseG || state.currentBrewInput?.brew?.doseG || 15);
   const subtitle = bean ? `${codeName('countries', bean.countryCode, '未定国家')} · ${codeName('varieties', bean.varietyCode, '未定豆种')}` : '当前豆卡';
-  const content = `<div class="consume-confirm">${dialogHeader('记录本次消耗', subtitle, { closable: false, centered: true })}<div class="consume-dose">${dose.toFixed(1)}g</div><div class="consume-actions"><button id="recordConsumptionBtn" class="button primary" type="button">扣除克重进入品鉴</button><button id="skipConsumptionBtn" class="button" type="button">不记录则返回拾味</button></div></div>`;
+  const filterId = state.currentBrewInput?.brew?.filterPaperId || state.currentPlan?.input?.brew?.filterPaperId || state.settings.brew.filterPaperId || '';
+  const filter = gearFilters().find(item => item.id === filterId);
+  const filterText = filter ? `${[filter.brand, filter.type].filter(Boolean).join(' ')} · 1张` : '未设置滤纸库存，本次无法扣减滤纸';
+  const content = `<div class="consume-confirm">${dialogHeader('记录本次消耗', subtitle, { closable: false, centered: true })}<div class="consume-dose">${dose.toFixed(1)}g</div><div class="consume-filter">同时扣除滤纸：${esc(filterText)}</div><div class="consume-actions"><button id="recordConsumptionBtn" class="button primary" type="button">扣除咖啡豆与滤纸，进入品鉴</button><button id="skipConsumptionBtn" class="button" type="button">不记录则返回拾味</button></div></div>`;
   const overlay = showOverlay(content, { id: 'consume-confirm', dialogClass: 'consume-dialog' });
   $('#recordConsumptionBtn').addEventListener('click', async () => {
-    await consumeBean(bean, dose, state.currentPlan?.id, reason);
+    const consumed = await consumeBean(bean, dose, state.currentPlan?.id, reason);
     if (state.currentPlan?.id) { const session = state.brewSessions.find(item => item.id === state.currentPlan.id); if (session) { session.status = reason === 'terminated' ? 'terminated' : 'completed'; session.completedAt = new Date().toISOString(); await put('brewSessions', session); await refreshData(); } }
     closeOverlay(); startEvaluation(bean.id, { brewSessionId: state.currentPlan?.id || '' }); switchPage('sensory', { preserveOverlay: true }); renderSensory();
+    toast(consumed.filter ? `已扣除 ${consumed.grams.toFixed(1)}g 咖啡豆与滤纸1张` : `已扣除 ${consumed.grams.toFixed(1)}g 咖啡豆；未设置滤纸库存`, consumed.filter ? 'status-good' : 'status-warn');
   });
   $('#skipConsumptionBtn').addEventListener('click', () => { closeOverlay(); switchPage('brew'); });
 }
@@ -1202,6 +1285,7 @@ async function consumeBean(bean, amount, sessionId, note = '') {
   if (filter) filter.quantity = Math.max(0, Number(filter.quantity||0)-1);
   await Promise.all([put('beans', bean), put('inventoryEvents', event), saveSettings()]); await refreshData();
   if (filter && filter.quantity < 10) toast(`滤纸“${filter.type}”仅剩 ${filter.quantity} 张`, 'status-bad');
+  return { grams: consumed, filter: filter || null };
 }
 
 function startEvaluation(beanId = state.selectedBeanId, options = {}) {
@@ -1244,7 +1328,7 @@ function recordHtml(record) {
   const subjective = Number(record.subjectiveScore ?? record.score ?? 0);
   const auto = Number(record.autoScore || 0);
   const delta = Number(record.scoreDelta || 0);
-  return `<div class="record-item"><span>${formatDate(record.createdAt)}</span><span>${esc(bean ? beanDisplayName(bean) : '已删除豆卡')} · ${esc((record.summary||[]).slice(0,3).join(' / '))}${record.naturalNote ? `<small>${esc(record.naturalNote)}</small>` : ''}</span><strong>${subjective.toFixed(1)}${auto ? `<small>自${delta>=0?'+':''}${delta.toFixed(1)}</small>` : ''}</strong></div>`;
+  return `<div class="record-item"><span>${formatDate(record.createdAt)}</span><span>${esc(bean ? beanDisplayName(bean) : '已删除豆卡')} · ${esc((record.summary||[]).slice(0,3).join(' / '))}${record.naturalNote ? `<small>${esc(record.naturalNote)}</small>` : ''}</span><strong>${subjective.toFixed(1)}${auto ? `<small>差${delta>=0?'+':''}${delta.toFixed(1)}</small>` : ''}</strong></div>`;
 }
 
 function evaluationHtml(evaluation) {
@@ -1260,9 +1344,9 @@ function questionGroupHtml(node, group, groupIndex, answer) {
 }
 function scoreNodeHtml(evaluation) {
   const autoScore = computeAutomaticScore(evaluation.answers);
-  const subjective = Number(evaluation.subjectiveScore || autoScore);
-  const delta = subjective - autoScore;
-  return `<div class="question-group score-comparison"><div><span>自动得分</span><strong id="sensoryAutoScore">${autoScore.toFixed(1)}</strong></div><label class="field"><span>主观得分</span><input id="sensoryScore" class="control" type="number" min="0" max="100" step="0.1" value="${subjective.toFixed(1)}"></label><div><span>主观分差</span><strong id="sensoryScoreDelta">${delta>=0?'+':''}${delta.toFixed(1)}</strong></div><p class="muted small">自动得分由感官节点的甜、酸、苦、口感和负面项计算；主观得分用于学习个人偏好，不替代杯测规范。</p></div>`;
+  const delta = clamp(Number(evaluation.scoreDelta || 0), -10, 10);
+  const derivedScore = clamp(autoScore + delta, 0, 100);
+  return `<div class="question-group score-comparison delta-only"><div class="automatic-score"><span>自动得分</span><strong id="sensoryAutoScore">${autoScore.toFixed(1)}</strong><small>折算总分 <b id="sensoryDerivedScore">${derivedScore.toFixed(1)}</b></small></div><div class="subjective-delta-control"><div class="subjective-delta-copy"><span>主观分差</span><strong id="sensoryScoreDelta">${delta>=0?'+':''}${delta.toFixed(1)}</strong><small>范围 -10 至 +10</small></div><input id="sensoryDeltaWheel" class="subjective-delta-wheel" type="range" min="-10" max="10" step="0.5" value="${delta}" aria-label="上下滑动设置主观分差"></div><p class="muted small">仅录入相对自动得分的主观分差；系统仍保存折算总分，用于兼容历史记录和偏好推荐。</p></div>`;
 }
 
 function noteNodeHtml(evaluation) {
@@ -1279,10 +1363,12 @@ function bindEvaluationEvents() {
     else selected = selected.includes(button.dataset.sensoryOption) ? selected.filter(v=>v!==button.dataset.sensoryOption) : [...selected, button.dataset.sensoryOption];
     state.evaluation.answers[node.id][groupIndex] = selected; renderSensory();
   }));
-  $('#sensoryScore')?.addEventListener('input', event => {
-    const auto = computeAutomaticScore(state.evaluation.answers); const subjective = parseNumber(event.target.value, auto);
-    state.evaluation.autoScore = auto; state.evaluation.subjectiveScore = subjective; state.evaluation.scoreDelta = Number((subjective - auto).toFixed(1));
-    if ($('#sensoryScoreDelta')) $('#sensoryScoreDelta').textContent = `${state.evaluation.scoreDelta>=0?'+':''}${state.evaluation.scoreDelta.toFixed(1)}`;
+  $('#sensoryDeltaWheel')?.addEventListener('input', event => {
+    const auto = computeAutomaticScore(state.evaluation.answers);
+    const delta = clamp(parseNumber(event.target.value, 0), -10, 10);
+    state.evaluation.autoScore = auto; state.evaluation.scoreDelta = delta; state.evaluation.subjectiveScore = clamp(auto + delta, 0, 100);
+    if ($('#sensoryScoreDelta')) $('#sensoryScoreDelta').textContent = `${delta>=0?'+':''}${delta.toFixed(1)}`;
+    if ($('#sensoryDerivedScore')) $('#sensoryDerivedScore').textContent = state.evaluation.subjectiveScore.toFixed(1);
   });
   $('#sensoryNaturalNote')?.addEventListener('input', event => { state.evaluation.naturalNote = event.target.value; });
   $('#sensoryVoiceNoteBtn')?.addEventListener('click', () => startSpeechRecognition('sensoryNaturalNote'));
@@ -1295,8 +1381,9 @@ function bindEvaluationEvents() {
     }
     if (node.type === 'score') {
       const auto = computeAutomaticScore(state.evaluation.answers);
-      const subjective = parseNumber($('#sensoryScore').value, -1); if (subjective < 0 || subjective > 100) return toast('主观得分必须在 0–100');
-      state.evaluation.autoScore = auto; state.evaluation.subjectiveScore = subjective; state.evaluation.score = subjective; state.evaluation.scoreDelta = Number((subjective - auto).toFixed(1));
+      const delta = clamp(parseNumber($('#sensoryDeltaWheel')?.value, state.evaluation.scoreDelta || 0), -10, 10);
+      const subjective = clamp(auto + delta, 0, 100);
+      state.evaluation.autoScore = auto; state.evaluation.subjectiveScore = subjective; state.evaluation.score = subjective; state.evaluation.scoreDelta = delta;
       state.evaluation.nodeIndex += 1; renderSensory(); return;
     }
     const answers = state.evaluation.answers[node.id] || {};
@@ -1315,10 +1402,11 @@ async function saveEvaluation() {
     if (values.length && !values.every(value => value === '无')) summary.push(`${node.label}:${values.join('/')}`);
   }
   const autoScore = Number(evaluation.autoScore || computeAutomaticScore(evaluation.answers));
-  const subjectiveScore = Number(evaluation.subjectiveScore || autoScore);
+  const scoreDelta = clamp(Number(evaluation.scoreDelta || 0), -10, 10);
+  const subjectiveScore = clamp(autoScore + scoreDelta, 0, 100);
   const record = {
     ...evaluation, summary, autoScore, subjectiveScore, score: subjectiveScore,
-    scoreDelta: Number((subjectiveScore - autoScore).toFixed(1)), naturalNote: String(evaluation.naturalNote || '').trim(),
+    scoreDelta, naturalNote: String(evaluation.naturalNote || '').trim(),
     preferenceTags: sensoryPreferenceTags({ ...evaluation, autoScore, subjectiveScore }, bean || {}), updatedAt: new Date().toISOString()
   };
   delete record.nodeIndex;
@@ -1471,10 +1559,10 @@ function renderSettings() {
   const autoOpenGear = low.length > 0;
   if (autoOpenGear) state.settingsFocusFilterId = low[0].id;
   $('#settingsContent').innerHTML = `<div class="settings-categories">
-  <details class="settings-category"><summary><span>账户</span><small>（${esc(identity.nickname || '访客')}）</small></summary><div class="settings-category-body"><div class="grid-2"><label class="field"><span>昵称</span><input id="settingsNickname" class="control" maxlength="24" value="${esc(identity.nickname||'')}"></label><label class="field"><span>邮箱</span><input id="settingsEmail" class="control" type="email" value="${esc(identity.email||'')}"></label><label class="field"><span>手机</span><input id="settingsPhone" class="control" inputmode="tel" value="${esc(identity.phone||'')}"></label><label class="field"><span>微信</span><input id="settingsWechat" class="control" value="${esc(identity.wechat||'')}"></label><label class="field"><span>QQ</span><input id="settingsQq" class="control" inputmode="numeric" value="${esc(identity.qq||'')}"></label><div class="field"><span>个人 ID</span><div class="static-value mono">${esc(identity.publicId||'保存账户后生成')}</div></div></div><button id="saveIdentityBtn" class="button primary" type="button">保存账户</button></div></details>
-  <details class="settings-category" id="privateGearCategory"${autoOpenGear?' open':''}><summary><span>私器${low.length?'<sup class="gear-low-star">*</sup>':''}</span><small>（滤纸 · 滤杯 · 磨豆机）</small></summary><div class="settings-category-body">${gearManagerHtml()}</div></details>
-  <details class="settings-category"><summary><span>数藏</span><small>（备份 · 恢复 · 数据源）</small></summary><div class="settings-category-body"><div class="text-actions"><button id="settingsExportBtn" class="button" type="button">导出备份</button><button id="settingsImportBtn" class="button" type="button">导入备份</button><button id="clearAllDataBtn" class="button danger" type="button">清空本地数据</button></div><details class="nested-settings"><summary>数据源与接口（点击展开）</summary><div class="nested-content"><div class="setting-row"><div><h3>数据源</h3><p>仅在需要时检查更新。</p></div><button id="updateCodebookBtn" class="button" type="button">检查更新</button></div><label class="field"><span>私有冲煮 API</span><input id="brewApiEndpoint" class="control" type="url" placeholder="HTTPS 服务端地址" value="${esc(state.settings.brew.apiEndpoint||'')}"></label><button id="saveApiBtn" class="button" type="button">保存接口</button><label class="toggle"><input id="planVisualToggle" type="checkbox"${state.settings.ui.planVisualsExpanded?' checked':''}>默认显示冲煮轨迹图</label></div></details></div></details>
-  <details class="settings-category"><summary><span>本物</span><small>（关于富贵盒子）</small></summary><div class="settings-category-body about-content"><h2>富贵盒子</h2><p>咖啡豆管理、拾味冲煮辅助、品鉴记录与本地数据归档工具。</p><dl><dt>版本</dt><dd>${APP_VERSION}</dd><dt>数据结构</dt><dd>${SCHEMA_VERSION}</dd><dt>离线引擎</dt><dd>${esc(FALLBACK_ENGINE_VERSION)}</dd><dt>数据源</dt><dd>公开编码数据 ${esc(meta.version||state.codebook.version||'6')}</dd><dt>开发与维护</dt><dd>zjcrop</dd></dl></div></details>
+  <details class="settings-category"><summary><span>账户</span><small>个人信息，账户 ID，其他平台绑定</small></summary><div class="settings-category-body"><div class="grid-2"><label class="field"><span>昵称</span><input id="settingsNickname" class="control" maxlength="24" value="${esc(identity.nickname||'')}"></label><label class="field"><span>邮箱</span><input id="settingsEmail" class="control" type="email" value="${esc(identity.email||'')}"></label><label class="field"><span>手机</span><input id="settingsPhone" class="control" inputmode="tel" value="${esc(identity.phone||'')}"></label><label class="field"><span>微信</span><input id="settingsWechat" class="control" value="${esc(identity.wechat||'')}"></label><label class="field"><span>QQ</span><input id="settingsQq" class="control" inputmode="numeric" value="${esc(identity.qq||'')}"></label><div class="field"><span>个人 ID</span><div class="static-value mono">${esc(identity.publicId||'保存账户后生成')}</div></div></div><button id="saveIdentityBtn" class="button primary" type="button">保存账户</button></div></details>
+  <details class="settings-category" id="privateGearCategory"${autoOpenGear?' open':''}><summary><span>私器${low.length?'<sup class="gear-low-star">*</sup>':''}</span><small>滤纸，滤杯，磨豆机设定</small></summary><div class="settings-category-body">${gearManagerHtml()}</div></details>
+  <details class="settings-category"><summary><span>数藏</span><small>数据的导入导出及备份，数据接口</small></summary><div class="settings-category-body"><div class="text-actions"><button id="settingsExportBtn" class="button" type="button">导出备份</button><button id="settingsImportBtn" class="button" type="button">导入备份</button><button id="clearAllDataBtn" class="button danger" type="button">清空本地数据</button></div><details class="nested-settings"><summary>数据源与接口（点击展开）</summary><div class="nested-content"><div class="setting-row"><div><h3>数据源</h3><p>仅在需要时检查更新。</p></div><button id="updateCodebookBtn" class="button" type="button">检查更新</button></div><label class="field"><span>私有冲煮 API</span><input id="brewApiEndpoint" class="control" type="url" placeholder="HTTPS 服务端地址" value="${esc(state.settings.brew.apiEndpoint||'')}"></label><button id="saveApiBtn" class="button" type="button">保存接口</button><label class="toggle"><input id="planVisualToggle" type="checkbox"${state.settings.ui.planVisualsExpanded?' checked':''}>默认显示冲煮轨迹图</label></div></details></div></details>
+  <details class="settings-category"><summary><span>本物</span><small>关于本工具和开发小哥的一切</small></summary><div class="settings-category-body about-content"><h2>富贵盒子</h2><p>咖啡豆管理、拾味冲煮辅助、品鉴记录与本地数据归档工具。</p><dl><dt>版本</dt><dd>${APP_VERSION}</dd><dt>数据结构</dt><dd>${SCHEMA_VERSION}</dd><dt>离线引擎</dt><dd>${esc(FALLBACK_ENGINE_VERSION)}</dd><dt>数据源</dt><dd>公开编码数据 ${esc(meta.version||state.codebook.version||'6')}</dd><dt>开发与维护</dt><dd>zjcrop</dd></dl></div></details>
   </div>`;
   $$('.settings-category').forEach(section=>section.addEventListener('toggle',()=>{if(!section.open)return;$$('.settings-category').forEach(other=>{if(other!==section)other.open=false;});}));
   $('#updateCodebookBtn').addEventListener('click', updateCodebook);
@@ -1518,14 +1606,15 @@ function bindGlobalEvents() {
   $('#testBtn').addEventListener('click',async()=>{await setIdentity('guest');await seedDemo();renderBeans();});
   $('#bottomNav').addEventListener('click',event=>{const button=event.target.closest('[data-page-target]');if(button)switchPage(button.dataset.pageTarget);});
   $('#beanGroups').addEventListener('click',event=>{
+    const boardBean = event.target.closest('[data-board-bean]'); if (boardBean) { const bean = state.beans.find(item => item.id === boardBean.dataset.boardBean); if (bean) focusRecommendedBean(bean, { openDetail: true, duration: 800 }); return; }
     const board = event.target.closest('[data-open-recommend-board]'); if (board) return openRecommendationLeaderboard();
     const group = event.target.closest('[data-open-group]');
-    if (group) { state.groupAnimationMode='manual'; state.activeGroupKey = group.dataset.openGroup; renderBeans(); return; }
-    if (event.target.closest('[data-collapse-group]')) { state.groupAnimationMode='manual'; state.activeGroupKey = null; renderBeans(); return; }
+    if (group) { state.groupAnimationMode='manual'; state.recommendationExpandedAll=false; state.activeGroupKey = group.dataset.openGroup; renderBeans(); return; }
+    if (event.target.closest('[data-collapse-group]')) { state.groupAnimationMode='manual'; state.recommendationExpandedAll=false; state.activeGroupKey = null; renderBeans(); return; }
     const brew=event.target.closest('[data-brew-bean]');if(brew){event.stopPropagation();state.selectedBeanId=brew.dataset.brewBean;state.currentPlan=null;switchPage('brew');return;}
     const card=event.target.closest('[data-bean-id]');if(card){detailBean(card.dataset.beanId);return;}
     const panel=event.target.closest('[data-active-group-panel]');
-    if(panel && !event.target.closest('[data-bean-id],[data-brew-bean],.active-group-title,.group-collapse')){state.groupAnimationMode='manual';state.activeGroupKey=null;renderBeans();}
+    if(panel && !event.target.closest('[data-bean-id],[data-brew-bean],.active-group-title')){state.groupAnimationMode='manual';state.recommendationExpandedAll=false;state.activeGroupKey=null;renderBeans();}
   });
   $('#beanGroups').addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&event.target.matches('[data-bean-id]'))detailBean(event.target.dataset.beanId);});
   $('#activeFilterBar').addEventListener('click',event=>{if(event.target.id==='clearActiveFilters'){state.filter={search:'',country:'',variety:'',process:'',flavors:[],sort:'freshness',dir:'asc'};state.activeGroupKey=null;renderBeans();}});
