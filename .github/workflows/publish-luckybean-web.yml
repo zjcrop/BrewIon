@@ -41,9 +41,12 @@ jobs:
           npm run check
           test -s index.html
           test -s styles.css
+          test -s styles-v094.css
           test -s src/app.js
+          test -s src/v094-ui.js
           test -s src/codebook.js
           test -s public/fallback-codebook.json
+          test -s public/splash-red.svg
 
       - name: Publish runtime files under BrewIon/luckybean
         shell: bash
@@ -53,6 +56,7 @@ jobs:
           mkdir -p luckybean
           cp _luckybean_source/index.html luckybean/
           cp _luckybean_source/styles.css luckybean/
+          cp _luckybean_source/styles-v094.css luckybean/
           cp _luckybean_source/manifest.webmanifest luckybean/
           cp _luckybean_source/sw.js luckybean/
           cp -R _luckybean_source/src luckybean/
@@ -96,6 +100,9 @@ jobs:
           ok='false'
           index_code='000'
           app_code='000'
+          extension_js_code='000'
+          extension_css_code='000'
+          splash_code='000'
           codebook_js_code='000'
           data_code='000'
           release_code='000'
@@ -106,6 +113,9 @@ jobs:
             nonce="$(date +%s)-$attempt"
             index_code="$(curl -L -sS -o /tmp/luckybean-index.html -w '%{http_code}' --max-time 20 "${base}?v=${nonce}" || true)"
             app_code="$(curl -L -sS -o /tmp/luckybean-app.js -w '%{http_code}' --max-time 20 "${base}src/app.js?v=${nonce}" || true)"
+            extension_js_code="$(curl -L -sS -o /tmp/luckybean-v094.js -w '%{http_code}' --max-time 20 "${base}src/v094-ui.js?v=${nonce}" || true)"
+            extension_css_code="$(curl -L -sS -o /tmp/luckybean-v094.css -w '%{http_code}' --max-time 20 "${base}styles-v094.css?v=${nonce}" || true)"
+            splash_code="$(curl -L -sS -o /tmp/luckybean-splash.svg -w '%{http_code}' --max-time 20 "${base}public/splash-red.svg?v=${nonce}" || true)"
             codebook_js_code="$(curl -L -sS -o /tmp/luckybean-codebook.js -w '%{http_code}' --max-time 20 "${base}src/codebook.js?v=${nonce}" || true)"
             data_code="$(curl -L -sS -o /tmp/luckybean-codebook.json -w '%{http_code}' --max-time 20 "${base}public/fallback-codebook.json?v=${nonce}" || true)"
             release_code="$(curl -L -sS -o /tmp/luckybean-release.json -w '%{http_code}' --max-time 20 "${base}release.json?v=${nonce}" || true)"
@@ -117,14 +127,21 @@ jobs:
 
             if [[ "$index_code" == '200' ]] \
               && [[ "$app_code" == '200' ]] \
+              && [[ "$extension_js_code" == '200' ]] \
+              && [[ "$extension_css_code" == '200' ]] \
+              && [[ "$splash_code" == '200' ]] \
               && [[ "$codebook_js_code" == '200' ]] \
               && [[ "$data_code" == '200' ]] \
               && [[ "$release_code" == '200' ]] \
               && [[ "$release_version" == "$LUCKYBEAN_VERSION" ]] \
               && [[ "$release_source_sha" == "$LUCKYBEAN_SOURCE_SHA" ]] \
               && grep -q '<title>富贵盒子</title>' /tmp/luckybean-index.html \
-              && grep -q '拾味' /tmp/luckybean-index.html \
+              && grep -q '小酌' /tmp/luckybean-index.html \
+              && grep -q 'styles-v094.css' /tmp/luckybean-index.html \
               && grep -q 'const PAGE_META' /tmp/luckybean-app.js \
+              && grep -q 'openSegmentedWizard' /tmp/luckybean-v094.js \
+              && grep -q '.v094-sensory-overlay' /tmp/luckybean-v094.css \
+              && grep -q '<svg' /tmp/luckybean-splash.svg \
               && grep -q 'mergeCodebooks' /tmp/luckybean-codebook.js \
               && grep -q '"countries"' /tmp/luckybean-codebook.json; then
               ok='true'
@@ -133,7 +150,7 @@ jobs:
             sleep 10
           done
 
-          export ok index_code app_code codebook_js_code data_code release_code release_version release_source_sha base
+          export ok index_code app_code extension_js_code extension_css_code splash_code codebook_js_code data_code release_code release_version release_source_sha base
           python - <<'PY'
           import json, os
           from datetime import datetime, timezone
@@ -145,6 +162,9 @@ jobs:
               'expected_source_sha': os.environ['LUCKYBEAN_SOURCE_SHA'],
               'index_http': os.environ['index_code'],
               'app_js_http': os.environ['app_code'],
+              'extension_js_http': os.environ['extension_js_code'],
+              'extension_css_http': os.environ['extension_css_code'],
+              'splash_svg_http': os.environ['splash_code'],
               'codebook_js_http': os.environ['codebook_js_code'],
               'codebook_http': os.environ['data_code'],
               'release_http': os.environ['release_code'],
