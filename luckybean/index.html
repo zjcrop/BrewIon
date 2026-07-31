@@ -10,10 +10,11 @@
   <link rel="icon" href="./public/app-logo.webp" type="image/webp">
   <link rel="apple-touch-icon" href="./public/app-logo.webp">
   <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles-v094.css?v=094">
 </head>
 <body>
   <section id="splashScreen" class="splash-screen" role="button" tabindex="0" aria-label="点击进入富贵盒子">
-    <img src="./public/splash.webp?v=dc1a4763" alt="富贵盒子启动画面">
+    <img id="splashImage" src="./public/splash-red.svg?v=094" alt="富贵盒子启动画面">
     <span>点击进入</span>
   </section>
   <section id="loginScreen" class="login-screen" aria-labelledby="loginTitle">
@@ -45,6 +46,7 @@
           <div class="top-controls">
             <button class="small-control" id="groupBtn" type="button">分组</button>
             <button class="small-control" id="manageBtn" type="button">管理</button>
+            <button class="theme-toggle" id="themeToggleBtn" type="button" aria-label="切换到白天模式"></button>
           </div>
         </div>
         <div id="activeFilterBar" class="active-filter-bar hidden"></div>
@@ -52,7 +54,7 @@
       </section>
 
       <section id="pageBrew" class="page" data-page="brew" aria-labelledby="titleBrew">
-        <div class="page-heading centered-page-heading brew-page-heading"><div class="page-seal-slot"><h1 id="titleBrew" class="page-seal">拾味</h1></div><div id="brewHeadingBean" class="brew-heading-bean"></div></div>
+        <div class="page-heading centered-page-heading brew-page-heading"><div class="page-seal-slot"><h1 id="titleBrew" class="page-seal">小酌</h1></div><div id="brewHeadingBean" class="brew-heading-bean"></div></div>
         <div id="brewContent"></div>
       </section>
 
@@ -68,15 +70,15 @@
     </main>
 
     <div id="fabWrap" class="fab-wrap action-grid" aria-label="豆藏快捷操作">
-      <button id="fabSearchBtn" class="fab text-fab" type="button" aria-label="寻找豆卡">寻</button>
-      <button id="fabAddBtn" class="fab text-fab" type="button" aria-label="新增豆卡">添</button>
-      <button id="fabHistoryBtn" class="fab text-fab" type="button" aria-label="撷取往昔记录">撷</button>
-      <button id="fabRecommendBtn" class="fab text-fab" type="button" aria-label="选择推荐豆卡">择</button>
+      <button id="fabSearchBtn" class="fab text-fab" type="button" aria-label="搜索豆卡">搜索</button>
+      <button id="fabAddBtn" class="fab text-fab" type="button" aria-label="新增豆卡">添丁</button>
+      <button id="fabHistoryBtn" class="fab text-fab" type="button" aria-label="追溯往昔记录">溯旧</button>
+      <button id="fabRecommendBtn" class="fab text-fab" type="button" aria-label="选择推荐豆卡">选择</button>
     </div>
 
     <nav id="bottomNav" class="bottom-nav" aria-label="主页面">
       <button class="nav-button active" type="button" data-page-target="beans" aria-label="豆藏：咖啡豆管理" aria-current="page"><span>藏</span></button>
-      <button class="nav-button" type="button" data-page-target="brew" aria-label="拾味：冲煮制作"><span>拾</span></button>
+      <button class="nav-button" type="button" data-page-target="brew" aria-label="小酌：冲煮制作"><span>酌</span></button>
       <button class="nav-button" type="button" data-page-target="sensory" aria-label="品鉴：感官评价"><span>鉴</span></button>
       <button class="nav-button" type="button" data-page-target="settings" aria-label="器设：设备与系统设置"><span>器</span></button>
     </nav>
@@ -88,5 +90,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script type="module" src="./src/app.js"></script>
+  <script type="module" src="./src/v094-ui.js?v=094"></script>
 </body>
 </html>

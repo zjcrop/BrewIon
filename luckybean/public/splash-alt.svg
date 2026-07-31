@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" role="img" aria-labelledby="title desc">
+<title id="title">富贵盒子素色启动页</title><desc id="desc">米白纸张与黑金咖啡豆主题启动画面</desc>
+<defs>
+  <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f1efe7"/><stop offset="1" stop-color="#d8d3c6"/></linearGradient>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="22" stdDeviation="28" flood-color="#000" flood-opacity=".26"/></filter>
+</defs>
+<rect width="1080" height="1920" fill="url(#paper)"/>
+<rect x="58" y="58" width="964" height="1804" rx="18" fill="none" stroke="#191815" stroke-width="3"/>
+<g transform="translate(540 710) rotate(16)" filter="url(#shadow)">
+  <ellipse rx="220" ry="325" fill="#171613" stroke="#9f7a42" stroke-width="10"/>
+  <path d="M0-300 C75-180 -60-85 10 8 C88 112 -42 210 0 300" fill="none" stroke="#c19a5b" stroke-width="17" stroke-linecap="round"/>
+</g>
+<g text-anchor="middle" fill="#181713">
+  <text x="540" y="1195" font-size="132" font-family="serif" letter-spacing="22">富贵盒子</text>
+  <text x="540" y="1280" font-size="34" font-family="sans-serif" letter-spacing="16">LUCKY BEAN</text>
+</g>
+<path d="M330 1370 H750" stroke="#8f6c39" stroke-width="3"/>
+<text x="540" y="1450" text-anchor="middle" fill="#5d513f" font-size="30" font-family="sans-serif" letter-spacing="8">咖啡豆与冲煮档案</text>
+</svg>

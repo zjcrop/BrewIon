@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" role="img" aria-labelledby="title desc">
+<title id="title">富贵盒子红色启动页</title><desc id="desc">深红色咖啡豆主题启动画面</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#130302"/><stop offset="0.55" stop-color="#6e0e0a"/><stop offset="1" stop-color="#180403"/></linearGradient>
+  <radialGradient id="glow"><stop stop-color="#f3c17b" stop-opacity=".62"/><stop offset="1" stop-color="#f3c17b" stop-opacity="0"/></radialGradient>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="24" stdDeviation="30" flood-color="#000" flood-opacity=".55"/></filter>
+</defs>
+<rect width="1080" height="1920" fill="url(#bg)"/>
+<circle cx="540" cy="720" r="460" fill="url(#glow)" opacity=".5"/>
+<g filter="url(#shadow)" transform="translate(540 690) rotate(-18)">
+  <ellipse rx="225" ry="330" fill="#2a0906" stroke="#d9a765" stroke-width="8"/>
+  <path d="M0-305 C-70-180 62-85 -10 5 C-86 100 45 205 0 305" fill="none" stroke="#d9a765" stroke-width="18" stroke-linecap="round"/>
+  <ellipse rx="190" ry="290" fill="none" stroke="#8f3028" stroke-width="3" opacity=".8"/>
+</g>
+<g text-anchor="middle" fill="#f7dfb1">
+  <text x="540" y="1185" font-size="132" font-family="serif" letter-spacing="22">富贵盒子</text>
+  <text x="540" y="1275" font-size="34" font-family="sans-serif" letter-spacing="16" opacity=".82">LUCKY BEAN</text>
+</g>
+<path d="M315 1360 H765" stroke="#d9a765" stroke-width="2" opacity=".7"/>
+<text x="540" y="1438" text-anchor="middle" fill="#e7c997" font-size="30" font-family="sans-serif" letter-spacing="8">藏豆 · 小酌 · 品鉴</text>
+</svg>

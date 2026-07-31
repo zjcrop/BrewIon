@@ -9,7 +9,7 @@ import { computeAutomaticScore, sensoryPreferenceTags, buildPreferenceModel, rec
 
 const PAGE_META = {
   beans: { nav: '藏', title: '豆藏', browser: '豆藏' },
-  brew: { nav: '拾', title: '拾味', browser: '拾味' },
+  brew: { nav: '酌', title: '小酌', browser: '小酌' },
   sensory: { nav: '鉴', title: '品鉴', browser: '品鉴' },
   settings: { nav: '器', title: '器设', browser: '器设' }
 };
@@ -505,7 +505,7 @@ function beanCardHtml(bean) {
   const progress = Math.round(fresh.progress * 100);
   return `<article class="bean-card compact${bean.id === state.recommendedBeanId ? ' recommended' : ''}${bean.archived ? ' archived' : ''}" data-bean-id="${esc(bean.id)}" tabindex="0">
     <div class="compact-bean-copy"><h3>${esc(beanDisplayName(bean))}</h3><small>${esc(process)}</small><div class="compact-bean-row"><strong class="${bean.refrigerated ? 'frozen-weight' : ''}">${Number(bean.remainingWeight || 0).toFixed(1)}g${bean.refrigerated ? '<small class="frozen-mark" aria-label="冷藏">❄️</small>' : ''}</strong><span class="compact-score">${score ? `${score.toFixed(1)}分` : '未评分'}${recommended ? '<em>荐</em>' : ''}</span></div></div>
-    <button class="cup-action compact-pick" type="button" data-brew-bean="${esc(bean.id)}" aria-label="用这只豆拾一味">拾</button>
+    <button class="cup-action compact-pick" type="button" data-brew-bean="${esc(bean.id)}" aria-label="用这只豆酌一味">酌</button>
     <div class="bean-freshness-progress" aria-label="${esc(fresh.label)}，风味${esc(fresh.trend)}，进度${progress}%"><span class="bean-freshness-solid" style="width:${progress}%;background:${fresh.color}"></span><span class="bean-freshness-dashed" style="left:${progress}%"></span></div>
   </article>`;
 }
@@ -553,7 +553,7 @@ function renderBeans() {
   if (!beans.length) {
     state.activeGroupKey = null;
     state.recommendationExpandedAll = false;
-    container.innerHTML = `<div class="empty-state"><strong>没有符合条件的豆卡</strong><p>点击“添”录入，或从“寻”调整条件。</p></div>`;
+    container.innerHTML = `<div class="empty-state"><strong>没有符合条件的豆卡</strong><p>点击“添丁”录入，或从“搜索”调整条件。</p></div>`;
     return;
   }
   const board = recommendationLeaderboardHtml();
@@ -979,7 +979,7 @@ function detailBean(beanId) {
     <div class="detail-tags">${flavors || '<span class="muted small">风味待录</span>'}</div>
     <section class="panel"><div class="panel-title"><div><h3>冲煮记录</h3><p>点击可载入完整方案复刻</p></div></div><div class="record-list">${sessions.length ? sessions.map(sessionRecordHtml).join('') : '<p class="muted small">尚无冲煮记录</p>'}</div></section>
     <section class="panel"><div class="panel-title"><div><h3>最近品鉴</h3></div></div>${records.length ? records.map(record=>`<div class="record-item"><span>${formatDate(record.createdAt)}</span><span>${esc((record.summary||[]).join(' · '))}${record.naturalNote ? `<small>${esc(record.naturalNote)}</small>` : ''}</span><strong>${Number(record.subjectiveScore ?? record.score ?? 0).toFixed(1)}</strong></div>`).join('') : '<p class="muted small">尚无品鉴记录</p>'}</section>
-    <div class="detail-actions menu-row"><button id="brewThisBeanBtn" class="button primary" type="button">拾一味</button><button id="editBeanBtn" class="button" type="button">编辑</button><button id="copyBeanBtn" class="button" type="button">复制</button><button id="shareBeanBtn" class="button" type="button">分享</button></div>`;
+    <div class="detail-actions menu-row"><button id="brewThisBeanBtn" class="button primary" type="button">酌一味</button><button id="editBeanBtn" class="button" type="button">编辑</button><button id="copyBeanBtn" class="button" type="button">复制</button><button id="shareBeanBtn" class="button" type="button">分享</button></div>`;
   const overlay = showOverlay(content, { id: 'bean-detail', backdropClose: true }); bindClose(overlay);
   $('#correctWeightBtn').addEventListener('click', () => correctWeightDialog(bean));
   $('#toggleColdBtn').addEventListener('click', async () => { bean.refrigerated = !bean.refrigerated; bean.freezeDate = bean.refrigerated ? todayISO() : ''; bean.updatedAt = new Date().toISOString(); await put('beans', bean); await refreshData(); detailBean(bean.id); });
@@ -1273,7 +1273,7 @@ function promptRecordConsumption(reason) {
   const filterId = state.currentBrewInput?.brew?.filterPaperId || state.currentPlan?.input?.brew?.filterPaperId || state.settings.brew.filterPaperId || '';
   const filter = gearFilters().find(item => item.id === filterId);
   const filterText = filter ? `${[filter.brand, filter.type].filter(Boolean).join(' ')} · 1张` : '未设置滤纸库存，本次无法扣减滤纸';
-  const content = `<div class="consume-confirm">${dialogHeader('记录本次消耗', subtitle, { closable: false, centered: true })}<div class="consume-dose">${dose.toFixed(1)}g</div><div class="consume-filter">同时扣除滤纸：${esc(filterText)}</div><div class="consume-actions"><button id="recordConsumptionBtn" class="button primary" type="button">扣除咖啡豆与滤纸，进入品鉴</button><button id="skipConsumptionBtn" class="button" type="button">不记录则返回拾味</button></div></div>`;
+  const content = `<div class="consume-confirm">${dialogHeader('记录本次消耗', subtitle, { closable: false, centered: true })}<div class="consume-dose">${dose.toFixed(1)}g</div><div class="consume-filter">同时扣除滤纸：${esc(filterText)}</div><div class="consume-actions"><button id="recordConsumptionBtn" class="button primary" type="button">扣除咖啡豆与滤纸，进入品鉴</button><button id="skipConsumptionBtn" class="button" type="button">不记录则返回小酌</button></div></div>`;
   const overlay = showOverlay(content, { id: 'consume-confirm', dialogClass: 'consume-dialog' });
   $('#recordConsumptionBtn').addEventListener('click', async () => {
     const consumed = await consumeBean(bean, dose, state.currentPlan?.id, reason);
