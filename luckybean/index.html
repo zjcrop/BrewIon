@@ -7,13 +7,18 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://raw.githubusercontent.com https:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
   <title>富贵盒子</title>
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" href="./public/app-icon.svg" type="image/svg+xml">
+  <link rel="icon" href="./public/app-logo.webp" type="image/webp">
+  <link rel="apple-touch-icon" href="./public/app-logo.webp">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
+  <section id="splashScreen" class="splash-screen" role="button" tabindex="0" aria-label="点击进入富贵盒子">
+    <img src="./public/splash.webp" alt="富贵盒子启动画面">
+    <span>点击进入</span>
+  </section>
   <section id="loginScreen" class="login-screen" aria-labelledby="loginTitle">
     <div class="login-card">
-      <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <img class="login-logo" src="./public/app-logo.webp" alt="富贵盒子 Logo">
       <p class="eyebrow">LUCKY BEAN</p>
       <h1 id="loginTitle">富贵盒子</h1>
       <p class="login-copy">管理咖啡豆、冲煮方案和品鉴记录。数据默认保存在当前设备。</p>

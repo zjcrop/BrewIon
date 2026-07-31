@@ -21,7 +21,7 @@ const ROASTS = [
 const ROAST_NAME = new Map(ROASTS);
 const STATUS_COLOR = { resting: '#5f8a73', peak: '#de9a42', good: '#bc8d55', decline: '#77736c', urgent: '#575757' };
 const DEFAULT_SETTINGS = {
-  ui: { planVisualsExpanded: true, temporaryVisualOpen: false },
+  ui: { planVisualsExpanded: true, temporaryVisualOpen: false, dripperListOpen: false },
   brew: {
     apiEndpoint: '', mode: 'simple', method: 'pourover', doseG: 15, ratio: 15.5,
     profileId: 'recommended', segmentMode: 'auto', segments: 3, lowTempFirst: true,
@@ -37,9 +37,9 @@ const DEFAULT_SETTINGS = {
   groupMethod: 'country'
 };
 const SENSORY_NODES = [
-  { id: 'floral', label: '花香', type: 'multi', groups: [{ label: '香气', options: ['无', '白花', '茉莉', '玫瑰', '橙花', '紫罗兰', '洋甘菊'] }] },
-  { id: 'fruit', label: '果香', type: 'multi', groups: [{ label: '果香', options: ['无', '柑橘', '莓果', '桃子', '苹果', '葡萄', '热带水果', '干果'] }] },
-  { id: 'other', label: '其他', type: 'multi', groups: [{ label: '其他风味', options: ['无', '茶感', '香料', '坚果', '巧克力', '酒香', '草本', '豆腐/豆味'] }] },
+  { id: 'floral', label: '花香', type: 'multi', groups: [{ label: '香气', options: ['无', '白花', '茉莉', '玫瑰', '橙花', '紫罗兰', '洋甘菊'] }, { label: '风味强度', single: true, intensity: true, options: ['无', '低', '中', '强'] }] },
+  { id: 'fruit', label: '果香', type: 'multi', groups: [{ label: '果香', options: ['无', '柑橘', '莓果', '桃子', '苹果', '葡萄', '热带水果', '干果'] }, { label: '风味强度', single: true, intensity: true, options: ['无', '低', '中', '强'] }] },
+  { id: 'other', label: '其他', type: 'multi', groups: [{ label: '其他风味', options: ['无', '茶感', '香料', '坚果', '巧克力', '酒香', '草本', '豆腐/豆味'] }, { label: '风味强度', single: true, intensity: true, options: ['无', '低', '中', '强'] }, { label: '酵感强度', single: true, intensity: true, options: ['无', '低', '中', '强'] }, { label: '增味强度', single: true, intensity: true, options: ['无', '低', '中', '强'] }] },
   { id: 'sweet', label: '甜', type: 'grouped', groups: [
     { label: '风味倾向', single: false, options: ['蜂蜜', '蔗糖', '红糖', '焦糖', '枫糖', '糖浆', '太妃糖'] },
     { label: '风味强度', single: true, options: ['无', '低', '适中', '高'] }
@@ -68,11 +68,20 @@ const state = {
 };
 
 let toastTimer;
+let toastCleanupTimer;
 function toast(message, kind = '') {
   const node = $('#toast');
-  node.textContent = message;
-  node.className = `toast show ${kind}`;
   clearTimeout(toastTimer);
+  clearTimeout(toastCleanupTimer);
+  node.textContent = message;
+  if (kind === 'recommendation') {
+    node.className = 'toast recommendation';
+    requestAnimationFrame(() => requestAnimationFrame(() => node.classList.add('show')));
+    toastTimer = setTimeout(() => node.classList.remove('show'), 6000);
+    toastCleanupTimer = setTimeout(() => { node.className = 'toast'; }, 7000);
+    return;
+  }
+  node.className = `toast show ${kind}`;
   toastTimer = setTimeout(() => node.className = 'toast', 2600);
 }
 
@@ -256,9 +265,9 @@ function normalizeGearSettings(gear = {}) {
         price: 0, createdAt: new Date().toISOString()
       }));
   const drippers = Array.isArray(gear.drippers)
-    ? gear.drippers.map(item => typeof item === 'string' ? { id: uid('dripper'), name: item, type: item } : ({ id: String(item.id || uid('dripper')), name: String(item.name || item.type || '').trim(), type: String(item.type || item.name || '').trim() })).filter(item => item.name)
-    : String(gear.drippers || '平底滤杯').split(/[、,，\n]/).map(value => value.trim()).filter(Boolean).map((name, index) => ({ id: `legacy_dripper_${index}`, name, type: name }));
-  return { filters, drippers: drippers.length ? drippers : [{ id: 'dripper_flat', name: '平底滤杯', type: '平底滤杯' }], grinders: String(gear.grinders || '') };
+    ? gear.drippers.map(item => typeof item === 'string' ? { id: uid('dripper'), name: item, type: item, price: 0 } : ({ id: String(item.id || uid('dripper')), name: String(item.name || item.type || '').trim(), type: String(item.type || item.name || '').trim(), price: Math.max(0, Number(item.price || 0)) })).filter(item => item.name)
+    : String(gear.drippers || '平底滤杯').split(/[、,，\n]/).map(value => value.trim()).filter(Boolean).map((name, index) => ({ id: `legacy_dripper_${index}`, name, type: name, price: 0 }));
+  return { filters, drippers: drippers.length ? drippers : [{ id: 'dripper_flat', name: '平底滤杯', type: '平底滤杯', price: 0 }], grinders: String(gear.grinders || '') };
 }
 
 function resolveKnownCode(table, value, parentCode = '') {
@@ -495,7 +504,7 @@ function beanCardHtml(bean) {
   const fresh = freshnessProfile(bean);
   const progress = Math.round(fresh.progress * 100);
   return `<article class="bean-card compact${bean.id === state.recommendedBeanId ? ' recommended' : ''}${bean.archived ? ' archived' : ''}" data-bean-id="${esc(bean.id)}" tabindex="0">
-    <div class="compact-bean-copy"><h3>${esc(beanDisplayName(bean))}</h3><small>${esc(process)}</small><div class="compact-bean-row"><strong>${Number(bean.remainingWeight || 0).toFixed(1)}g</strong><span class="compact-score">${score ? `${score.toFixed(1)}分` : '未评分'}${recommended ? '<em>荐</em>' : ''}</span></div></div>
+    <div class="compact-bean-copy"><h3>${esc(beanDisplayName(bean))}</h3><small>${esc(process)}</small><div class="compact-bean-row"><strong class="${bean.refrigerated ? 'frozen-weight' : ''}">${Number(bean.remainingWeight || 0).toFixed(1)}g${bean.refrigerated ? '<small class="frozen-mark" aria-label="冷藏">❄️</small>' : ''}</strong><span class="compact-score">${score ? `${score.toFixed(1)}分` : '未评分'}${recommended ? '<em>荐</em>' : ''}</span></div></div>
     <button class="cup-action compact-pick" type="button" data-brew-bean="${esc(bean.id)}" aria-label="用这只豆拾一味">拾</button>
     <div class="bean-freshness-progress" aria-label="${esc(fresh.label)}，风味${esc(fresh.trend)}，进度${progress}%"><span class="bean-freshness-solid" style="width:${progress}%;background:${fresh.color}"></span><span class="bean-freshness-dashed" style="left:${progress}%"></span></div>
   </article>`;
@@ -717,7 +726,7 @@ async function recommendBean(mode) {
     }
     if (mode !== 'random') await focusRecommendedBean(selected, { automatic: true, settle: true, duration: 800 });
     const prompt = recommendationPrompt(mode);
-    toast(prompt || `已选：${beanDisplayName(selected)}`);
+    toast(prompt || `已选：${beanDisplayName(selected)}`, 'recommendation');
   } finally {
     state.recommendationRun = false;
   }
@@ -871,10 +880,10 @@ function flavorGroupLabel(name = '') {
 function openFlavorEditor(selected, bean, source) {
   const draft = captureBeanFormDraft();
   const set = new Set((selected || []).filter(code => state.codebookIndex?.flavors?.has(code)));
-  const rows = (state.codebook.flavors || []).filter(row => row?.[0] && String(row[1] || '').trim());
+  const rows = (state.codebook.flavors || []).filter(row => row?.[0] && String(row.length >= 9 ? row[4] : row[1] || '').trim());
   const groups = new Map();
-  rows.forEach(row => { const label = flavorGroupLabel(row[1]); if (!groups.has(label)) groups.set(label, []); groups.get(label).push(row); });
-  const content = `${dialogHeader('风味标签', `中文标签 ${rows.length} 项，最多选择 12 项`, { closable: false })}<div class="flavor-groups">${[...groups.entries()].map(([label, items]) => `<section class="flavor-group"><h3>${esc(label)}</h3><div class="flavor-grid">${items.map(row=>`<button type="button" class="flavor-button${set.has(row[0])?' selected':''}" data-flavor-code="${esc(row[0])}">${esc(String(row[1]).trim())}</button>`).join('')}</div></section>`).join('')}</div><div class="row end"><button id="backFlavorsBtn" class="button subtle" type="button">返回</button><button id="clearFlavorsBtn" class="button subtle" type="button">清空</button><button id="confirmFlavorsBtn" class="button primary" type="button">确定</button></div>`;
+  rows.forEach(row => { const name = row.length >= 9 ? row[4] : row[1]; const label = flavorGroupLabel(name || row[2] || row[1]); if (!groups.has(label)) groups.set(label, []); groups.get(label).push(row); });
+  const content = `${dialogHeader('风味标签', `中文标签 ${rows.length} 项，最多选择 12 项`, { closable: false })}<div class="flavor-groups">${[...groups.entries()].map(([label, items]) => `<section class="flavor-group"><h3>${esc(label)}</h3><div class="flavor-grid">${items.map(row=>`<button type="button" class="flavor-button${set.has(row[0])?' selected':''}" data-flavor-code="${esc(row[0])}">${esc(String(row.length >= 9 ? row[4] : row[1]).trim())}</button>`).join('')}</div></section>`).join('')}</div><div class="row end"><button id="backFlavorsBtn" class="button subtle" type="button">返回</button><button id="clearFlavorsBtn" class="button subtle" type="button">清空</button><button id="confirmFlavorsBtn" class="button primary" type="button">确定</button></div>`;
   const overlay = showOverlay(content, { full: true, id: 'flavors' }); bindClose(overlay);
   overlay.addEventListener('click', event => {
     const button = event.target.closest('[data-flavor-code]'); if (!button) return;
@@ -1294,7 +1303,7 @@ function startEvaluation(beanId = state.selectedBeanId, options = {}) {
   state.evaluation = {
     id: uid('sensory'), beanId, brewSessionId: sessionId,
     engineVersion: state.currentPlan?.engineVersion || '', profileVersion: state.currentPlan?.profileVersion || '',
-    nodeIndex: 0, answers: {}, autoScore: 0, subjectiveScore: 0, scoreDelta: 0,
+    nodeIndex: 0, answers: { floral: { 1: ['无'] }, fruit: { 1: ['无'] }, other: { 1: ['无'], 2: ['无'], 3: ['无'] } }, autoScore: 0, subjectiveScore: 0, scoreDelta: 0,
     naturalNote: '', direct: Boolean(options.direct), createdAt: new Date().toISOString()
   };
 }
@@ -1335,7 +1344,7 @@ function evaluationHtml(evaluation) {
   const node = SENSORY_NODES[evaluation.nodeIndex];
   const body = node.type === 'score' ? scoreNodeHtml(evaluation) : node.type === 'note' ? noteNodeHtml(evaluation) : node.groups.map((group,index)=>questionGroupHtml(node,group,index,evaluation.answers[node.id]||{})).join('');
   const last = evaluation.nodeIndex === SENSORY_NODES.length - 1;
-  return `<section class="panel sensory-evaluation"><div class="panel-title sensory-title-centered"><div><h2>${esc(node.label)}</h2><p>${esc(beanDisplayName(state.beans.find(b=>b.id===evaluation.beanId) || {}))}</p></div><button id="cancelEvaluationBtn" class="button subtle" type="button">取消</button></div><div class="sensory-progress">${SENSORY_NODES.map((_,i)=>`<span class="${i<evaluation.nodeIndex?'done':i===evaluation.nodeIndex?'current':''}"></span>`).join('')}</div>${body}<div class="row menu-row sensory-navigation"><button id="prevSensoryNodeBtn" class="button" type="button"${evaluation.nodeIndex===0?' disabled':''}>退</button><button id="nextSensoryNodeBtn" class="button primary" type="button">${last?'完成品鉴':node.type==='score'?'继续札记':'进'}</button></div></section>`;
+  return `<section class="panel sensory-evaluation"><div class="panel-title sensory-title-centered"><div><h2>${esc(node.label)}</h2><p>${esc(beanDisplayName(state.beans.find(b=>b.id===evaluation.beanId) || {}))}</p></div></div><div class="sensory-progress">${SENSORY_NODES.map((_,i)=>`<span class="${i<evaluation.nodeIndex?'done':i===evaluation.nodeIndex?'current':''}"></span>`).join('')}</div>${body}<div class="sensory-navigation"><button id="cancelEvaluationBtn" class="button subtle" type="button">取消</button><button id="prevSensoryNodeBtn" class="button" type="button"${evaluation.nodeIndex===0?' disabled':''}>退</button><button id="nextSensoryNodeBtn" class="button primary" type="button">${last?'完成品鉴':node.type==='score'?'札记':'进'}</button></div></section>`;
 }
 
 function questionGroupHtml(node, group, groupIndex, answer) {
@@ -1346,7 +1355,7 @@ function scoreNodeHtml(evaluation) {
   const autoScore = computeAutomaticScore(evaluation.answers);
   const delta = clamp(Number(evaluation.scoreDelta || 0), -10, 10);
   const derivedScore = clamp(autoScore + delta, 0, 100);
-  return `<div class="question-group score-comparison delta-only"><div class="automatic-score"><span>自动得分</span><strong id="sensoryAutoScore">${autoScore.toFixed(1)}</strong><small>折算总分 <b id="sensoryDerivedScore">${derivedScore.toFixed(1)}</b></small></div><div class="subjective-delta-control"><div class="subjective-delta-copy"><span>主观分差</span><strong id="sensoryScoreDelta">${delta>=0?'+':''}${delta.toFixed(1)}</strong><small>范围 -10 至 +10</small></div><input id="sensoryDeltaWheel" class="subjective-delta-wheel" type="range" min="-10" max="10" step="0.5" value="${delta}" aria-label="上下滑动设置主观分差"></div><p class="muted small">仅录入相对自动得分的主观分差；系统仍保存折算总分，用于兼容历史记录和偏好推荐。</p></div>`;
+  return `<div class="question-group score-comparison delta-only"><div class="score-head-row"><span>自动得分</span><span>主观分差</span></div><div class="score-value-row"><strong id="sensoryAutoScore">${autoScore.toFixed(1)}</strong><div class="subjective-delta-control"><strong id="sensoryScoreDelta">${delta>=0?'+':''}${delta.toFixed(1)}</strong><input id="sensoryDeltaWheel" class="subjective-delta-wheel" type="range" min="-10" max="10" step="0.5" value="${delta}" aria-label="上下滑动设置主观分差"></div></div><div class="score-derived-row"><small>折算总分</small><small id="sensoryDerivedScore">${derivedScore.toFixed(1)}</small></div></div>`;
 }
 
 function noteNodeHtml(evaluation) {
@@ -1537,7 +1546,7 @@ function openHistory() {
 function gearManagerHtml() {
   const gear = normalizeGearSettings(state.settings.gear);
   const lowIds = new Set(gear.filters.filter(item => Number(item.quantity) < 10).map(item => item.id));
-  return `<div class="gear-manager"><section class="gear-subpage"><div class="panel-title centered"><div><h3>滤纸</h3><p>品牌、类型、张数和价格</p></div><button id="addFilterBtn" class="button" type="button">添</button></div><div class="gear-list">${gear.filters.length?gear.filters.map(item=>`<button class="gear-item${lowIds.has(item.id)?' low-stock':''}" type="button" data-filter-item="${esc(item.id)}"><span><strong>${esc([item.brand,item.type].filter(Boolean).join(' '))}</strong><small>价格 ¥${Number(item.price||0).toFixed(2)}</small></span><b>${Math.floor(Number(item.quantity)||0)}张</b></button>`).join(''):'<p class="muted small">尚未添加滤纸。每次完成冲煮后会自动扣减所选滤纸 1 张。</p>'}</div></section><section class="gear-subpage"><div class="panel-title centered"><div><h3>滤杯</h3><p>用于冲煮模型和拾味选择</p></div><button id="addDripperBtn" class="button" type="button">添</button></div><div class="gear-list">${gear.drippers.map(item=>`<div class="gear-item"><span><strong>${esc(item.name)}</strong><small>${esc(item.type)}</small></span></div>`).join('')}</div></section><label class="field"><span>磨豆机 / 刻度</span><input id="gearGrinders" class="control" value="${esc(gear.grinders||'')}" placeholder="例如 C40 22格"></label><button id="saveGearTextBtn" class="button primary" type="button">保存磨豆机</button></div>`;
+  return `<div class="gear-manager"><section class="gear-subpage"><div class="panel-title centered"><div><h3>滤纸</h3><p>品牌、类型、张数和价格</p></div><button id="addFilterBtn" class="button" type="button">添</button></div><div class="gear-list">${gear.filters.length?gear.filters.map(item=>`<button class="gear-item${lowIds.has(item.id)?' low-stock':''}" type="button" data-filter-item="${esc(item.id)}"><span><strong>${esc([item.brand,item.type].filter(Boolean).join(' '))}</strong><small>价格 ¥${Number(item.price||0).toFixed(2)}</small></span><b>${Math.floor(Number(item.quantity)||0)}张</b></button>`).join(''):'<p class="muted small">尚未添加滤纸。每次完成冲煮后会自动扣减所选滤纸 1 张。</p>'}</div></section><details class="gear-subpage gear-drippers"><summary><span>滤杯</span><small>点击展开滤杯列表</small></summary><div class="gear-subpage-body"><div class="row end"><button id="addDripperBtn" class="button" type="button">添</button></div><div class="gear-list">${gear.drippers.map(item=>`<button class="gear-item" type="button" data-dripper-item="${esc(item.id)}"><span><strong>${esc(item.name)}</strong><small>${esc(item.type)} · ¥${Number(item.price||0).toFixed(2)}</small></span><b>设</b></button>`).join('')}</div></div></details><label class="field"><span>磨豆机 / 刻度</span><input id="gearGrinders" class="control" value="${esc(gear.grinders||'')}" placeholder="例如 C40 22格"></label><button id="saveGearTextBtn" class="button primary" type="button">保存磨豆机</button></div>`;
 }
 
 function openAddFilterDialog(existingId = '') {
@@ -1547,8 +1556,13 @@ function openAddFilterDialog(existingId = '') {
   $('#saveFilterBtn').addEventListener('click',async()=>{const type=$('#filterType').value.trim();const quantity=Math.floor(parseNumber($('#filterQuantity').value,-1));if(!type)return toast('滤纸类型为必填项','status-bad');if(quantity<0)return toast('滤纸张数为必填项且不能小于0','status-bad');state.settings.gear=normalizeGearSettings(state.settings.gear);const record={id:existing.id||uid('filter'),brand:$('#filterBrand').value.trim(),type,quantity,price:Math.max(0,parseNumber($('#filterPrice').value,0)),createdAt:existing.createdAt||new Date().toISOString()};const index=state.settings.gear.filters.findIndex(item=>item.id===record.id);if(index>=0)state.settings.gear.filters[index]=record;else state.settings.gear.filters.push(record);state.settings.brew.filterPaperId ||= record.id;await saveSettings();closeOverlay();renderSettings();updateLowStockIndicator();});
 }
 
-function openAddDripperDialog() {
-  const overlay=showOverlay(`${dialogHeader('添加滤杯','名称和类型用于拾味与计算模型',{centered:true})}<div class="grid-2"><label class="field"><span>名称 *</span><input id="dripperName" class="control"></label><label class="field"><span>类型 *</span><select id="dripperType" class="control"><option>平底滤杯</option><option>锥形滤杯</option><option>混合式滤杯</option><option>低旁路滤杯</option><option>浸泡式滤杯</option></select></label></div><div class="row end"><button id="saveDripperBtn" class="button primary" type="button">确定</button></div>`,{id:'dripper-editor',backdropClose:true});bindClose(overlay);$('#saveDripperBtn').addEventListener('click',async()=>{const name=$('#dripperName').value.trim();if(!name)return toast('滤杯名称为必填项','status-bad');state.settings.gear=normalizeGearSettings(state.settings.gear);state.settings.gear.drippers.push({id:uid('dripper'),name,type:$('#dripperType').value});await saveSettings();closeOverlay();renderSettings();});
+function openAddDripperDialog(existingId = '') {
+  state.settings.gear = normalizeGearSettings(state.settings.gear);
+  const existing = state.settings.gear.drippers.find(item => item.id === existingId) || {};
+  const overlay=showOverlay(`${dialogHeader(existingId?'编辑滤杯':'添加滤杯','名称、类型和价格用于私器管理',{centered:true})}<div class="grid-2"><label class="field"><span>名称 *</span><input id="dripperName" class="control" value="${esc(existing.name||'')}"></label><label class="field"><span>类型 *</span><select id="dripperType" class="control">${['平底滤杯','锥形滤杯','混合式滤杯','低旁路滤杯','浸泡式滤杯'].map(type=>`<option${type===(existing.type||'平底滤杯')?' selected':''}>${type}</option>`).join('')}</select></label><label class="field"><span>价格</span><input id="dripperPrice" class="control" type="number" min="0" step="0.01" value="${Number(existing.price||0)}"></label></div><div class="row end">${existingId?'<button id="deleteDripperBtn" class="button danger" type="button">删除</button>':''}<button id="saveDripperBtn" class="button primary" type="button">确定</button></div>`,{id:'dripper-editor',backdropClose:true});
+  bindClose(overlay);
+  $('#saveDripperBtn').addEventListener('click',async()=>{const name=$('#dripperName').value.trim();if(!name)return toast('滤杯名称为必填项','status-bad');const record={id:existing.id||uid('dripper'),name,type:$('#dripperType').value,price:Math.max(0,parseNumber($('#dripperPrice').value,0))};const index=state.settings.gear.drippers.findIndex(item=>item.id===record.id);if(index>=0)state.settings.gear.drippers[index]=record;else state.settings.gear.drippers.push(record);await saveSettings();closeOverlay();renderSettings();});
+  $('#deleteDripperBtn')?.addEventListener('click',async()=>{state.settings.gear.drippers=state.settings.gear.drippers.filter(item=>item.id!==existingId);state.settings.gear=normalizeGearSettings(state.settings.gear);if(existing.name===state.settings.brew.dripper)state.settings.brew.dripper=state.settings.gear.drippers[0].name;await saveSettings();closeOverlay();renderSettings();toast('滤杯已删除');});
 }
 
 function renderSettings() {
@@ -1561,7 +1575,7 @@ function renderSettings() {
   $('#settingsContent').innerHTML = `<div class="settings-categories">
   <details class="settings-category"><summary><span>账户</span><small>个人信息，账户 ID，其他平台绑定</small></summary><div class="settings-category-body"><div class="grid-2"><label class="field"><span>昵称</span><input id="settingsNickname" class="control" maxlength="24" value="${esc(identity.nickname||'')}"></label><label class="field"><span>邮箱</span><input id="settingsEmail" class="control" type="email" value="${esc(identity.email||'')}"></label><label class="field"><span>手机</span><input id="settingsPhone" class="control" inputmode="tel" value="${esc(identity.phone||'')}"></label><label class="field"><span>微信</span><input id="settingsWechat" class="control" value="${esc(identity.wechat||'')}"></label><label class="field"><span>QQ</span><input id="settingsQq" class="control" inputmode="numeric" value="${esc(identity.qq||'')}"></label><div class="field"><span>个人 ID</span><div class="static-value mono">${esc(identity.publicId||'保存账户后生成')}</div></div></div><button id="saveIdentityBtn" class="button primary" type="button">保存账户</button></div></details>
   <details class="settings-category" id="privateGearCategory"${autoOpenGear?' open':''}><summary><span>私器${low.length?'<sup class="gear-low-star">*</sup>':''}</span><small>滤纸，滤杯，磨豆机设定</small></summary><div class="settings-category-body">${gearManagerHtml()}</div></details>
-  <details class="settings-category"><summary><span>数藏</span><small>数据的导入导出及备份，数据接口</small></summary><div class="settings-category-body"><div class="text-actions"><button id="settingsExportBtn" class="button" type="button">导出备份</button><button id="settingsImportBtn" class="button" type="button">导入备份</button><button id="clearAllDataBtn" class="button danger" type="button">清空本地数据</button></div><details class="nested-settings"><summary>数据源与接口（点击展开）</summary><div class="nested-content"><div class="setting-row"><div><h3>数据源</h3><p>仅在需要时检查更新。</p></div><button id="updateCodebookBtn" class="button" type="button">检查更新</button></div><label class="field"><span>私有冲煮 API</span><input id="brewApiEndpoint" class="control" type="url" placeholder="HTTPS 服务端地址" value="${esc(state.settings.brew.apiEndpoint||'')}"></label><button id="saveApiBtn" class="button" type="button">保存接口</button><label class="toggle"><input id="planVisualToggle" type="checkbox"${state.settings.ui.planVisualsExpanded?' checked':''}>默认显示冲煮轨迹图</label></div></details></div></details>
+  <details class="settings-category data-category"><summary><span>数藏</span><small>数据的导入导出及备份，数据接口</small></summary><div class="settings-category-body"><div class="text-actions data-actions"><button id="settingsExportBtn" class="button" type="button">导出备份</button><button id="settingsImportBtn" class="button" type="button">导入备份</button><button id="clearAllDataBtn" class="button danger" type="button">清空本地数据</button></div><details class="nested-settings"><summary>数据源与接口（点击展开）</summary><div class="nested-content"><div class="setting-row"><div><h3>数据源</h3><p>仅在需要时检查更新。</p></div><button id="updateCodebookBtn" class="button" type="button">检查更新</button></div><label class="field"><span>私有冲煮 API</span><input id="brewApiEndpoint" class="control" type="url" placeholder="HTTPS 服务端地址" value="${esc(state.settings.brew.apiEndpoint||'')}"></label><button id="saveApiBtn" class="button" type="button">保存接口</button><label class="toggle"><input id="planVisualToggle" type="checkbox"${state.settings.ui.planVisualsExpanded?' checked':''}>默认显示冲煮轨迹图</label></div></details></div></details>
   <details class="settings-category"><summary><span>本物</span><small>关于本工具和开发小哥的一切</small></summary><div class="settings-category-body about-content"><h2>富贵盒子</h2><p>咖啡豆管理、拾味冲煮辅助、品鉴记录与本地数据归档工具。</p><dl><dt>版本</dt><dd>${APP_VERSION}</dd><dt>数据结构</dt><dd>${SCHEMA_VERSION}</dd><dt>离线引擎</dt><dd>${esc(FALLBACK_ENGINE_VERSION)}</dd><dt>数据源</dt><dd>公开编码数据 ${esc(meta.version||state.codebook.version||'6')}</dd><dt>开发与维护</dt><dd>zjcrop</dd></dl></div></details>
   </div>`;
   $$('.settings-category').forEach(section=>section.addEventListener('toggle',()=>{if(!section.open)return;$$('.settings-category').forEach(other=>{if(other!==section)other.open=false;});}));
@@ -1569,8 +1583,8 @@ function renderSettings() {
   $('#saveApiBtn').addEventListener('click',async()=>{state.settings.brew.apiEndpoint=$('#brewApiEndpoint').value.trim();await saveSettings();toast('接口地址已保存');});
   $('#planVisualToggle').addEventListener('change',async event=>{state.settings.ui.planVisualsExpanded=event.target.checked;await saveSettings();});
   $('#saveIdentityBtn').addEventListener('click',async()=>{const next={...state.settings.identity,nickname:$('#settingsNickname').value.trim()||'访客',email:$('#settingsEmail').value.trim(),phone:$('#settingsPhone').value.trim(),wechat:$('#settingsWechat').value.trim(),qq:$('#settingsQq').value.trim()};Object.assign(next,await derivePublicId(next));state.settings.identity=next;await saveSettings();renderSettings();toast('账户信息与个人 ID 已保存');});
-  $('#addFilterBtn')?.addEventListener('click',()=>openAddFilterDialog()); $('#addDripperBtn')?.addEventListener('click',openAddDripperDialog);
-  $$('[data-filter-item]').forEach(button=>button.addEventListener('click',()=>openAddFilterDialog(button.dataset.filterItem)));
+  $('#addFilterBtn')?.addEventListener('click',()=>openAddFilterDialog()); $('#addDripperBtn')?.addEventListener('click',()=>openAddDripperDialog());
+  $$('[data-filter-item]').forEach(button=>button.addEventListener('click',()=>openAddFilterDialog(button.dataset.filterItem))); $$('[data-dripper-item]').forEach(button=>button.addEventListener('click',()=>openAddDripperDialog(button.dataset.dripperItem)));
   $('#saveGearTextBtn')?.addEventListener('click',async()=>{state.settings.gear.grinders=$('#gearGrinders').value.trim();await saveSettings();toast('磨豆机已保存');});
   $('#settingsExportBtn').addEventListener('click',exportData); $('#settingsImportBtn').addEventListener('click',()=>$('#importInput').click());
   $('#clearAllDataBtn').addEventListener('click',confirmClearAll); bindControlStates($('#settingsContent'));
@@ -1601,7 +1615,16 @@ function confirmClearAll() {
 
 function openProfileDialog() { switchPage('settings'); }
 
+function dismissSplash() {
+  const splash = $('#splashScreen');
+  if (!splash || splash.classList.contains('hidden')) return;
+  splash.classList.add('splash-leave');
+  setTimeout(() => splash.classList.add('hidden'), 520);
+}
+
 function bindGlobalEvents() {
+  $('#splashScreen')?.addEventListener('click', dismissSplash);
+  $('#splashScreen')?.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') dismissSplash(); });
   $('#guestBtn').addEventListener('click',()=>setIdentity('guest')); $('#emailIdentityBtn').addEventListener('click',openEmailIdentityDialog); $('#wechatIdentityBtn').addEventListener('click',()=>setIdentity('wechat'));
   $('#testBtn').addEventListener('click',async()=>{await setIdentity('guest');await seedDemo();renderBeans();});
   $('#bottomNav').addEventListener('click',event=>{const button=event.target.closest('[data-page-target]');if(button)switchPage(button.dataset.pageTarget);});

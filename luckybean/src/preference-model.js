@@ -5,7 +5,7 @@ const POSITIVE = Object.freeze({
   '柑橘': .35, '莓果': .40, '桃子': .35, '苹果': .25, '葡萄': .30, '热带水果': .40, '干果': .20,
   '蜂蜜': .40, '蔗糖': .35, '红糖': .30, '焦糖': .25, '枫糖': .30, '糖浆': .20, '太妃糖': .25,
   '顺滑': .60, '圆润': .45, '奶油感': .35, '轻盈': .25, '厚重': .20, '圆润舒适': .60,
-  '低': .20, '适中': .35, '高': .45, '微酸': .25
+  '低': .20, '中': .35, '强': .50, '适中': .35, '高': .45, '微酸': .25
 });
 
 // Defect penalties deliberately dominate positive descriptors. The structure follows
@@ -50,7 +50,7 @@ export function computeAutomaticScore(answers = {}) {
 
 export function sensoryPreferenceTags(record = {}, bean = {}) {
   const answerTags = flattenAnswers(record.answers || {})
-    .filter(({ value }) => value && value !== '无' && !['低', '适中', '高', '微酸', '圆润舒适', '尖锐', '偏高', '焦苦'].includes(value))
+    .filter(({ value }) => value && value !== '无' && !['低', '中', '强', '适中', '高', '微酸', '圆润舒适', '尖锐', '偏高', '焦苦'].includes(value))
     .map(({ node, value }) => `${node}:${value}`);
   const beanTags = [
     ...(bean.flavorCodes || []).map(code => `flavor:${code}`),

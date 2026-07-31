@@ -1,8 +1,8 @@
-const CACHE_NAME = 'luckybean-v0.9.2';
+const CACHE_NAME = 'luckybean-v0.9.3';
 const CORE = [
   './', './index.html', './styles.css', './manifest.webmanifest',
   './src/app.js', './src/utils.js', './src/brew-model-v09.js', './src/db.js', './src/codebook.js', './src/qr.js', './src/water-profiles.js', './src/preference-model.js', './src/share-codec.js', './src/brew-engine.js',
-  './public/fallback-codebook.json', './public/legacy-flavor-map.json', './public/app-icon.svg'
+  './public/fallback-codebook.json', './public/legacy-flavor-map.json', './public/app-logo.webp', './public/splash.webp', './public/action-grid.webp'
 ];
 
 self.addEventListener('install', event => {

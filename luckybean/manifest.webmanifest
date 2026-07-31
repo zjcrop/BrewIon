@@ -1,6 +1,6 @@
 {
-  "name": "富贵盒子 0.9 Beta",
-  "short_name": "富贵盒子β",
+  "name": "富贵盒子 0.9.3",
+  "short_name": "富贵盒子",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -9,11 +9,11 @@
   "lang": "zh-CN",
   "icons": [
     {
-      "src": "./public/app-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "./public/app-logo.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
       "purpose": "any maskable"
     }
   ],
-  "description": "富贵盒子 0.9：咖啡豆管理、专业冲煮计算、品鉴与器具库存"
+  "description": "富贵盒子 0.9.3：咖啡豆管理、专业冲煮计算、品鉴与器具库存"
 }

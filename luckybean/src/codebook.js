@@ -64,7 +64,7 @@ export function displayName(index, table, code, fallback = '—') {
   const row = index?.[table]?.get(code)?.row;
   if (!row) return fallback;
   const labelIndex = table === 'regions' ? 2 : table === 'entities' ? 3 : 1;
-  const value = String(row[labelIndex] || '').trim();
+  const value = String(table === 'flavors' ? (row.length >= 9 ? row[4] : row[1]) : row[labelIndex] || '').trim();
   return value || fallback;
 }
 
@@ -175,7 +175,8 @@ export function parseNaturalLanguage(text, book) {
 
   const flavorMatches = [];
   for (const row of book.flavors || []) {
-    const aliases = row.slice(1, 4).filter(v => typeof v === 'string');
+    const flavorFields = row.length >= 9 ? [row[4], row[5], row[6], row[7]] : [row[1], row[2], row[3]];
+    const aliases = flavorFields.filter(v => typeof v === 'string').flatMap(v => v.split(/[/、,，;；]/).map(x => x.trim()).filter(Boolean));
     if (aliases.some(v => v.length >= 2 && lower.includes(v.toLocaleLowerCase('zh-CN')))) flavorMatches.push(row[0]);
   }
   result.flavorCodes = [...new Set(flavorMatches)].slice(0, 8);

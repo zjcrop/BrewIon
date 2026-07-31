@@ -731,3 +731,50 @@ input[type="checkbox"] { accent-color: var(--active); }
   .recommendation-board.top-three { grid-template-columns:1fr; }
   .score-comparison.delta-only { grid-template-columns:1fr minmax(140px,.75fr); }
 }
+
+
+/* Lucky Bean v0.9.3 -------------------------------------------------- */
+.splash-screen { position:fixed; inset:0; z-index:200; background:#050505; display:grid; place-items:center; overflow:hidden; cursor:pointer; opacity:1; transition:opacity .5s ease; }
+.splash-screen.splash-leave { opacity:0; pointer-events:none; }
+.splash-screen img { width:100%; height:100%; object-fit:cover; object-position:center; }
+.splash-screen span { position:absolute; left:50%; bottom:calc(22px + var(--safe-bottom)); transform:translateX(-50%); color:#fff; font-size:12px; letter-spacing:.22em; white-space:nowrap; text-shadow:0 1px 4px rgba(0,0,0,.5); }
+.login-logo { display:block; width:86px; height:86px; object-fit:cover; margin:0 0 18px; border-radius:18px; }
+.page-heading.centered-page-heading { position:relative; justify-content:space-between; text-align:left; }
+.page-heading.centered-page-heading .page-seal-slot,
+.page-heading.centered-page-heading > div:first-child { position:static; left:auto; top:auto; transform:none; width:auto; display:block; }
+.page-heading.centered-page-heading .page-seal { margin-left:0; }
+.beans-page-heading .top-controls, .brew-page-heading .brew-heading-bean { max-width:56%; }
+.fab-wrap.action-grid { width:104px; height:104px; grid-template-columns:repeat(2,1fr); grid-template-rows:repeat(2,1fr); gap:0; padding:0; border:0; background:transparent url('./public/action-grid.webp') center/contain no-repeat; box-shadow:none; }
+.fab-wrap.action-grid .fab { width:52px; height:52px; min-width:0; min-height:0; background:transparent; color:transparent; font-size:0; }
+.fab-wrap.action-grid .fab:active { background:rgba(255,255,255,.08); }
+.preference-board-title { color:#d4aa55; font-size:26px; font-weight:800; }
+.toast.recommendation { background:#e8d7ad; color:#111; font-family:SimSun,STSong,'Songti SC',serif; opacity:0; transition:opacity 1s ease; padding:8px 13px; border-radius:4px; }
+.toast.recommendation.show { opacity:1; }
+.frozen-weight { color:#a9bdcf !important; }
+.frozen-mark { margin-left:4px; font-size:10px; vertical-align:1px; }
+.sensory-title-centered { display:flex; justify-content:center; text-align:center; }
+.sensory-title-centered > div { width:100%; text-align:center; }
+.sensory-navigation { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0; width:100%; margin-top:26px; }
+.sensory-navigation .button { width:100%; min-height:44px; text-align:center; }
+.score-comparison.delta-only { display:grid; grid-template-columns:1fr; gap:10px; text-align:center; }
+.score-head-row, .score-value-row, .score-derived-row { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:16px; }
+.score-head-row span { color:var(--muted); font-size:12px; text-align:center; }
+.score-value-row > strong { display:block; color:#fff; font-size:38px; line-height:1.2; text-align:center; }
+.subjective-delta-control { min-height:0; display:grid; grid-template-columns:minmax(0,1fr) 34px; align-items:start; gap:8px; }
+.subjective-delta-control > strong { display:block; color:#fff; font-size:34px; line-height:1.2; text-align:center; }
+.subjective-delta-wheel { width:30px; height:86px; writing-mode:vertical-lr; direction:rtl; accent-color:var(--active); cursor:ns-resize; }
+.score-derived-row { border-top:1px dashed rgba(188,157,99,.28); padding-top:10px; }
+.score-derived-row small { color:var(--muted); font-size:12px; text-align:center; }
+.gear-drippers { margin:0; }
+.gear-drippers > summary { list-style:none; cursor:pointer; display:grid; grid-template-columns:1fr; justify-items:center; gap:3px; padding:10px 0; }
+.gear-drippers > summary::-webkit-details-marker { display:none; }
+.gear-drippers > summary span { color:var(--clickable); font-size:17px; }
+.gear-drippers > summary small { color:var(--muted); font-size:11px; }
+.gear-drippers[open] > summary span { color:var(--text); border-bottom:1px dashed var(--active); }
+.gear-subpage-body { padding-top:8px; }
+.data-actions { display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0 !important; width:100%; }
+.data-actions .button { width:100%; text-align:center; min-width:0; }
+@media (max-width:640px) {
+  .beans-page-heading .top-controls, .brew-page-heading .brew-heading-bean { max-width:62%; }
+  .score-head-row, .score-value-row, .score-derived-row { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
