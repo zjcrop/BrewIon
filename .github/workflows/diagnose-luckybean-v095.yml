@@ -1,4 +1,5 @@
 name: Diagnose Lucky Bean v0.9.5 refinement
+# Trigger registered diagnostic workflow.
 
 on:
   push:
