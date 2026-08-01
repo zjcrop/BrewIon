@@ -26,10 +26,7 @@
       <p class="eyebrow">LUCKY BEAN</p>
       <h1 id="loginTitle">富贵盒子</h1>
       <p class="login-copy">管理咖啡豆、冲煮方案和品鉴记录。数据默认保存在当前设备。</p>
-      <label class="field">
-        <span>本机昵称</span>
-        <input id="loginNickname" class="control" maxlength="24" autocomplete="nickname" placeholder="例如：JJ">
-      </label>
+      <label class="field"><span>本机昵称</span><input id="loginNickname" class="control" maxlength="24" autocomplete="nickname" placeholder="例如：JJ"></label>
       <div class="login-actions">
         <button id="emailIdentityBtn" class="button primary" type="button">邮箱身份</button>
         <button id="wechatIdentityBtn" class="button" type="button">微信注册</button>
@@ -39,62 +36,25 @@
       <p class="fine-print">邮箱身份目前为本机身份；微信注册与跨设备账号需要后端服务。界面不会伪装为已完成真实注册。</p>
     </div>
   </section>
-
   <div id="appShell" class="app-shell hidden">
     <main id="mainContent" class="main-content">
       <section id="pageBeans" class="page active" data-page="beans" aria-labelledby="titleBeans">
-        <div class="page-heading centered-page-heading beans-page-heading">
-          <div class="page-seal-slot"><h1 id="titleBeans" class="page-seal">豆藏</h1></div>
-          <div class="top-controls">
-            <button class="small-control" id="groupBtn" type="button">分组</button>
-            <button class="small-control" id="manageBtn" type="button">管理</button>
-            <button class="theme-toggle" id="themeToggleBtn" type="button" aria-label="切换到白色模式"></button>
-          </div>
-        </div>
-        <div id="activeFilterBar" class="active-filter-bar hidden"></div>
-        <div id="beanGroups" class="bean-groups" aria-live="polite"></div>
+        <div class="page-heading centered-page-heading beans-page-heading"><div class="page-seal-slot"><h1 id="titleBeans" class="page-seal">豆藏</h1></div><div class="top-controls"><button class="small-control" id="groupBtn" type="button">分组</button><button class="small-control" id="manageBtn" type="button">管理</button><button class="theme-toggle" id="themeToggleBtn" type="button" aria-label="切换到白色模式"></button></div></div>
+        <div id="activeFilterBar" class="active-filter-bar hidden"></div><div id="beanGroups" class="bean-groups" aria-live="polite"></div>
       </section>
-
-      <section id="pageBrew" class="page" data-page="brew" aria-labelledby="titleBrew">
-        <div class="page-heading centered-page-heading brew-page-heading"><div class="page-seal-slot"><h1 id="titleBrew" class="page-seal">小酌</h1></div><div id="brewHeadingBean" class="brew-heading-bean"></div></div>
-        <div id="brewContent"></div>
-      </section>
-
-      <section id="pageSensory" class="page" data-page="sensory" aria-labelledby="titleSensory">
-        <div class="page-heading centered-page-heading"><div><h1 id="titleSensory" class="page-seal">品鉴</h1></div></div>
-        <div id="sensoryContent"></div>
-      </section>
-
-      <section id="pageSettings" class="page" data-page="settings" aria-labelledby="titleSettings">
-        <div class="page-heading centered-page-heading"><div><h1 id="titleSettings" class="page-seal">器设</h1></div></div>
-        <div id="settingsContent"></div>
-      </section>
+      <section id="pageBrew" class="page" data-page="brew" aria-labelledby="titleBrew"><div class="page-heading centered-page-heading brew-page-heading"><div class="page-seal-slot"><h1 id="titleBrew" class="page-seal">小酌</h1></div><div id="brewHeadingBean" class="brew-heading-bean"></div></div><div id="brewContent"></div></section>
+      <section id="pageSensory" class="page" data-page="sensory" aria-labelledby="titleSensory"><div class="page-heading centered-page-heading"><div><h1 id="titleSensory" class="page-seal">品鉴</h1></div></div><div id="sensoryContent"></div></section>
+      <section id="pageSettings" class="page" data-page="settings" aria-labelledby="titleSettings"><div class="page-heading centered-page-heading"><div><h1 id="titleSettings" class="page-seal">器设</h1></div></div><div id="settingsContent"></div></section>
     </main>
-
-    <div id="fabWrap" class="fab-wrap action-grid" aria-label="豆藏快捷操作">
-      <button id="fabSearchBtn" class="fab text-fab" type="button" aria-label="搜索豆卡">搜索</button>
-      <button id="fabAddBtn" class="fab text-fab" type="button" aria-label="新增豆卡">添丁</button>
-      <button id="fabHistoryBtn" class="fab text-fab" type="button" aria-label="追溯往昔记录">溯旧</button>
-      <button id="fabRecommendBtn" class="fab text-fab" type="button" aria-label="选择推荐豆卡">选择</button>
-    </div>
-
-    <nav id="bottomNav" class="bottom-nav" aria-label="主页面">
-      <button class="nav-button active" type="button" data-page-target="beans" aria-label="豆藏：咖啡豆管理" aria-current="page"><span>藏</span></button>
-      <button class="nav-button" type="button" data-page-target="brew" aria-label="小酌：冲煮制作"><span>酌</span></button>
-      <button class="nav-button" type="button" data-page-target="sensory" aria-label="品鉴：感官评价"><span>鉴</span></button>
-      <button class="nav-button" type="button" data-page-target="settings" aria-label="器设：设备与系统设置"><span>器</span></button>
-    </nav>
+    <div id="fabWrap" class="fab-wrap action-grid" aria-label="豆藏快捷操作"><button id="fabSearchBtn" class="fab text-fab" type="button" aria-label="搜索豆卡">搜索</button><button id="fabAddBtn" class="fab text-fab" type="button" aria-label="新增豆卡">添丁</button><button id="fabHistoryBtn" class="fab text-fab" type="button" aria-label="追溯往昔记录">溯旧</button><button id="fabRecommendBtn" class="fab text-fab" type="button" aria-label="选择推荐豆卡">选择</button></div>
+    <nav id="bottomNav" class="bottom-nav" aria-label="主页面"><button class="nav-button active" type="button" data-page-target="beans" aria-label="豆藏：咖啡豆管理" aria-current="page"><span>藏</span></button><button class="nav-button" type="button" data-page-target="brew" aria-label="小酌：冲煮制作"><span>酌</span></button><button class="nav-button" type="button" data-page-target="sensory" aria-label="品鉴：感官评价"><span>鉴</span></button><button class="nav-button" type="button" data-page-target="settings" aria-label="器设：设备与系统设置"><span>器</span></button></nav>
   </div>
-
-  <input id="qrImageInput" type="file" accept="image/*" capture="environment" class="hidden">
-  <input id="importInput" type="file" accept="application/json" class="hidden">
-  <div id="overlayRoot"></div>
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
+  <input id="qrImageInput" type="file" accept="image/*" capture="environment" class="hidden"><input id="importInput" type="file" accept="application/json" class="hidden"><div id="overlayRoot"></div><div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script type="module" src="./src/app.js"></script>
   <script type="module" src="./src/v095-ui.js?v=095"></script>
   <script type="module" src="./src/theme-bridge.js?v=095b"></script>
   <script type="module" src="./src/v095-layout-gear.js?v=095c"></script>
   <script type="module" src="./src/v095-sensory-pro.js?v=095c"></script>
+  <script type="module" src="./src/v095-sensory-flow-guard.js?v=095c"></script>
 </body>
 </html>
