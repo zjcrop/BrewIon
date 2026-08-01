@@ -1,0 +1,348 @@
+/* Lucky Bean v0.9.5 refinement: light subpages, gear and professional sensory */
+
+/* Light theme: seals always keep white lettering on red. */
+html[data-theme="light"] .page-seal,
+html.theme-light .page-seal {
+  background: var(--seal, #a62823) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+/* Group cards, expanded group and collapse row. */
+html[data-theme="light"] :where(
+  .group-grid,
+  .group-card,
+  .active-group-panel,
+  .active-group-title,
+  .group-collapse,
+  .bottom-return
+) {
+  background: transparent !important;
+  color: #11110f !important;
+  border-color: #c9c6bd !important;
+}
+html[data-theme="light"] .group-card {
+  background: #f8f8f5 !important;
+  padding-inline: 12px !important;
+}
+html[data-theme="light"] .group-card span,
+html[data-theme="light"] .active-group-title span,
+html[data-theme="light"] .group-collapse,
+html[data-theme="light"] .bottom-return {
+  color: #11110f !important;
+}
+html[data-theme="light"] .group-card small,
+html[data-theme="light"] .active-group-title small {
+  color: #66645f !important;
+}
+html[data-theme="light"] .group-collapse,
+html[data-theme="light"] .bottom-return {
+  background: #f8f8f5 !important;
+  border-top-color: #b49a6e !important;
+}
+
+/* Group menu, recommendation selector and leaderboard subpage. */
+html[data-theme="light"] :where(
+  .popup-menu,
+  .recommend-menu,
+  .recommendation-board,
+  .preference-board-line,
+  .preference-board-strip,
+  .preference-board-top3,
+  .overlay[data-overlay="recommendation-board"] .dialog,
+  .overlay[data-overlay="history"] .dialog,
+  .overlay .dialog.bottom-sheet
+) {
+  background: #f8f8f5 !important;
+  color: #11110f !important;
+  border-color: #c9c6bd !important;
+}
+html[data-theme="light"] .recommendation-board button,
+html[data-theme="light"] .preference-board-line,
+html[data-theme="light"] .preference-board-top3 button {
+  background: transparent !important;
+  color: #11110f !important;
+  border-color: #d1cec5 !important;
+}
+html[data-theme="light"] .recommendation-board button > small,
+html[data-theme="light"] .preference-board-line > span:not(:first-child) {
+  color: #66645f !important;
+}
+html[data-theme="light"] .recommendation-board button > span,
+html[data-theme="light"] .preference-board-title,
+html[data-theme="light"] .preference-board-line > span:first-child {
+  color: #a47834 !important;
+}
+html[data-theme="light"] .popup-menu button,
+html[data-theme="light"] .recommend-menu button {
+  color: #11110f !important;
+}
+.recommend-dot[data-v095-grey="1"] { background: #8b8b87 !important; }
+
+/* Old hard-coded bean text must remain readable in light mode. */
+html[data-theme="light"] .bean-card.compact h3,
+html[data-theme="light"] .compact-bean-row > strong,
+html[data-theme="light"] .v095-process-inline,
+html[data-theme="light"] .frozen-weight {
+  color: #11110f !important;
+}
+html[data-theme="light"] .bean-card.compact,
+html[data-theme="light"] .record-item.brew-record {
+  background: transparent !important;
+  border-color: #d1cec5 !important;
+}
+html[data-theme="light"] .cup-action.compact-pick {
+  color: #11110f !important;
+  border-color: #aaa79e !important;
+}
+
+/* Fixed-size mascot: one third of the former 360px maximum. */
+.v095-settings-mascot {
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+  inline-size: 120px !important;
+  flex: 0 0 120px !important;
+  margin: 42px auto 110px !important;
+}
+.v095-settings-mascot img {
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+  height: auto !important;
+  object-fit: contain !important;
+}
+.v095-settings-mascot figcaption { width: 120px !important; }
+
+/* Filter paper, dripper and grinder use the same left-aligned structure. */
+.v095-gear-section { margin: 0 0 26px !important; }
+.v095-gear-heading,
+.gear-manager .panel-title.v095-gear-heading,
+.gear-drippers > summary.v095-gear-heading {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  text-align: left !important;
+  list-style: none !important;
+  padding: 0 0 10px !important;
+  cursor: default !important;
+}
+.v095-gear-heading::-webkit-details-marker { display: none !important; }
+.v095-gear-heading > div,
+.v095-gear-heading > span {
+  display: grid !important;
+  justify-items: start !important;
+  text-align: left !important;
+  gap: 3px !important;
+}
+.v095-gear-heading h3,
+.v095-gear-heading strong,
+.gear-drippers > summary.v095-gear-heading strong {
+  margin: 0 !important;
+  color: var(--text) !important;
+  font-size: 17px !important;
+  font-weight: 750 !important;
+  text-align: left !important;
+}
+.v095-gear-heading p,
+.v095-gear-heading small {
+  margin: 0 !important;
+  color: var(--muted) !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  text-align: left !important;
+}
+.v095-gear-add { flex: 0 0 auto !important; }
+.v095-dripper-section[open] > .gear-subpage-body { padding-top: 0 !important; }
+.v095-legacy-grinder-field,
+.v095-legacy-grinder-save { display: none !important; }
+.v095-grinder-section .gear-item small { display: block; margin-top: 3px; }
+.v095-equipment-editor .dialog-header,
+.v095-gear-editor .dialog-header { text-align: left !important; }
+.v095-equipment-editor .grid-2,
+.v095-gear-editor .grid-2 { margin-bottom: 22px; }
+
+/* New professional sensory modes. */
+.v095-sensory-modes-v2 button {
+  border: 0 !important;
+  border-bottom: 1px dashed var(--muted-deep) !important;
+  padding: 18px 2px !important;
+}
+.v095-sensory-modes-v2 button:last-child { border-bottom-color: transparent !important; }
+.v095-sensory-modes-v2 strong { font-weight: 750; }
+
+.v095-professional-dialog {
+  width: min(900px, 100%) !important;
+  max-height: calc(100dvh - 30px) !important;
+}
+.v095-pro-card { display: grid; gap: 14px; }
+.v095-pro-card > h2,
+.v095-pro-card > p { margin: 0; }
+.v095-sort-hint {
+  display: block;
+  margin-top: 4px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+}
+.v095-selected-tags,
+.v095-tag-pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  min-height: 38px;
+}
+.v095-selected-tags {
+  align-items: center;
+  padding: 10px 0 13px;
+  border-bottom: 1px dashed var(--muted-deep);
+}
+.v095-selected-tag,
+.v095-cata-tag {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--muted-deep);
+  background: transparent;
+  color: var(--clickable);
+  cursor: pointer;
+}
+.v095-selected-tag {
+  color: var(--text);
+  border-color: var(--active);
+  cursor: grab;
+  touch-action: none;
+}
+.v095-selected-tag.dragging { opacity: .48; cursor: grabbing; }
+.v095-selected-tag small,
+.v095-cata-tag small {
+  color: #a47834;
+  font-size: 9px;
+  font-weight: 800;
+}
+.v095-selected-tag b { color: var(--muted); font-size: 10px; letter-spacing: -.15em; }
+.v095-cata-tag.selected {
+  color: var(--text);
+  border-color: var(--active);
+  background: rgba(164, 120, 52, .10);
+}
+.v095-descriptive-intensity {
+  display: grid;
+  grid-template-columns: minmax(128px, auto) minmax(120px, 1fr) 44px;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+.v095-descriptive-intensity input { width: 100%; accent-color: var(--active); }
+.v095-descriptive-intensity output { text-align: right; }
+.v095-descriptive-intensity small { grid-column: 2 / 4; color: var(--muted); }
+
+.v095-radar-grid { align-items: start; }
+.v095-radar svg { cursor: crosshair; }
+.v095-radar-axis-label { cursor: pointer; font-weight: 650; }
+.v095-radar-handle.selected { stroke-width: 4 !important; r: 10px; }
+.v095-radar-slider-slot { min-height: 0; }
+.v095-radar-slider {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 10px;
+  margin: 12px auto 0;
+  width: min(100%, 330px);
+}
+.v095-radar-slider input { width: 100%; accent-color: var(--active); }
+.v095-radar-slider output { text-align: right; }
+
+.v095-affective-grid { display: grid; gap: 18px; }
+.v095-affective-item { margin: 0; padding: 0 0 14px; border: 0; border-bottom: 1px dashed var(--muted-deep); }
+.v095-affective-item legend { margin-bottom: 8px; font-weight: 700; }
+.v095-nine-scale {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(28px, 1fr));
+  gap: 5px;
+}
+.v095-nine-scale button {
+  min-width: 0;
+  padding: 7px 2px;
+  border: 1px solid var(--muted-deep);
+  background: transparent;
+  color: var(--clickable);
+}
+.v095-nine-scale button.selected {
+  color: var(--text);
+  border-color: var(--active);
+  background: rgba(164, 120, 52, .12);
+  font-weight: 750;
+}
+.v095-affective-item > small { display: block; margin-top: 6px; color: var(--muted); }
+.v095-pro-score {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding-top: 6px;
+}
+.v095-pro-score strong { color: var(--active); font-size: 38px; }
+.v095-pro-score small { max-width: 520px; text-align: center; color: var(--muted); }
+.v095-professional-summary {
+  margin: 0 0 18px;
+  padding: 12px 0;
+  border-block: 1px dashed var(--muted-deep);
+}
+.v095-professional-summary pre {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+  color: var(--muted);
+  font: 12px/1.75 system-ui, sans-serif;
+}
+
+/* Light styling for all new gear and professional sensory pages. */
+html[data-theme="light"] :where(
+  .v095-gear-section,
+  .v095-equipment-editor,
+  .v095-gear-editor,
+  .v095-professional-dialog,
+  .v095-pro-card,
+  .v095-affective-item,
+  .v095-professional-summary
+) {
+  background: #f8f8f5 !important;
+  color: #11110f !important;
+  border-color: #c9c6bd !important;
+}
+html[data-theme="light"] :where(
+  .v095-selected-tag,
+  .v095-cata-tag,
+  .v095-nine-scale button
+) {
+  background: #fff !important;
+  color: #2b2a26 !important;
+  border-color: #aaa79e !important;
+}
+html[data-theme="light"] :where(
+  .v095-selected-tag,
+  .v095-cata-tag.selected,
+  .v095-nine-scale button.selected
+) {
+  color: #11110f !important;
+  border-color: #a47834 !important;
+  background: #f5ede1 !important;
+}
+html[data-theme="light"] .v095-radar-handle { stroke: #fff !important; }
+html[data-theme="light"] .v095-professional-summary pre { color: #55524e !important; }
+
+@media (max-width: 620px) {
+  .v095-professional-dialog { padding: 16px !important; }
+  .v095-selected-tag,
+  .v095-cata-tag { min-height: 38px; }
+  .v095-descriptive-intensity { grid-template-columns: 1fr 42px; }
+  .v095-descriptive-intensity > span { grid-column: 1 / -1; }
+  .v095-descriptive-intensity small { grid-column: 1 / -1; }
+  .v095-nine-scale { grid-template-columns: repeat(9, minmax(24px, 1fr)); gap: 3px; }
+  .v095-nine-scale button { font-size: 12px; }
+}
