@@ -1,0 +1,310 @@
+/* Lucky Bean v0.9.5 — complete light theme and stable header layout */
+
+/* Header controls: always one horizontal row, independent of legacy beta rules. */
+.page-heading.beans-page-heading {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) max-content !important;
+  align-items: start !important;
+  justify-content: stretch !important;
+  column-gap: 18px !important;
+}
+.page-heading.beans-page-heading > .page-seal-slot {
+  width: auto !important;
+  min-width: 0 !important;
+  justify-self: start !important;
+}
+.page-heading.beans-page-heading > .top-controls {
+  display: grid !important;
+  grid-auto-flow: column !important;
+  grid-template-columns: max-content max-content 22px !important;
+  align-items: center !important;
+  justify-content: end !important;
+  justify-items: center !important;
+  width: max-content !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  gap: 2ch !important;
+  padding-top: 8px !important;
+  margin: 0 !important;
+  flex-flow: row nowrap !important;
+  white-space: nowrap !important;
+}
+.page-heading.beans-page-heading > .top-controls > * {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding-inline: 0 !important;
+  justify-self: center !important;
+}
+#themeToggleBtn {
+  position: relative;
+  z-index: 3;
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 22px !important;
+  min-width: 22px !important;
+  height: 22px !important;
+  padding: 0 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation;
+}
+#themeToggleBtn svg { pointer-events: none; }
+
+html[data-theme="light"] {
+  color-scheme: light !important;
+  --bg: #ececea;
+  --panel: #f8f8f5;
+  --field: #ffffff;
+  --text: #11110f;
+  --clickable: #2b2a26;
+  --muted: #66645f;
+  --muted-deep: #96938a;
+  --active: #a47834;
+  --seal: #a62823;
+  --danger: #963b37;
+  --ok: #4f7054;
+  --warn: #82612d;
+  background: #ececea !important;
+  color: #11110f !important;
+}
+
+/* Root surfaces and every main page. */
+html[data-theme="light"] body,
+html[data-theme="light"] .app-shell,
+html[data-theme="light"] .main-content,
+html[data-theme="light"] .page,
+html[data-theme="light"] .login-screen,
+html[data-theme="light"] .overlay.full,
+html[data-theme="light"] .overlay.full .dialog {
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
+}
+
+/* Content surfaces, including dynamically generated subpages. */
+html[data-theme="light"] :where(
+  .panel,
+  .bean-card,
+  .freshness-card,
+  .plan-stage,
+  .record-item,
+  .setting-row,
+  .details-block,
+  .settings-category,
+  .settings-category-body,
+  .nested-settings,
+  .visual-section,
+  .evidence-block,
+  .brew-form,
+  .brew-compact-grid,
+  .brew-row,
+  .sensory-start-panel,
+  .sensory-evaluation,
+  .sensory-history,
+  .score-comparison,
+  .professional-result,
+  .trajectory-section,
+  .gear-drippers,
+  .v095-brew-details,
+  .v095-settings-mascot,
+  .v095-radar
+) {
+  background-color: transparent !important;
+  color: var(--text) !important;
+}
+
+/* Floating sheets, dialogs, menus and the full sensory wizard. */
+html[data-theme="light"] :where(
+  .dialog,
+  .popup-menu,
+  .recommend-menu,
+  .v095-wizard-dialog
+) {
+  background: var(--panel) !important;
+  color: var(--text) !important;
+  border-color: #bdbab0 !important;
+  box-shadow: 0 14px 38px rgba(45, 43, 36, .18) !important;
+}
+html[data-theme="light"] .overlay:not(.full),
+html[data-theme="light"] .v095-wizard-overlay {
+  background: rgba(38, 37, 33, .30) !important;
+}
+html[data-theme="light"] .overlay[data-overlay="bean-search"] {
+  background: rgba(38, 37, 33, .26) !important;
+}
+
+/* Text hierarchy. Explicitly replaces hard-coded white text in old pages. */
+html[data-theme="light"] :where(
+  h1, h2, h3, h4, h5, h6,
+  strong, b, label, legend, summary,
+  .static-value,
+  .bean-card-footer strong,
+  .record-item strong,
+  .score-value-row > strong,
+  .subjective-delta-control > strong,
+  .trajectory-title-row h3,
+  .professional-result > summary,
+  .v095-suggested-score,
+  .v095-wizard-card
+) {
+  color: var(--text) !important;
+}
+html[data-theme="light"] :where(
+  p, small, .small, .muted, .fine-print, .origin, .meta,
+  .field > span, .form-field > label, .panel-title p,
+  .dialog-header p, .settings-category summary small,
+  .score-head-row span, .score-derived-row small,
+  .v095-sensory-modes small, .v095-step, .v095-radar p
+) {
+  color: var(--muted) !important;
+}
+html[data-theme="light"] a { color: #3c3a34 !important; }
+html[data-theme="light"] .page-seal {
+  background: var(--seal) !important;
+  color: #050505 !important;
+}
+html[data-theme="light"] :where(.gold, [class*="gold"], .recommended, .recommended h3) {
+  color: #a47834 !important;
+}
+
+/* Buttons and interactive text. */
+html[data-theme="light"] :where(
+  .button,
+  .small-control,
+  .icon-button,
+  .cup-action,
+  .close-button,
+  .nav-button,
+  .popup-menu button,
+  .recommend-option,
+  .history-toggle,
+  .flavor-button,
+  .sensory-option,
+  .v095-sensory-modes button,
+  .v095-wizard-actions button,
+  .v095-intensity button
+) {
+  background-color: transparent !important;
+  color: var(--clickable) !important;
+  border-color: #aaa79e !important;
+}
+html[data-theme="light"] :where(
+  .button.primary,
+  .button.active,
+  .small-control.active,
+  .mode-switch .active,
+  .flavor-button.selected,
+  .sensory-option.selected,
+  .history-toggle.active,
+  .v095-sensory-modes button.selected,
+  .v095-intensity button.selected
+) {
+  color: var(--text) !important;
+  border-color: var(--active) !important;
+}
+html[data-theme="light"] :where(.button.danger, .danger) { color: var(--danger) !important; }
+html[data-theme="light"] :where(.ok, .success) { color: var(--ok) !important; }
+html[data-theme="light"] :where(.warn, .warning) { color: var(--warn) !important; }
+html[data-theme="light"] .close-button { color: #57554f !important; }
+
+/* Form controls across bean, brew, tasting, search and settings pages. */
+html[data-theme="light"] :where(
+  input,
+  select,
+  textarea,
+  .control
+) {
+  background-color: var(--field) !important;
+  color: var(--text) !important;
+  caret-color: var(--text) !important;
+  border-color: #aaa79e !important;
+}
+html[data-theme="light"] select option {
+  background: #fff !important;
+  color: #111 !important;
+}
+html[data-theme="light"] :where(input, textarea, .control)::placeholder {
+  color: #88857d !important;
+  opacity: 1 !important;
+}
+html[data-theme="light"] .control.is-empty {
+  color: var(--muted) !important;
+  border-bottom-color: #aaa79e !important;
+}
+html[data-theme="light"] .control.is-filled { color: var(--text) !important; }
+html[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none !important;
+  opacity: .72 !important;
+}
+html[data-theme="light"] input[type="range"],
+html[data-theme="light"] input[type="checkbox"] { accent-color: var(--active) !important; }
+
+/* Bottom navigation and fixed controls. */
+html[data-theme="light"] .bottom-nav {
+  background: rgba(248, 248, 245, .97) !important;
+  border-top: 1px solid #cfccc3 !important;
+  box-shadow: 0 -8px 24px rgba(45, 43, 36, .07) !important;
+}
+html[data-theme="light"] .nav-button { color: #706d65 !important; }
+html[data-theme="light"] .nav-button.active { color: #111 !important; }
+html[data-theme="light"] .fab-wrap.action-grid { background-color: transparent !important; }
+html[data-theme="light"] .fab-wrap.action-grid .fab { color: #fff !important; }
+
+/* Theme icon: dark mode shows white sun; light mode shows black moon. */
+html[data-theme="dark"] #themeToggleBtn { color: #fff !important; }
+html[data-theme="dark"] #themeToggleBtn svg { stroke: #fff !important; fill: none !important; }
+html[data-theme="light"] #themeToggleBtn { color: #111 !important; }
+html[data-theme="light"] #themeToggleBtn svg { stroke: #111 !important; fill: none !important; }
+html[data-theme="light"] #themeToggleBtn svg path { fill: none !important; }
+
+/* Charts, trajectory diagrams and radar charts. */
+html[data-theme="light"] :where(
+  .trajectory-chart text,
+  .trajectory-svg text,
+  .v095-radar text
+) { fill: #111 !important; color: #111 !important; }
+html[data-theme="light"] :where(
+  .trajectory-grid line,
+  .trajectory-grid path,
+  .v095-radar .grid polygon,
+  .v095-radar .grid line
+) { stroke: rgba(25, 25, 22, .24) !important; }
+html[data-theme="light"] .v095-radar-handle { stroke: #fff !important; }
+html[data-theme="light"] .v095-radar .value {
+  fill: rgba(164, 120, 52, .20) !important;
+  stroke: #a47834 !important;
+}
+
+/* Tables and separators used by history/detail pages. */
+html[data-theme="light"] :where(table, thead, tbody, tr, th, td) {
+  background-color: transparent !important;
+  color: var(--text) !important;
+  border-color: #cfccc3 !important;
+}
+html[data-theme="light"] :where(hr, .divider, .separator) {
+  border-color: #cfccc3 !important;
+  color: #cfccc3 !important;
+}
+
+/* Toast remains dark deliberately for contrast in both themes. */
+html[data-theme="light"] .toast {
+  background: #24231f !important;
+  color: #fff !important;
+}
+
+@media (max-width: 620px) {
+  .page-heading.beans-page-heading {
+    grid-template-columns: minmax(0, 1fr) max-content !important;
+    column-gap: 10px !important;
+  }
+  .page-heading.beans-page-heading > .top-controls {
+    grid-template-columns: max-content max-content 20px !important;
+    gap: 2ch !important;
+    font-size: 13px !important;
+  }
+  #themeToggleBtn {
+    width: 20px !important;
+    min-width: 20px !important;
+    height: 20px !important;
+  }
+}

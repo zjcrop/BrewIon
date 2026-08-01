@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="./styles-v095.css?v=095">
   <link rel="stylesheet" href="./styles-action-grid.css?v=095a">
+  <link rel="stylesheet" href="./styles-theme-light.css?v=095b">
 </head>
 <body>
   <section id="splashScreen" class="splash-screen" role="button" tabindex="0" aria-label="点击进入富贵盒子">
@@ -47,7 +48,7 @@
           <div class="top-controls">
             <button class="small-control" id="groupBtn" type="button">分组</button>
             <button class="small-control" id="manageBtn" type="button">管理</button>
-            <button class="theme-toggle" id="themeToggleBtn" type="button" aria-label="切换到白天模式"></button>
+            <button class="theme-toggle" id="themeToggleBtn" type="button" aria-label="切换到白色模式"></button>
           </div>
         </div>
         <div id="activeFilterBar" class="active-filter-bar hidden"></div>
@@ -92,5 +93,6 @@
 
   <script type="module" src="./src/app.js"></script>
   <script type="module" src="./src/v095-ui.js?v=095"></script>
+  <script type="module" src="./src/theme-bridge.js?v=095b"></script>
 </body>
 </html>
