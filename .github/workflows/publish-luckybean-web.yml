@@ -42,13 +42,16 @@ jobs:
           npm run check
           node --check src/app.js
           node --check src/v095-ui.js
+          node --check src/theme-bridge.js
           test "$(node -p "require('./package.json').version")" = '0.9.5'
           test -s index.html
           test -s styles.css
           test -s styles-v095.css
           test -s styles-action-grid.css
+          test -s styles-theme-light.css
           test -s src/app.js
           test -s src/v095-ui.js
+          test -s src/theme-bridge.js
           test -s src/codebook.js
           test -s public/fallback-codebook.json
           test -s public/splash-red.jpg
@@ -57,11 +60,19 @@ jobs:
           test -s public/action-grid.svg
           grep -q 'styles-v095.css?v=095' index.html
           grep -q 'styles-action-grid.css?v=095a' index.html
+          grep -q 'styles-theme-light.css?v=095b' index.html
           grep -q 'src/v095-ui.js?v=095' index.html
+          grep -q 'src/theme-bridge.js?v=095b' index.html
           grep -q 'splash-red.jpg?v=095' index.html
           grep -q 'action-grid.svg?v=095a' styles-action-grid.css
-          grep -q 'luckybean-v0.9.5' sw.js
+          grep -q 'grid-template-columns: max-content max-content 22px !important' styles-theme-light.css
+          grep -q 'html\[data-theme="light"\] .bottom-nav' styles-theme-light.css
+          grep -q "document.addEventListener('click', handleThemeRequest, true)" src/theme-bridge.js
+          grep -q 'nativeButton.onclick.call' src/theme-bridge.js
+          grep -q 'luckybean-v0.9.5-theme2' sw.js
           grep -q "'./styles-action-grid.css'" sw.js
+          grep -q "'./styles-theme-light.css'" sw.js
+          grep -q "'./src/theme-bridge.js'" sw.js
           grep -q "'./public/action-grid.svg'" sw.js
 
       - name: Publish runtime under BrewIon/luckybean
@@ -74,6 +85,7 @@ jobs:
           cp _luckybean_source/styles.css luckybean/
           cp _luckybean_source/styles-v095.css luckybean/
           cp _luckybean_source/styles-action-grid.css luckybean/
+          cp _luckybean_source/styles-theme-light.css luckybean/
           cp _luckybean_source/manifest.webmanifest luckybean/
           cp _luckybean_source/sw.js luckybean/
           cp -R _luckybean_source/src luckybean/
@@ -115,7 +127,7 @@ jobs:
           set -euo pipefail
           base='https://zjcrop.github.io/BrewIon/luckybean/'
           ok='false'
-          index_code='000'; app_code='000'; ui_code='000'; css_code='000'; grid_css_code='000'
+          index_code='000'; app_code='000'; ui_code='000'; theme_js_code='000'; css_code='000'; grid_css_code='000'; theme_css_code='000'
           red_code='000'; white_code='000'; mascot_code='000'; grid_svg_code='000'; codebook_code='000'; release_code='000'
           release_version=''; release_source_sha=''
 
@@ -124,8 +136,10 @@ jobs:
             index_code="$(curl -L -sS -o /tmp/lb-index.html -w '%{http_code}' --max-time 20 "${base}?v=${nonce}" || true)"
             app_code="$(curl -L -sS -o /tmp/lb-app.js -w '%{http_code}' --max-time 20 "${base}src/app.js?v=${nonce}" || true)"
             ui_code="$(curl -L -sS -o /tmp/lb-v095.js -w '%{http_code}' --max-time 20 "${base}src/v095-ui.js?v=${nonce}" || true)"
+            theme_js_code="$(curl -L -sS -o /tmp/lb-theme.js -w '%{http_code}' --max-time 20 "${base}src/theme-bridge.js?v=${nonce}" || true)"
             css_code="$(curl -L -sS -o /tmp/lb-v095.css -w '%{http_code}' --max-time 20 "${base}styles-v095.css?v=${nonce}" || true)"
             grid_css_code="$(curl -L -sS -o /tmp/lb-grid.css -w '%{http_code}' --max-time 20 "${base}styles-action-grid.css?v=${nonce}" || true)"
+            theme_css_code="$(curl -L -sS -o /tmp/lb-theme.css -w '%{http_code}' --max-time 20 "${base}styles-theme-light.css?v=${nonce}" || true)"
             red_code="$(curl -L -sS -o /tmp/lb-red.jpg -w '%{http_code}' --max-time 20 "${base}public/splash-red.jpg?v=${nonce}" || true)"
             white_code="$(curl -L -sS -o /tmp/lb-white.jpg -w '%{http_code}' --max-time 20 "${base}public/splash-white.jpg?v=${nonce}" || true)"
             mascot_code="$(curl -L -sS -o /tmp/lb-mascot.png -w '%{http_code}' --max-time 20 "${base}public/settings-mascot.png?v=${nonce}" || true)"
@@ -138,19 +152,26 @@ jobs:
               release_source_sha="$(python -c "import json; print(json.load(open('/tmp/lb-release.json', encoding='utf-8')).get('source_sha', ''))" || true)"
             fi
 
-            if [[ "$index_code" == '200' && "$app_code" == '200' && "$ui_code" == '200' && "$css_code" == '200' && "$grid_css_code" == '200' \
+            if [[ "$index_code" == '200' && "$app_code" == '200' && "$ui_code" == '200' && "$theme_js_code" == '200' \
+              && "$css_code" == '200' && "$grid_css_code" == '200' && "$theme_css_code" == '200' \
               && "$red_code" == '200' && "$white_code" == '200' && "$mascot_code" == '200' && "$grid_svg_code" == '200' \
               && "$codebook_code" == '200' && "$release_code" == '200' \
               && "$release_version" == "$LUCKYBEAN_VERSION" && "$release_source_sha" == "$LUCKYBEAN_SOURCE_SHA" ]] \
               && grep -q '<title>富贵盒子</title>' /tmp/lb-index.html \
               && grep -q 'styles-v095.css' /tmp/lb-index.html \
               && grep -q 'styles-action-grid.css' /tmp/lb-index.html \
+              && grep -q 'styles-theme-light.css' /tmp/lb-index.html \
               && grep -q 'src/v095-ui.js' /tmp/lb-index.html \
+              && grep -q 'src/theme-bridge.js' /tmp/lb-index.html \
               && grep -q 'const PAGE_META' /tmp/lb-app.js \
               && grep -q 'openSegmentedWizard' /tmp/lb-v095.js \
               && grep -q 'skipNativeToNote' /tmp/lb-v095.js \
+              && grep -q 'handleThemeRequest' /tmp/lb-theme.js \
+              && grep -q 'nativeButton.onclick.call' /tmp/lb-theme.js \
               && grep -q '.v095-radar-handle' /tmp/lb-v095.css \
               && grep -q 'action-grid.svg' /tmp/lb-grid.css \
+              && grep -q 'grid-template-columns: max-content max-content 22px' /tmp/lb-theme.css \
+              && grep -q 'html\[data-theme="light"\] .bottom-nav' /tmp/lb-theme.css \
               && grep -q '四格快捷操作背景' /tmp/lb-grid.svg \
               && grep -q '"countries"' /tmp/lb-codebook.json; then
               ok='true'
@@ -159,7 +180,7 @@ jobs:
             sleep 10
           done
 
-          export ok index_code app_code ui_code css_code grid_css_code red_code white_code mascot_code grid_svg_code codebook_code release_code release_version release_source_sha base
+          export ok index_code app_code ui_code theme_js_code css_code grid_css_code theme_css_code red_code white_code mascot_code grid_svg_code codebook_code release_code release_version release_source_sha base
           python - <<'PY'
           import json, os
           from datetime import datetime, timezone
@@ -171,8 +192,10 @@ jobs:
               'index_http': os.environ['index_code'],
               'app_js_http': os.environ['app_code'],
               'v095_js_http': os.environ['ui_code'],
+              'theme_bridge_js_http': os.environ['theme_js_code'],
               'v095_css_http': os.environ['css_code'],
               'action_grid_css_http': os.environ['grid_css_code'],
+              'light_theme_css_http': os.environ['theme_css_code'],
               'splash_red_http': os.environ['red_code'],
               'splash_white_http': os.environ['white_code'],
               'settings_mascot_http': os.environ['mascot_code'],
