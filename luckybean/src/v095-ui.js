@@ -29,8 +29,12 @@ function loadUi() {
 }
 function saveUi() {
   const value = JSON.stringify(ui);
-  localStorage.setItem(UI_KEY, value);
-  localStorage.setItem(LEGACY_UI_KEY, value);
+  try {
+    localStorage.setItem(UI_KEY, value);
+    localStorage.setItem(LEGACY_UI_KEY, value);
+  } catch (error) {
+    console.warn('界面偏好无法写入本地存储，当前会话仍继续生效。', error);
+  }
 }
 async function waitFor(selector, timeout = 4000) {
   const started = performance.now();
@@ -51,7 +55,10 @@ function applyTheme() {
   document.documentElement.dataset.theme = ui.theme;
   const button = q('#themeToggleBtn');
   if (button) {
-    button.innerHTML = themeIcon(ui.theme);
+    if (button.dataset.v095ThemeIcon !== ui.theme) {
+      button.innerHTML = themeIcon(ui.theme);
+      button.dataset.v095ThemeIcon = ui.theme;
+    }
     button.setAttribute('aria-label', ui.theme === 'dark' ? '切换到白色模式' : '切换到黑色模式');
     button.title = ui.theme === 'dark' ? '白色模式' : '黑色模式';
   }
@@ -67,13 +74,13 @@ function toggleTheme() {
 }
 function bindThemeButton() {
   const button = q('#themeToggleBtn');
-  if (!button || button.dataset.v095Bound) return;
+  if (!button) return;
   button.dataset.v095Bound = '1';
-  button.addEventListener('click', event => {
+  button.onclick = event => {
     event.preventDefault();
-    event.stopImmediatePropagation();
+    event.stopPropagation();
     toggleTheme();
-  }, true);
+  };
 }
 function applySplash() {
   const image = q('#splashImage') || q('#splashScreen img');
