@@ -1,8 +1,8 @@
-const CACHE_NAME = 'luckybean-v0.9.4';
+const CACHE_NAME = 'luckybean-v0.9.5';
 const CORE = [
-  './', './index.html', './styles.css', './styles-v094.css', './manifest.webmanifest',
-  './src/app.js', './src/v094-ui.js', './src/utils.js', './src/brew-model-v09.js', './src/db.js', './src/codebook.js', './src/qr.js', './src/water-profiles.js', './src/preference-model.js', './src/share-codec.js', './src/brew-engine.js',
-  './public/fallback-codebook.json', './public/legacy-flavor-map.json', './public/app-logo.webp', './public/splash.webp', './public/splash-red.svg', './public/splash-alt.svg', './public/action-grid.svg', './public/action-grid.webp'
+  './', './index.html', './styles.css', './styles-v095.css', './manifest.webmanifest',
+  './src/app.js', './src/v095-ui.js', './src/utils.js', './src/brew-model-v09.js', './src/db.js', './src/codebook.js', './src/qr.js', './src/water-profiles.js', './src/preference-model.js', './src/share-codec.js', './src/brew-engine.js',
+  './public/fallback-codebook.json', './public/legacy-flavor-map.json', './public/app-logo.webp', './public/splash-red.jpg', './public/splash-white.jpg', './public/settings-mascot.png'
 ];
 
 self.addEventListener('install', event => {

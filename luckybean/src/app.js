@@ -505,7 +505,7 @@ function beanCardHtml(bean) {
   const progress = Math.round(fresh.progress * 100);
   return `<article class="bean-card compact${bean.id === state.recommendedBeanId ? ' recommended' : ''}${bean.archived ? ' archived' : ''}" data-bean-id="${esc(bean.id)}" tabindex="0">
     <div class="compact-bean-copy"><h3>${esc(beanDisplayName(bean))}</h3><small>${esc(process)}</small><div class="compact-bean-row"><strong class="${bean.refrigerated ? 'frozen-weight' : ''}">${Number(bean.remainingWeight || 0).toFixed(1)}g${bean.refrigerated ? '<small class="frozen-mark" aria-label="冷藏">❄️</small>' : ''}</strong><span class="compact-score">${score ? `${score.toFixed(1)}分` : '未评分'}${recommended ? '<em>荐</em>' : ''}</span></div></div>
-    <button class="cup-action compact-pick" type="button" data-brew-bean="${esc(bean.id)}" aria-label="用这只豆酌一味">酌</button>
+    <button class="cup-action compact-pick" type="button" data-brew-bean="${esc(bean.id)}" aria-label="用这只豆小酌">酌</button>
     <div class="bean-freshness-progress" aria-label="${esc(fresh.label)}，风味${esc(fresh.trend)}，进度${progress}%"><span class="bean-freshness-solid" style="width:${progress}%;background:${fresh.color}"></span><span class="bean-freshness-dashed" style="left:${progress}%"></span></div>
   </article>`;
 }
@@ -974,16 +974,16 @@ function detailBean(beanId) {
   const sessions = state.brewSessions.filter(session => session.beanId === bean.id).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))).slice(0,5);
   const content = `${dialogHeader(beanDisplayName(bean), beanNameSummary(bean))}
     <div class="detail-layout"><div class="freshness-card"><div><div class="small muted">赏味状态</div><h2>${esc(fresh.label)}</h2><p class="muted small">烘焙日期 ${formatDate(bean.roastDate)} · 有效豆龄 ${Math.round(fresh.effectiveAge)} 天 · 剩余 ${Number(bean.remainingWeight||0).toFixed(1)}g</p></div><div class="freshness-trend ${fresh.rising?'rising':'falling'}">风味${esc(fresh.trend)}</div></div>
-    <div class="management-stack"><button id="correctWeightBtn" class="button" type="button">修正克重</button><button id="toggleColdBtn" class="button${bean.refrigerated?' active':''}" type="button">${bean.refrigerated?'解除冷藏':'设为冷藏'}</button><button id="archiveBeanBtn" class="button" type="button">${bean.archived?'移出诹吉':'放入诹吉'}</button></div></div>
+    <div class="management-stack"><button id="correctWeightBtn" class="button" type="button">修正克重</button><button id="toggleColdBtn" class="button${bean.refrigerated?' active':''}" type="button">${bean.refrigerated?'解除冷藏':'设为冷藏'}</button><button id="archiveBeanBtn" class="button" type="button">${bean.archived?'移出溯旧':'移至溯旧'}</button></div></div>
     <section class="freshness-curve-panel">${freshnessCurveSvg(bean)}</section>
     <div class="detail-tags">${flavors || '<span class="muted small">风味待录</span>'}</div>
     <section class="panel"><div class="panel-title"><div><h3>冲煮记录</h3><p>点击可载入完整方案复刻</p></div></div><div class="record-list">${sessions.length ? sessions.map(sessionRecordHtml).join('') : '<p class="muted small">尚无冲煮记录</p>'}</div></section>
     <section class="panel"><div class="panel-title"><div><h3>最近品鉴</h3></div></div>${records.length ? records.map(record=>`<div class="record-item"><span>${formatDate(record.createdAt)}</span><span>${esc((record.summary||[]).join(' · '))}${record.naturalNote ? `<small>${esc(record.naturalNote)}</small>` : ''}</span><strong>${Number(record.subjectiveScore ?? record.score ?? 0).toFixed(1)}</strong></div>`).join('') : '<p class="muted small">尚无品鉴记录</p>'}</section>
-    <div class="detail-actions menu-row"><button id="brewThisBeanBtn" class="button primary" type="button">酌一味</button><button id="editBeanBtn" class="button" type="button">编辑</button><button id="copyBeanBtn" class="button" type="button">复制</button><button id="shareBeanBtn" class="button" type="button">分享</button></div>`;
+    <div class="detail-actions menu-row"><button id="brewThisBeanBtn" class="button primary" type="button">小酌</button><button id="editBeanBtn" class="button" type="button">编辑</button><button id="copyBeanBtn" class="button" type="button">复制</button><button id="shareBeanBtn" class="button" type="button">分享</button></div>`;
   const overlay = showOverlay(content, { id: 'bean-detail', backdropClose: true }); bindClose(overlay);
   $('#correctWeightBtn').addEventListener('click', () => correctWeightDialog(bean));
   $('#toggleColdBtn').addEventListener('click', async () => { bean.refrigerated = !bean.refrigerated; bean.freezeDate = bean.refrigerated ? todayISO() : ''; bean.updatedAt = new Date().toISOString(); await put('beans', bean); await refreshData(); detailBean(bean.id); });
-  $('#archiveBeanBtn').addEventListener('click', async () => { bean.archived = !bean.archived; bean.updatedAt = new Date().toISOString(); await put('beans', bean); await refreshData(); closeOverlay(); renderBeans(); toast(bean.archived?'已放入诹吉':'已恢复到豆藏'); });
+  $('#archiveBeanBtn').addEventListener('click', async () => { bean.archived = !bean.archived; bean.updatedAt = new Date().toISOString(); await put('beans', bean); await refreshData(); closeOverlay(); renderBeans(); toast(bean.archived?'已移至溯旧':'已恢复到豆藏'); });
   $('#brewThisBeanBtn').addEventListener('click', () => { closeOverlay(); state.selectedBeanId = bean.id; state.currentPlan = null; switchPage('brew'); });
   $('#editBeanBtn').addEventListener('click', () => openBeanForm(bean, { type: 'manual' }));
   $('#copyBeanBtn').addEventListener('click', () => { const copy = { ...bean, id: undefined, createdAt: undefined, updatedAt: undefined, remainingWeight: bean.initialWeight }; openBeanForm(copy, { type: 'copy' }); });
