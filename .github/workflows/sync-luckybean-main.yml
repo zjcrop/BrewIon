@@ -1,0 +1,61 @@
+name: Sync Lucky Bean main
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/sync-luckybean-main.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-luckybean-main
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout BrewIon main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Download Lucky Bean main
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/luckybean-main" "$RUNNER_TEMP/luckybean-main.tar.gz"
+          curl --fail --location --retry 3 \
+            https://github.com/zjcrop/luckybean/archive/refs/heads/main.tar.gz \
+            --output "$RUNNER_TEMP/luckybean-main.tar.gz"
+          tar -xzf "$RUNNER_TEMP/luckybean-main.tar.gz" -C "$RUNNER_TEMP"
+
+      - name: Replace published Lucky Bean directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p luckybean
+          rsync -a --delete \
+            --exclude='.git/' \
+            "$RUNNER_TEMP/luckybean-main/" \
+            luckybean/
+
+      - name: Commit synchronized release
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add luckybean
+          if git diff --cached --quiet; then
+            echo "Lucky Bean is already synchronized."
+            exit 0
+          fi
+          SOURCE_SHA="$(git ls-remote https://github.com/zjcrop/luckybean.git refs/heads/main | cut -f1)"
+          git commit -m "deploy: sync Lucky Bean v0.9.8 (${SOURCE_SHA:0:12})"
+          git push origin HEAD:main
