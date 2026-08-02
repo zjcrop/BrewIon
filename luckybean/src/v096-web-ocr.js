@@ -1,4 +1,5 @@
 const TESSERACT_VERSION = '6.0.1';
+const ENGINE_NAME = 'tesseract.js-6.0.1';
 const TESSERACT_URL = `https://cdn.jsdelivr.net/npm/tesseract.js@${TESSERACT_VERSION}/dist/tesseract.min.js`;
 let loaderPromise = null;
 let workerPromise = null;
@@ -83,7 +84,7 @@ async function recognizeImages(images, options = {}) {
   }
   emitProgress('文字识别完成', 1);
   return {
-    engine: `tesseract.js-${TESSERACT_VERSION}`,
+    engine: ENGINE_NAME,
     results,
     fullText: combined.join('\n\n')
   };
@@ -97,7 +98,7 @@ function enqueue(task) {
 
 globalThis.LuckyBeanWebOCR = {
   version: TESSERACT_VERSION,
-  engine: `tesseract.js-${TESSERACT_VERSION}`,
+  engine: ENGINE_NAME,
   recognizeCoffeeBag(images, options = {}) {
     return enqueue(() => recognizeImages(images, options));
   },
