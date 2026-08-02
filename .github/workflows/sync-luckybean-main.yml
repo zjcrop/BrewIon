@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  RELEASE_REVISION: 098e
+  RELEASE_REVISION: 099a
 
 jobs:
   sync:
@@ -60,5 +60,5 @@ jobs:
             exit 0
           fi
           SOURCE_SHA="$(git ls-remote https://github.com/zjcrop/luckybean.git refs/heads/main | cut -f1)"
-          git commit -m "deploy: sync Lucky Bean v0.9.8-${RELEASE_REVISION} (${SOURCE_SHA:0:12})"
+          git commit -m "deploy: sync Lucky Bean v0.9.9-${RELEASE_REVISION} (${SOURCE_SHA:0:12})"
           git push origin HEAD:main
