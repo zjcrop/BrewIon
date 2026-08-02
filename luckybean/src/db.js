@@ -1,108 +1,113 @@
-import { SCHEMA_VERSION, assertPlainObject } from './utils.js';
+import * as core from './db-storage-core.js';
+import { sealPrivateJson, openPrivateJson, PRIVATE_ENVELOPE_FORMAT } from './privacy-codec-v096.js';
 
-const DB_NAME = 'luckybean';
-const LEGACY_DB_NAME = 'coffee_cellar_local_mvp_v1';
-const STORES = ['beans', 'brewSessions', 'sensoryRecords', 'inventoryEvents', 'settings', 'customCodes', 'codebookCache', 'syncMetadata', 'shareDrafts'];
-let dbPromise;
+export * from './db-storage-core.js';
 
-function requestToPromise(request) {
-  return new Promise((resolve, reject) => {
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error || new Error('IndexedDB 请求失败'));
-  });
+const PRIVACY_KEY_ID = 'local.privacy.key.v1';
+let privacySecretPromise;
+
+function bytesToBase64(bytes) {
+  let binary = '';
+  for (const value of bytes) binary += String.fromCharCode(value);
+  return btoa(binary);
 }
 
-function keyPathForStore(name) {
-  if (['settings', 'codebookCache', 'syncMetadata'].includes(name)) return 'id';
-  if (name === 'customCodes') return 'code';
-  return 'id';
+function base64ToBytes(value) {
+  return Uint8Array.from(atob(String(value || '')), char => char.charCodeAt(0));
 }
 
-function createMissingStores(db) {
-  for (const name of STORES) {
-    if (!db.objectStoreNames.contains(name)) db.createObjectStore(name, { keyPath: keyPathForStore(name) });
-  }
-}
-
-function missingStores(db) {
-  return STORES.filter(name => !db.objectStoreNames.contains(name));
-}
-
-function attachVersionChangeHandler(db) {
-  db.onversionchange = () => db.close();
-  return db;
-}
-
-function openDatabase(version) {
-  return new Promise((resolve, reject) => {
-    const request = version == null ? indexedDB.open(DB_NAME) : indexedDB.open(DB_NAME, version);
-    request.onupgradeneeded = () => createMissingStores(request.result);
-    request.onsuccess = () => resolve(attachVersionChangeHandler(request.result));
-    request.onerror = () => reject(request.error || new Error('数据库打开失败'));
-    request.onblocked = () => reject(new Error('数据库升级被其他页面占用，请关闭其他富贵盒子页面后重试'));
-  });
-}
-
-export function openDb() {
-  if (dbPromise) return dbPromise;
-  dbPromise = (async () => {
-    if (!globalThis.indexedDB) throw new Error('当前浏览器不支持 IndexedDB');
-
-    const current = await openDatabase();
-    const missing = missingStores(current);
-
-    if (current.version >= SCHEMA_VERSION && missing.length === 0) return current;
-
-    const targetVersion = Math.max(SCHEMA_VERSION, current.version + (missing.length ? 1 : 0));
-    current.close();
-    return openDatabase(targetVersion);
+async function privacySecret() {
+  if (privacySecretPromise) return privacySecretPromise;
+  privacySecretPromise = (async () => {
+    if (!crypto?.getRandomValues) return null;
+    const existing = await core.get('syncMetadata', PRIVACY_KEY_ID);
+    if (existing?.secret) return base64ToBytes(existing.secret);
+    const secret = crypto.getRandomValues(new Uint8Array(32));
+    await core.put('syncMetadata', {
+      id: PRIVACY_KEY_ID,
+      secret: bytesToBase64(secret),
+      algorithm: 'AES-GCM-256',
+      scope: 'local-device',
+      createdAt: new Date().toISOString()
+    });
+    return secret;
   })().catch(error => {
-    dbPromise = undefined;
-    throw error;
+    privacySecretPromise = undefined;
+    console.warn('私有设置密钥初始化失败', error);
+    return null;
   });
-  return dbPromise;
+  return privacySecretPromise;
 }
 
-async function store(name, mode = 'readonly') {
-  if (!STORES.includes(name)) throw new Error(`未知数据表：${name}`);
-  const db = await openDb();
-  return db.transaction(name, mode).objectStore(name);
+async function prepareWrite(name, original) {
+  const value = structuredClone(original);
+  if (name === 'brewSessions') {
+    delete value.sensoryNote;
+    delete value.userId;
+    delete value.publicId;
+    return value;
+  }
+  if (name !== 'settings' || value?.id !== 'app.settings' || !value.value?.identity) return value;
+  const identity = structuredClone(value.value.identity);
+  const secret = await privacySecret();
+  if (!secret) {
+    delete value.value.identity.publicId;
+    delete value.value.identity.idSalt;
+    delete value.value.identity.email;
+    delete value.value.identity.phone;
+    delete value.value.identity.wechat;
+    delete value.value.identity.qq;
+    value.value.identity.protected = false;
+    return value;
+  }
+  value.privateIdentity = await sealPrivateJson(identity, secret, 'identity');
+  value.value.identity = {
+    mode: identity.mode || 'guest',
+    nickname: '本地用户',
+    publicId: '',
+    verified: Boolean(identity.verified),
+    protected: true,
+    hasIdentity: Boolean(identity.publicId)
+  };
+  return value;
 }
 
-export async function all(name) { return requestToPromise((await store(name)).getAll()); }
-export async function get(name, key) { return requestToPromise((await store(name)).get(key)); }
+async function restoreRead(name, original) {
+  if (!original || name !== 'settings' || original.id !== 'app.settings' || original.privateIdentity?.format !== PRIVATE_ENVELOPE_FORMAT) return original;
+  const value = structuredClone(original);
+  try {
+    value.value.identity = await openPrivateJson(value.privateIdentity, await privacySecret(), 'identity');
+  } catch (error) {
+    console.error('登录身份解密失败', error);
+    value.value.identity = {
+      mode: value.value.identity?.mode || 'guest',
+      nickname: '本地用户',
+      publicId: '',
+      verified: false,
+      protected: true,
+      decryptionError: error.message
+    };
+  }
+  return value;
+}
+
+export async function get(name, key) {
+  return restoreRead(name, await core.get(name, key));
+}
+
+export async function all(name) {
+  const values = await core.all(name);
+  if (name !== 'settings') return values;
+  return Promise.all(values.map(value => restoreRead(name, value)));
+}
+
 export async function put(name, value) {
-  assertPlainObject(value, name);
-  return requestToPromise((await store(name, 'readwrite')).put(structuredClone(value)));
+  return core.put(name, await prepareWrite(name, value));
 }
-export async function remove(name, key) { return requestToPromise((await store(name, 'readwrite')).delete(key)); }
-export async function clear(name) { return requestToPromise((await store(name, 'readwrite')).clear()); }
 
 export async function bulkPut(name, values) {
   if (!Array.isArray(values)) throw new Error('批量写入数据必须是数组');
-  const db = await openDb();
-  await new Promise((resolve, reject) => {
-    const tx = db.transaction(name, 'readwrite');
-    const objectStore = tx.objectStore(name);
-    values.forEach(v => objectStore.put(structuredClone(v)));
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error || new Error('批量写入失败'));
-    tx.onabort = () => reject(tx.error || new Error('批量写入中止'));
-  });
-}
-
-export async function activateCodebook(candidate) {
-  assertPlainObject(candidate, '编码表候选');
-  const db = await openDb();
-  await new Promise((resolve, reject) => {
-    const tx = db.transaction('codebookCache', 'readwrite');
-    const objectStore = tx.objectStore('codebookCache');
-    objectStore.put(structuredClone({ ...candidate, id: 'candidate' }));
-    objectStore.put(structuredClone({ ...candidate, id: 'active' }));
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error || new Error('编码表原子替换失败'));
-    tx.onabort = () => reject(tx.error || new Error('编码表原子替换中止'));
-  });
+  return core.bulkPut(name, await Promise.all(values.map(value => prepareWrite(name, value))));
 }
 
 export async function getSetting(id, fallback = null) {
@@ -110,68 +115,11 @@ export async function getSetting(id, fallback = null) {
   return value?.value ?? fallback;
 }
 
-export async function setSetting(id, value) { return put('settings', { id, value, updatedAt: new Date().toISOString() }); }
-
-export async function clearAll() {
-  const db = await openDb();
-  await Promise.all(STORES.map(name => new Promise((resolve, reject) => {
-    const request = db.transaction(name, 'readwrite').objectStore(name).clear();
-    request.onsuccess = resolve;
-    request.onerror = () => reject(request.error);
-  })));
+export async function setSetting(id, value) {
+  return put('settings', { id, value, updatedAt: new Date().toISOString() });
 }
 
-export async function migrateLegacy() {
-  const done = await getSetting('migration.legacy.v1', false);
-  if (done) return { migrated: false, reason: 'already-done' };
-
-  const legacyExists = await new Promise(resolve => {
-    const request = indexedDB.open(LEGACY_DB_NAME);
-    let created = false;
-    request.onupgradeneeded = () => { created = true; request.transaction.abort(); };
-    request.onsuccess = () => { request.result.close(); resolve(!created); };
-    request.onerror = () => resolve(false);
-  });
-  if (!legacyExists) {
-    await setSetting('migration.legacy.v1', true);
-    return { migrated: false, reason: 'not-found' };
-  }
-
-  const legacy = await new Promise((resolve, reject) => {
-    const request = indexedDB.open(LEGACY_DB_NAME);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-  const read = name => new Promise(resolve => {
-    if (!legacy.objectStoreNames.contains(name)) return resolve([]);
-    const request = legacy.transaction(name).objectStore(name).getAll();
-    request.onsuccess = () => resolve(request.result || []);
-    request.onerror = () => resolve([]);
-  });
-  const [beans, records, customCodes, settings] = await Promise.all(['beans', 'records', 'customCodes', 'settings'].map(read));
-  legacy.close();
-
-  await put('syncMetadata', {
-    id: 'migration.legacy.backup.v1',
-    capturedAt: new Date().toISOString(),
-    sourceDatabase: LEGACY_DB_NAME,
-    data: { beans, records, customCodes, settings }
-  });
-
-  const migratedBeans = beans.map(bean => ({
-    ...bean,
-    id: bean.id,
-    name: bean.name || bean.beanName || '未命名豆卡',
-    initialWeight: Number(bean.initialWeight ?? bean.startWeight ?? bean.remainingWeight ?? 0),
-    remainingWeight: Number(bean.remainingWeight ?? bean.initialWeight ?? bean.startWeight ?? 0),
-    flavorCodes: Array.isArray(bean.flavorCodes) ? bean.flavorCodes : [],
-    legacyCode: bean.legacyCode || null,
-    updatedAt: bean.updatedAt || new Date().toISOString()
-  }));
-  if (migratedBeans.length) await bulkPut('beans', migratedBeans);
-  if (records.length) await bulkPut('sensoryRecords', records.map(r => ({ ...r, id: r.id, migratedFrom: 'records' })));
-  if (customCodes.length) await bulkPut('customCodes', customCodes);
-  for (const item of settings) if (item?.id) await put('settings', item);
-  await setSetting('migration.legacy.v1', true);
-  return { migrated: true, beans: migratedBeans.length, records: records.length, customCodes: customCodes.length };
+export async function clearAll() {
+  privacySecretPromise = undefined;
+  return core.clearAll();
 }

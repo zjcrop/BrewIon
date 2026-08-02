@@ -1,9 +1,23 @@
 import * as core from './qr-core.js';
+import { decodeSharePayload } from './share-codec.js';
 
 export * from './qr-core.js';
 
 const CORE_LEN = 32;
 const CRC_LEN = 2;
+
+export function extractShareEncoded(text) {
+  const value = String(text || '').trim();
+  if (/^LB8E\.[RJ]\./.test(value)) return value;
+  if (/^LB8[RDGJ]\./.test(value)) return value;
+  const marker = value.indexOf('#share=');
+  if (marker >= 0) return value.slice(marker + 7).split(/[&#]/)[0];
+  try {
+    const url = new URL(value, globalThis.location?.href || 'https://local.invalid/');
+    if (url.hash.startsWith('#share=')) return url.hash.slice(7);
+  } catch { /* not a URL */ }
+  return core.extractShareEncoded(value);
+}
 
 function structuredText(text) {
   const value = String(text || '').trim();
@@ -11,7 +25,7 @@ function structuredText(text) {
   if (/^HEX\s*:/i.test(value)) return true;
   if (/^[\[{]/.test(value)) return true;
   if (/(?:^|[^A-Z0-9])(?:CT|RG|EN|VR|PROC|FL|RL)-[A-Z0-9-]+/i.test(value)) return true;
-  return Boolean(core.extractShareEncoded(value));
+  return Boolean(extractShareEncoded(value));
 }
 
 function sanitizeStructuredResult(result) {
@@ -19,13 +33,42 @@ function sanitizeStructuredResult(result) {
   return { ...result, binaryData: null, rawBytes: null };
 }
 
+async function expandEncryptedShare(result) {
+  const encoded = extractShareEncoded(result?.data);
+  if (!encoded || !encoded.startsWith('LB8E.')) return result;
+  const payload = await decodeSharePayload(encoded);
+  const bean = {
+    ...(payload.bean || {}),
+    source: 'luckybean-share-qr',
+    notes: ['加密二维码分享', payload.sharedAt ? `分享于 ${payload.sharedAt}` : ''].filter(Boolean).join('；')
+  };
+  return {
+    ...result,
+    data: JSON.stringify(bean),
+    binaryData: null,
+    rawBytes: null,
+    shareEncoded: encoded,
+    sharePayloadVersion: payload.appVersion || '',
+    encrypted: true
+  };
+}
+
+export async function normalizeQrResult(result, engine = 'unknown') {
+  const normalized = await core.normalizeQrResult(result, engine);
+  return sanitizeStructuredResult(await expandEncryptedShare(normalized));
+}
+
 export async function scanQrFile(file) {
-  return sanitizeStructuredResult(await core.scanQrFile(file));
+  const result = await core.scanQrFile(file);
+  return normalizeQrResult(result, result?.engine || 'image');
 }
 
 export class CameraScanner extends core.CameraScanner {
   constructor(video, onResult, onStatus = () => {}) {
-    super(video, result => onResult(sanitizeStructuredResult(result)), onStatus);
+    super(video, async result => {
+      try { onResult(await normalizeQrResult(result, result?.engine || 'camera')); }
+      catch (error) { onStatus(`二维码已捕捉，但解密失败：${error.message}`); }
+    }, onStatus);
   }
 }
 
@@ -87,8 +130,6 @@ export function decodeJsQrResult(result, codebook) {
   if (!result) throw new Error('二维码结果为空');
   const text = String(result.data || '').trim();
 
-  // Text formats are authoritative. Raw bytes are considered only after JSON,
-  // Lucky Bean share codes and explicit codebook text have been ruled out.
   if (/^HEX\s*:/i.test(text)) return core.decodeBrewIonBytes(text, codebook);
   try {
     const object = JSON.parse(text);
@@ -98,16 +139,14 @@ export function decodeJsQrResult(result, codebook) {
   const codebookResult = decodeCodebookText(text, codebook);
   if (codebookResult) return codebookResult;
 
-  if (core.extractShareEncoded(text)) {
-    throw new Error('分享二维码未完成解压，请重新扫描或改用原图');
+  if (extractShareEncoded(text)) {
+    throw new Error('分享二维码已捕捉但尚未完成解压或解密，请重新扫描清晰原图');
   }
 
   const explicitBytes = result.binaryData || result.rawBytes || null;
   const decodedExplicit = tryBrewIonBytes(explicitBytes, codebook);
   if (decodedExplicit) return decodedExplicit;
 
-  // Some mobile decoders expose a byte-mode QR only as an ISO-8859-1 string.
-  // Recover those bytes before declaring the BrewIon packet invalid.
   const decodedLatin1 = tryBrewIonBytes(latin1Bytes(text), codebook);
   if (decodedLatin1) return decodedLatin1;
 

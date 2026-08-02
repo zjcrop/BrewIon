@@ -16,26 +16,22 @@
   <link rel="stylesheet" href="./styles-v095-refine.css?v=095e">
   <link rel="stylesheet" href="./styles-v096-recognition.css?v=096e">
   <link rel="stylesheet" href="./styles-qr-scan.css?v=096b">
+  <link rel="stylesheet" href="./styles-v096-integrity.css?v=096f">
 </head>
 <body>
   <section id="splashScreen" class="splash-screen" role="button" tabindex="0" aria-label="点击进入富贵盒子">
     <img id="splashImage" src="./public/splash-red.jpg?v=095" alt="富贵盒子启动画面">
     <span>点击进入</span>
   </section>
-  <section id="loginScreen" class="login-screen" aria-labelledby="loginTitle">
+  <section id="loginScreen" class="login-screen" aria-label="登录与本地使用">
     <div class="login-card">
-      <img class="login-logo" src="./public/app-logo.webp" alt="富贵盒子 Logo">
-      <p class="eyebrow">LUCKY BEAN</p>
-      <h1 id="loginTitle">富贵盒子</h1>
-      <p class="login-copy">管理咖啡豆、冲煮方案和品鉴记录。数据默认保存在当前设备。</p>
-      <label class="field"><span>本机昵称</span><input id="loginNickname" class="control" maxlength="24" autocomplete="nickname" placeholder="例如：JJ"></label>
-      <div class="login-actions">
-        <button id="emailIdentityBtn" class="button primary" type="button">邮箱身份</button>
-        <button id="wechatIdentityBtn" class="button" type="button">微信注册</button>
-        <button id="guestBtn" class="button" type="button">游客进入</button>
+      <input id="loginNickname" type="hidden" value="本地用户">
+      <div class="login-actions" aria-label="身份入口">
+        <button id="emailIdentityBtn" class="button primary" type="button">登录</button>
+        <button id="wechatIdentityBtn" class="button" type="button">注册</button>
+        <button id="guestBtn" class="button" type="button">本地使用</button>
         <button id="testBtn" class="button subtle" type="button">测试</button>
       </div>
-      <p class="fine-print">邮箱身份目前为本机身份；微信注册与跨设备账号需要后端服务。界面不会伪装为已完成真实注册。</p>
     </div>
   </section>
   <div id="appShell" class="app-shell hidden">
@@ -52,7 +48,7 @@
     <nav id="bottomNav" class="bottom-nav" aria-label="主页面"><button class="nav-button active" type="button" data-page-target="beans" aria-label="豆藏：咖啡豆管理" aria-current="page"><span>藏</span></button><button class="nav-button" type="button" data-page-target="brew" aria-label="小酌：冲煮制作"><span>酌</span></button><button class="nav-button" type="button" data-page-target="sensory" aria-label="品鉴：感官评价"><span>鉴</span></button><button class="nav-button" type="button" data-page-target="settings" aria-label="器设：设备与系统设置"><span>器</span></button></nav>
   </div>
   <input id="qrImageInput" type="file" accept="image/*" capture="environment" class="hidden"><input id="importInput" type="file" accept="application/json" class="hidden"><div id="overlayRoot"></div><div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./src/app.js?v=096e"></script>
+  <script type="module" src="./src/app.js?v=096f"></script>
   <script type="module" src="./src/v096-web-ocr.js?v=096e"></script>
   <script type="module" src="./src/v096-package-capture.js?v=096e"></script>
   <script type="module" src="./src/v096-direct-camera.js?v=096e"></script>
@@ -63,5 +59,6 @@
   <script type="module" src="./src/v095-sensory-flow-guard.js?v=095f"></script>
   <script type="module" src="./src/v095-postbrew-sensory.js?v=096b"></script>
   <script type="module" src="./src/v095-qr-ui.js?v=096b"></script>
+  <script type="module" src="./src/v096-integrity-ui.js?v=096f"></script>
 </body>
 </html>
