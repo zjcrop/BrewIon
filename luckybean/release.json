@@ -2,10 +2,12 @@
   "name": "Lucky Bean Web Stable",
   "version": "0.9.6",
   "source_repository": "zjcrop/luckybean",
-  "source_sha": "961b7c674de2ea5165563a9013ddb8d7c9d49a9b",
+  "source_sha": "8c6a0db0cfe3a40632c0afd86a5b929c97a299bc",
   "sensory_browser_verified": true,
   "postbrew_qr_browser_verified": true,
   "qr_share_decode_verified": true,
-  "published_at": "2026-08-02T07:08:25Z",
+  "web_ocr_browser_verified": true,
+  "qr_text_first_verified": true,
+  "published_at": "2026-08-02T08:55:51Z",
   "url": "https://zjcrop.github.io/BrewIon/luckybean/"
 }
