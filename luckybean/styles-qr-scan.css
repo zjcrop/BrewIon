@@ -1,0 +1,116 @@
+/* Lucky Bean v0.9.5 QR automatic capture */
+.v095-qr-stage {
+  position: relative;
+  width: min(100%, 720px);
+  margin: 14px auto 0;
+  overflow: hidden;
+  background: #050505;
+  border: 1px solid #666;
+  aspect-ratio: 3 / 4;
+}
+.v095-qr-stage .camera-video {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  background: #050505;
+}
+.v095-qr-frame {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: min(68%, 360px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.v095-qr-frame i {
+  position: absolute;
+  width: 42px;
+  height: 42px;
+  border-color: #d4a453;
+  border-style: solid;
+  filter: drop-shadow(0 0 5px rgba(0, 0, 0, .65));
+}
+.v095-qr-frame i:nth-child(1) { left: 0; top: 0; border-width: 3px 0 0 3px; }
+.v095-qr-frame i:nth-child(2) { right: 0; top: 0; border-width: 3px 3px 0 0; }
+.v095-qr-frame i:nth-child(3) { right: 0; bottom: 0; border-width: 0 3px 3px 0; }
+.v095-qr-frame i:nth-child(4) { left: 0; bottom: 0; border-width: 0 0 3px 3px; }
+.v095-qr-frame span {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  top: 8%;
+  height: 2px;
+  background: #d4a453;
+  box-shadow: 0 0 9px rgba(212, 164, 83, .9);
+  animation: v095-qr-scan-line 2.1s ease-in-out infinite alternate;
+}
+.v095-qr-live-badge {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border: 1px solid rgba(255,255,255,.68);
+  background: rgba(0,0,0,.62);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.v095-qr-live-badge b {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #63c57a;
+  box-shadow: 0 0 0 4px rgba(99,197,122,.2);
+  animation: v095-qr-live-pulse 1.25s ease-in-out infinite;
+}
+.v095-qr-status {
+  margin: 13px auto 4px !important;
+  max-width: 720px;
+  text-align: center;
+  font-weight: 700;
+}
+.v095-qr-help {
+  max-width: 720px;
+  margin: 0 auto 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: center;
+}
+html.v095-postbrew-mode-choice #sensoryContent .sensory-evaluation {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+html[data-theme="light"] .v095-qr-stage {
+  border-color: #aaa79e;
+  background: #deddd8;
+}
+html[data-theme="light"] .v095-qr-status { color: #11110f !important; }
+html[data-theme="light"] .v095-qr-help { color: #5b5954 !important; }
+
+@keyframes v095-qr-scan-line {
+  from { top: 8%; opacity: .55; }
+  to { top: 91%; opacity: 1; }
+}
+@keyframes v095-qr-live-pulse {
+  0%, 100% { transform: scale(.85); opacity: .65; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
+@media (max-width: 620px) {
+  .v095-qr-stage { width: 100%; aspect-ratio: 9 / 13; }
+  .v095-qr-frame { width: 72%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v095-qr-frame span,
+  .v095-qr-live-badge b { animation: none; }
+}
