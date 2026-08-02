@@ -1,7 +1,7 @@
 {
   "name": "富贵盒子 0.9.9",
   "short_name": "富贵盒子",
-  "start_url": "./?v=099a",
+  "start_url": "./?v=099b",
   "scope": "./",
   "display": "standalone",
   "background_color": "#080909",
@@ -9,11 +9,11 @@
   "lang": "zh-CN",
   "icons": [
     {
-      "src": "./public/app-logo.webp?v=099a",
+      "src": "./public/app-logo.webp?v=099b",
       "sizes": "512x512",
       "type": "image/webp",
       "purpose": "any maskable"
     }
   ],
-  "description": "富贵盒子 0.9.9（099a）：咖啡豆管理、豆袋识别、专业冲煮轨迹、品鉴与器具库存"
+  "description": "富贵盒子 0.9.9（099b）：咖啡豆管理、豆袋识别、预测萃取轨迹、品鉴与器具库存"
 }

@@ -1,0 +1,103 @@
+name: Bind v0.9.9 trajectory to actual optimizer signal
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/fix-v099-actual-trajectory.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Patch actual-signal trajectory and revision
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text, old, new, label):
+              if old not in text:
+                  raise SystemExit(f'missing marker: {label}')
+              return text.replace(old, new, 1)
+
+          app = Path('src/app.js')
+          text = app.read_text(encoding='utf-8')
+          if 'trajectory-series extraction' not in text:
+              text = replace_once(
+                  text,
+                  '<path class="trajectory-series water" d="${line(\'cumulativeN\')}"></path>',
+                  '<path class="trajectory-series water" d="${line(\'cumulativeN\')}"></path>\n    <path class="trajectory-series extraction" d="${line(\'actualSignal\')}"></path>',
+                  'app extraction path'
+              )
+          text = text.replace('<summary>专业内容……</summary>', '<summary>深入解读</summary>')
+          app.write_text(text, encoding='utf-8')
+
+          renderer = Path('src/v098-trajectory-v17.js')
+          text = renderer.read_text(encoding='utf-8')
+          if 'function sourcePathPoints(path)' not in text:
+              text = replace_once(
+                  text,
+                  'function numberFrom(text, fallback = 0) {',
+                  '''function sourcePathPoints(path) {
+  const values = String(path?.getAttribute('d') || '').match(/-?\\d+(?:\\.\\d+)?/g)?.map(Number) || [];
+  const points = [];
+  for (let index = 0; index + 1 < values.length; index += 2) points.push({ x: values[index], y: values[index + 1] });
+  return points;
+}
+
+function numberFrom(text, fallback = 0) {''',
+                  'path parser'
+              )
+          if 'const sourceExtraction =' not in text:
+              text = replace_once(
+                  text,
+                  "  const original = svg.cloneNode(true);\n  const W = 800, H = 190, left = 38, right = 14, top = 16, bottom = 32;",
+                  "  const original = svg.cloneNode(true);\n  const sourceExtraction = sourcePathPoints(original.querySelector('.trajectory-series.extraction'));\n  const W = 800, H = 190, left = 38, right = 14, top = 16, bottom = 32;",
+                  'source extraction'
+              )
+          if 'const extraction = sourceExtraction.length' not in text:
+              text = replace_once(
+                  text,
+                  "  const cumulative = points.map(point => `${tx(point.t)},${tyCumulative(point.cumulative)}`).join(' ');\n  const ticks =",
+                  "  const cumulative = points.map(point => `${tx(point.t)},${tyCumulative(point.cumulative)}`).join(' ');\n  const extraction = sourceExtraction.length\n    ? sourceExtraction.map(point => {\n        const sourceX = clamp((point.x - 42) / 660, 0, 1);\n        const sourceY = clamp(1 - (point.y - 24) / 268, 0, 1);\n        return `${(left + sourceX * innerW).toFixed(1)},${(top + innerH - sourceY * innerH * .88).toFixed(1)}`;\n      }).join(' ')\n    : flavor.coverage;\n  const ticks =",
+                  'mapped extraction'
+              )
+          old_polyline = '${flavor.coverage ? `<polyline class="v098-flavor-line" points="${flavor.coverage}"></polyline>` : \'\'}'
+          new_polyline = '${extraction ? `<polyline class="v098-flavor-line" points="${extraction}"></polyline>` : \'\'}'
+          if old_polyline in text:
+              text = text.replace(old_polyline, new_polyline, 1)
+          if 'points="${extraction}"' not in text:
+              raise SystemExit('highlighted extraction polyline was not installed')
+          renderer.write_text(text, encoding='utf-8')
+
+          for path in ['index.html', 'manifest.webmanifest', 'sw.js']:
+              p = Path(path)
+              text = p.read_text(encoding='utf-8').replace('099a', '099b')
+              p.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Run actual-signal renderer test
+        run: node --test tests/v099-trajectory-actual.test.mjs
+
+      - name: Commit verified actual-signal renderer
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/app.js src/v098-trajectory-v17.js index.html manifest.webmanifest sw.js tests/v099-trajectory-actual.test.mjs
+          if git diff --cached --quiet; then
+            echo "Already applied"
+            exit 0
+          fi
+          git commit -m "fix: render optimizer actual signal as highlighted trajectory"
+          git push origin HEAD:main

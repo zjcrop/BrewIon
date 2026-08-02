@@ -1,0 +1,16 @@
+{
+  "verified": true,
+  "source_sha": "f0c8065e3c0e51b70a8e5263ce9e4f54b4a2b259",
+  "version": "0.9.9",
+  "revision": "099b",
+  "checks": [
+    "one-pour-single-stage",
+    "33666-five-stage-exact-split",
+    "non-recursive-group-menu",
+    "repeat-recommendation-guard",
+    "eight-axis-radar",
+    "defect-scoring",
+    "theme-readability",
+    "modeled-extraction-signal-bridge"
+  ]
+}

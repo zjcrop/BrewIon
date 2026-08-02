@@ -58,7 +58,7 @@ test('eight-axis radar uses dynamic pointer geometry and defect scoring', async 
   const sensory = await read('src/v095-sensory-pro.js');
   assert.match(sensory, /'干净度', '一致性', '平衡度'/);
   assert.match(sensory, /function pointerRadarValue\(event, svg, key, index\)/);
-  assert.match(sensory, /wizard\.radar\[key\]\.length/);
+  assert.match(sensory, /wizard\.radar\[key\].*length/s);
   assert.match(sensory, /明缺陷/);
   assert.match(sensory, /暗缺陷/);
   assert.match(sensory, /cleanRaw >= 10 \? 10 : 0/);
@@ -66,21 +66,23 @@ test('eight-axis radar uses dynamic pointer geometry and defect scoring', async 
 });
 
 test('v0.9.9 presentation and inverse-trajectory emphasis are published', async () => {
-  const [html, css, trajectory, optimizer, sw] = await Promise.all([
+  const [html, css, trajectory, optimizer, sw, bridge] = await Promise.all([
     read('index.html'), read('styles-v099.css'), read('src/v098-trajectory-v17.js'),
-    read('src/brew-optimizer-v097.js'), read('sw.js')
+    read('src/brew-optimizer-v097.js'), read('sw.js'), read('src/v099-trajectory-signal-bridge.js')
   ]);
   assert.match(html, /application-version" content="0\.9\.9/);
-  assert.match(html, /release-revision" content="099a/);
-  assert.match(html, /styles-v099\.css\?v=099a/);
-  assert.match(html, /src\/v099-runtime\.js\?v=099a/);
+  assert.match(html, /release-revision" content="099b/);
+  assert.match(html, /styles-v099\.css\?v=099b/);
+  assert.match(html, /src\/v099-trajectory-signal-bridge\.js\?v=099b/);
+  assert.match(html, /src\/v099-runtime\.js\?v=099b/);
   assert.match(css, /\.v097-fab-drag-handle[\s\S]*background: transparent !important/);
   assert.match(css, /stroke: #fff !important/);
   assert.match(css, /stroke-width: 3\.4/);
   assert.match(css, /#454542/);
   assert.match(css, /#cececa/);
   assert.match(trajectory, /白色实线：冲煮萃取轨迹/);
+  assert.match(bridge, /modeled-positive-signal-minus-risk/);
   assert.match(optimizer, /timeScale/);
   assert.match(optimizer, /正向风味窗口视为必须穿越的目标区/);
-  assert.match(sw, /luckybean-v0\.9\.9-main-099a/);
+  assert.match(sw, /luckybean-v0\.9\.9-main-099b/);
 });

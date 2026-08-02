@@ -1,7 +1,7 @@
-// Release marker: luckybean-v0.9.9-main-099a
-// Compatibility marker: luckybean-v0.9.8-main-098d
-const CACHE_NAME = 'luckybean-v0.9.9-main-099a';
-const RELEASE = '099a';
+// Release marker: luckybean-v0.9.9-main-099b
+// Compatibility marker: luckybean-v0.9.9-main-099a
+const CACHE_NAME = 'luckybean-v0.9.9-main-099b';
+const RELEASE = '099b';
 const CORE = [
   './', `./?v=${RELEASE}`, './index.html', `./index.html?v=${RELEASE}`,
   `./manifest.webmanifest?v=${RELEASE}`,
@@ -31,6 +31,7 @@ const CORE = [
   `./src/v096-integrity-ui.js?v=${RELEASE}`,
   `./src/v097-ui-fixes.js?v=${RELEASE}`,
   `./src/v097-fab-gesture.js?v=${RELEASE}`,
+  `./src/v099-trajectory-signal-bridge.js?v=${RELEASE}`,
   `./src/v098-trajectory-v17.js?v=${RELEASE}`,
   `./src/v098-selection-bridge.js?v=${RELEASE}`,
   `./src/v098-feature-fixes.js?v=${RELEASE}`,
