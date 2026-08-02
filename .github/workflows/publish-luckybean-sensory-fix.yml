@@ -1,0 +1,181 @@
+name: Publish Lucky Bean sensory fix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.luckybean-sensory-publish-trigger'
+      - '.github/workflows/publish-luckybean-sensory-fix.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-luckybean-web
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout BrewIon Pages repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Checkout Lucky Bean main
+        uses: actions/checkout@v4
+        with:
+          repository: zjcrop/luckybean
+          ref: main
+          path: _luckybean_source
+          fetch-depth: 0
+
+      - name: Validate source and browser verification
+        working-directory: _luckybean_source
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm test
+          npm run check
+          node --check src/v095-sensory-bootstrap.js
+          node --check src/v095-sensory-pro.js
+          node --check src/v095-sensory-flow-guard.js
+          test "$(node -p "require('./package.json').version")" = '0.9.5'
+          test -s tests/sensory-browser-status.json
+          python - <<'PY'
+          import json, subprocess
+          status = json.load(open('tests/sensory-browser-status.json', encoding='utf-8'))
+          assert status.get('verified') is True, status
+          assert status.get('static_tests') == 'success', status
+          assert status.get('browser_runtime') == 'success', status
+          assert status.get('sensory_browser_smoke') == 'success', status
+          source_sha = status.get('source_sha', '')
+          assert len(source_sha) == 40, status
+          subprocess.run(['git', 'merge-base', '--is-ancestor', source_sha, 'HEAD'], check=True)
+          PY
+          grep -q 'src/v095-sensory-bootstrap.js?v=095f' index.html
+          grep -q 'src/v095-ui.js?v=095e' index.html
+          grep -q 'src/v095-sensory-flow-guard.js?v=095f' index.html
+          ! grep -q 'src/v095-sensory-pro.js?v=095c' index.html
+          grep -q 'loading-professional-v2' src/v095-sensory-bootstrap.js
+          grep -q 'safe-null-root' src/v095-sensory-bootstrap.js
+          grep -q '专业品鉴' src/v095-sensory-pro.js
+          grep -q '玩家互动品鉴' src/v095-sensory-pro.js
+          grep -q '自然语言记录，评分' src/v095-sensory-pro.js
+          grep -q 'luckybean-v0.9.5-sensory-fix5' sw.js
+          grep -q "'./src/v095-sensory-bootstrap.js'" sw.js
+
+      - name: Publish runtime under BrewIon/luckybean
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf luckybean
+          mkdir -p luckybean
+          cp _luckybean_source/index.html luckybean/
+          cp _luckybean_source/styles.css luckybean/
+          cp _luckybean_source/styles-v095.css luckybean/
+          cp _luckybean_source/styles-action-grid.css luckybean/
+          cp _luckybean_source/styles-theme-light.css luckybean/
+          cp _luckybean_source/styles-v095-refine.css luckybean/
+          cp _luckybean_source/manifest.webmanifest luckybean/
+          cp _luckybean_source/sw.js luckybean/
+          cp -R _luckybean_source/src luckybean/
+          cp -R _luckybean_source/public luckybean/
+          touch luckybean/.nojekyll
+
+          source_sha="$(git -C _luckybean_source rev-parse HEAD)"
+          app_version="$(node -p "require('./_luckybean_source/package.json').version")"
+          echo "LUCKYBEAN_SOURCE_SHA=$source_sha" >> "$GITHUB_ENV"
+          echo "LUCKYBEAN_VERSION=$app_version" >> "$GITHUB_ENV"
+
+          cat > luckybean/release.json <<EOF
+          {
+            "name": "Lucky Bean Web Stable",
+            "version": "$app_version",
+            "source_repository": "zjcrop/luckybean",
+            "source_sha": "$source_sha",
+            "browser_sensory_verified": true,
+            "published_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "url": "https://zjcrop.github.io/BrewIon/luckybean/"
+          }
+          EOF
+          rm -rf _luckybean_source
+
+      - name: Commit verified web release
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add luckybean
+          if ! git diff --cached --quiet; then
+            git commit -m "fix: publish browser-verified Lucky Bean sensory modes v${LUCKYBEAN_VERSION}"
+            git push origin HEAD:main
+          fi
+
+      - name: Verify public Pages deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://zjcrop.github.io/BrewIon/luckybean/'
+          ok=false
+          for attempt in $(seq 1 20); do
+            nonce="$(date +%s)-$attempt"
+            index_code="$(curl -L -sS -o /tmp/lb-index.html -w '%{http_code}' --max-time 20 "${base}?v=${nonce}" || true)"
+            bootstrap_code="$(curl -L -sS -o /tmp/lb-bootstrap.js -w '%{http_code}' --max-time 20 "${base}src/v095-sensory-bootstrap.js?v=${nonce}" || true)"
+            pro_code="$(curl -L -sS -o /tmp/lb-pro.js -w '%{http_code}' --max-time 20 "${base}src/v095-sensory-pro.js?v=${nonce}" || true)"
+            guard_code="$(curl -L -sS -o /tmp/lb-guard.js -w '%{http_code}' --max-time 20 "${base}src/v095-sensory-flow-guard.js?v=${nonce}" || true)"
+            release_code="$(curl -L -sS -o /tmp/lb-release.json -w '%{http_code}' --max-time 20 "${base}release.json?v=${nonce}" || true)"
+            release_sha=''
+            release_verified='false'
+            if [[ "$release_code" == 200 ]]; then
+              release_sha="$(python -c "import json; print(json.load(open('/tmp/lb-release.json')).get('source_sha',''))" || true)"
+              release_verified="$(python -c "import json; print(str(json.load(open('/tmp/lb-release.json')).get('browser_sensory_verified',False)).lower())" || true)"
+            fi
+            if [[ "$index_code" == 200 && "$bootstrap_code" == 200 && "$pro_code" == 200 && "$guard_code" == 200 && "$release_code" == 200 \
+              && "$release_sha" == "$LUCKYBEAN_SOURCE_SHA" && "$release_verified" == true ]] \
+              && grep -q 'src/v095-sensory-bootstrap.js?v=095f' /tmp/lb-index.html \
+              && grep -q 'safe-null-root' /tmp/lb-bootstrap.js \
+              && grep -q '专业品鉴' /tmp/lb-pro.js \
+              && grep -q '玩家互动品鉴' /tmp/lb-pro.js \
+              && grep -q 'data-v095-mode="note"' /tmp/lb-guard.js; then
+              ok=true
+              break
+            fi
+            sleep 10
+          done
+
+          export ok base LUCKYBEAN_SOURCE_SHA LUCKYBEAN_VERSION
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          report = {
+              'checked_at': datetime.now(timezone.utc).isoformat(),
+              'url': os.environ['base'],
+              'version': os.environ['LUCKYBEAN_VERSION'],
+              'source_sha': os.environ['LUCKYBEAN_SOURCE_SHA'],
+              'sensory_browser_verified': True,
+              'site_verified': os.environ['ok'] == 'true',
+          }
+          with open('luckybean/deployment-status.json', 'w', encoding='utf-8') as handle:
+              json.dump(report, handle, ensure_ascii=False, indent=2)
+              handle.write('\n')
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+          PY
+          [[ "$ok" == true ]]
+
+      - name: Commit deployment verification
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git pull --rebase origin main
+          git add luckybean/deployment-status.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: record browser-verified sensory deployment [skip ci]'
+            git push origin HEAD:main
+          fi
