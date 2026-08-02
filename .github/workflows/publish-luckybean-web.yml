@@ -33,7 +33,7 @@ jobs:
           ref: main
           path: _luckybean_source
 
-      - name: Validate Lucky Bean v0.9.5 source
+      - name: Validate Lucky Bean v0.9.6 source
         working-directory: _luckybean_source
         shell: bash
         run: |
@@ -41,18 +41,25 @@ jobs:
           npm test
           npm run check
           node --check src/app.js
+          node --check src/v096-package-capture.js
+          node --check src/image-quality.js
+          node --check src/recognition-bridge.js
           node --check src/v095-ui.js
           node --check src/theme-bridge.js
           node --check src/v095-layout-gear.js
           node --check src/v095-sensory-pro.js
-          test "$(node -p "require('./package.json').version")" = '0.9.5'
+          test "$(node -p "require('./package.json').version")" = '0.9.6'
           test -s index.html
           test -s styles.css
           test -s styles-v095.css
           test -s styles-action-grid.css
           test -s styles-theme-light.css
           test -s styles-v095-refine.css
+          test -s styles-v096-recognition.css
           test -s src/app.js
+          test -s src/v096-package-capture.js
+          test -s src/image-quality.js
+          test -s src/recognition-bridge.js
           test -s src/v095-ui.js
           test -s src/theme-bridge.js
           test -s src/v095-layout-gear.js
@@ -62,20 +69,19 @@ jobs:
           test -s public/splash-white.jpg
           test -s public/settings-mascot.png
           test -s public/action-grid.svg
-          grep -q 'styles-v095-refine.css?v=095c' index.html
-          grep -q 'src/v095-layout-gear.js?v=095c' index.html
-          grep -q 'src/v095-sensory-pro.js?v=095c' index.html
+          grep -q 'styles-v096-recognition.css' index.html
+          grep -q 'src/v096-package-capture.js' index.html
+          grep -q '拍袋录入' src/v096-package-capture.js
+          grep -q 'PackageRecognitionBridge' src/recognition-bridge.js
+          grep -q 'analyzeImageQuality' src/image-quality.js
           grep -q '专业品鉴' src/v095-sensory-pro.js
           grep -q '玩家互动品鉴' src/v095-sensory-pro.js
-          grep -q '排序靠前的标签代表强度更高' src/v095-sensory-pro.js
           grep -q '手冲常用刻度范围' src/v095-layout-gear.js
-          grep -q "replaceAll('拾余', '余量')" src/v095-layout-gear.js
-          grep -q 'html\[data-theme="light"\] .page-seal' styles-v095-refine.css
-          grep -q '.recommendation-board button' styles-v095-refine.css
-          grep -q 'luckybean-v0.9.5-refine3' sw.js
-          grep -q "'./styles-v095-refine.css'" sw.js
-          grep -q "'./src/v095-layout-gear.js'" sw.js
-          grep -q "'./src/v095-sensory-pro.js'" sw.js
+          grep -q 'luckybean-v0.9.6-recognition-a' sw.js
+          grep -q "'./styles-v096-recognition.css'" sw.js
+          grep -q "'./src/v096-package-capture.js'" sw.js
+          grep -q "'./src/image-quality.js'" sw.js
+          grep -q "'./src/recognition-bridge.js'" sw.js
 
       - name: Publish runtime under BrewIon/luckybean
         shell: bash
@@ -89,6 +95,7 @@ jobs:
           cp _luckybean_source/styles-action-grid.css luckybean/
           cp _luckybean_source/styles-theme-light.css luckybean/
           cp _luckybean_source/styles-v095-refine.css luckybean/
+          cp _luckybean_source/styles-v096-recognition.css luckybean/
           cp _luckybean_source/manifest.webmanifest luckybean/
           cp _luckybean_source/sw.js luckybean/
           cp -R _luckybean_source/src luckybean/
@@ -117,7 +124,7 @@ jobs:
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git config user.email '4189826+github-actions[bot]@users.noreply.github.com'
           git add luckybean
           if ! git diff --cached --quiet; then
             git commit -m "feat: publish verified Lucky Bean web stable v${LUCKYBEAN_VERSION}"
@@ -130,27 +137,21 @@ jobs:
           set -euo pipefail
           base='https://zjcrop.github.io/BrewIon/luckybean/'
           ok='false'
-          index_code='000'; app_code='000'; ui_code='000'; theme_js_code='000'; layout_js_code='000'; sensory_js_code='000'
-          css_code='000'; grid_css_code='000'; theme_css_code='000'; refine_css_code='000'
-          red_code='000'; white_code='000'; mascot_code='000'; grid_svg_code='000'; codebook_code='000'; release_code='000'
+          index_code='000'; app_code='000'; package_code='000'; quality_code='000'; bridge_code='000'
+          ui_code='000'; layout_code='000'; sensory_code='000'; recognition_css_code='000'; codebook_code='000'; release_code='000'
           release_version=''; release_source_sha=''
 
-          for attempt in $(seq 1 18); do
+          for attempt in $(seq 1 24); do
             nonce="$(date +%s)-$attempt"
             index_code="$(curl -L -sS -o /tmp/lb-index.html -w '%{http_code}' --max-time 20 "${base}?v=${nonce}" || true)"
             app_code="$(curl -L -sS -o /tmp/lb-app.js -w '%{http_code}' --max-time 20 "${base}src/app.js?v=${nonce}" || true)"
-            ui_code="$(curl -L -sS -o /tmp/lb-v095.js -w '%{http_code}' --max-time 20 "${base}src/v095-ui.js?v=${nonce}" || true)"
-            theme_js_code="$(curl -L -sS -o /tmp/lb-theme.js -w '%{http_code}' --max-time 20 "${base}src/theme-bridge.js?v=${nonce}" || true)"
-            layout_js_code="$(curl -L -sS -o /tmp/lb-layout.js -w '%{http_code}' --max-time 20 "${base}src/v095-layout-gear.js?v=${nonce}" || true)"
-            sensory_js_code="$(curl -L -sS -o /tmp/lb-sensory.js -w '%{http_code}' --max-time 20 "${base}src/v095-sensory-pro.js?v=${nonce}" || true)"
-            css_code="$(curl -L -sS -o /tmp/lb-v095.css -w '%{http_code}' --max-time 20 "${base}styles-v095.css?v=${nonce}" || true)"
-            grid_css_code="$(curl -L -sS -o /tmp/lb-grid.css -w '%{http_code}' --max-time 20 "${base}styles-action-grid.css?v=${nonce}" || true)"
-            theme_css_code="$(curl -L -sS -o /tmp/lb-theme.css -w '%{http_code}' --max-time 20 "${base}styles-theme-light.css?v=${nonce}" || true)"
-            refine_css_code="$(curl -L -sS -o /tmp/lb-refine.css -w '%{http_code}' --max-time 20 "${base}styles-v095-refine.css?v=${nonce}" || true)"
-            red_code="$(curl -L -sS -o /tmp/lb-red.jpg -w '%{http_code}' --max-time 20 "${base}public/splash-red.jpg?v=${nonce}" || true)"
-            white_code="$(curl -L -sS -o /tmp/lb-white.jpg -w '%{http_code}' --max-time 20 "${base}public/splash-white.jpg?v=${nonce}" || true)"
-            mascot_code="$(curl -L -sS -o /tmp/lb-mascot.png -w '%{http_code}' --max-time 20 "${base}public/settings-mascot.png?v=${nonce}" || true)"
-            grid_svg_code="$(curl -L -sS -o /tmp/lb-grid.svg -w '%{http_code}' --max-time 20 "${base}public/action-grid.svg?v=${nonce}" || true)"
+            package_code="$(curl -L -sS -o /tmp/lb-package.js -w '%{http_code}' --max-time 20 "${base}src/v096-package-capture.js?v=${nonce}" || true)"
+            quality_code="$(curl -L -sS -o /tmp/lb-quality.js -w '%{http_code}' --max-time 20 "${base}src/image-quality.js?v=${nonce}" || true)"
+            bridge_code="$(curl -L -sS -o /tmp/lb-bridge.js -w '%{http_code}' --max-time 20 "${base}src/recognition-bridge.js?v=${nonce}" || true)"
+            ui_code="$(curl -L -sS -o /tmp/lb-ui.js -w '%{http_code}' --max-time 20 "${base}src/v095-ui.js?v=${nonce}" || true)"
+            layout_code="$(curl -L -sS -o /tmp/lb-layout.js -w '%{http_code}' --max-time 20 "${base}src/v095-layout-gear.js?v=${nonce}" || true)"
+            sensory_code="$(curl -L -sS -o /tmp/lb-sensory.js -w '%{http_code}' --max-time 20 "${base}src/v095-sensory-pro.js?v=${nonce}" || true)"
+            recognition_css_code="$(curl -L -sS -o /tmp/lb-recognition.css -w '%{http_code}' --max-time 20 "${base}styles-v096-recognition.css?v=${nonce}" || true)"
             codebook_code="$(curl -L -sS -o /tmp/lb-codebook.json -w '%{http_code}' --max-time 20 "${base}public/fallback-codebook.json?v=${nonce}" || true)"
             release_code="$(curl -L -sS -o /tmp/lb-release.json -w '%{http_code}' --max-time 20 "${base}release.json?v=${nonce}" || true)"
 
@@ -159,21 +160,18 @@ jobs:
               release_source_sha="$(python -c "import json; print(json.load(open('/tmp/lb-release.json', encoding='utf-8')).get('source_sha', ''))" || true)"
             fi
 
-            if [[ "$index_code" == '200' && "$app_code" == '200' && "$ui_code" == '200' && "$theme_js_code" == '200' \
-              && "$layout_js_code" == '200' && "$sensory_js_code" == '200' && "$css_code" == '200' \
-              && "$grid_css_code" == '200' && "$theme_css_code" == '200' && "$refine_css_code" == '200' \
-              && "$red_code" == '200' && "$white_code" == '200' && "$mascot_code" == '200' && "$grid_svg_code" == '200' \
+            if [[ "$index_code" == '200' && "$app_code" == '200' && "$package_code" == '200' \
+              && "$quality_code" == '200' && "$bridge_code" == '200' && "$ui_code" == '200' \
+              && "$layout_code" == '200' && "$sensory_code" == '200' && "$recognition_css_code" == '200' \
               && "$codebook_code" == '200' && "$release_code" == '200' \
               && "$release_version" == "$LUCKYBEAN_VERSION" && "$release_source_sha" == "$LUCKYBEAN_SOURCE_SHA" ]] \
-              && grep -q 'styles-v095-refine.css' /tmp/lb-index.html \
-              && grep -q 'src/v095-layout-gear.js' /tmp/lb-index.html \
-              && grep -q 'src/v095-sensory-pro.js' /tmp/lb-index.html \
+              && grep -q 'styles-v096-recognition.css' /tmp/lb-index.html \
+              && grep -q 'src/v096-package-capture.js' /tmp/lb-index.html \
+              && grep -q '拍袋录入' /tmp/lb-package.js \
+              && grep -q 'PackageRecognitionBridge' /tmp/lb-bridge.js \
+              && grep -q 'analyzeImageQuality' /tmp/lb-quality.js \
               && grep -q '手冲常用刻度范围' /tmp/lb-layout.js \
               && grep -q '专业品鉴' /tmp/lb-sensory.js \
-              && grep -q '玩家互动品鉴' /tmp/lb-sensory.js \
-              && grep -q '排序靠前的标签代表强度更高' /tmp/lb-sensory.js \
-              && grep -q '.recommendation-board button' /tmp/lb-refine.css \
-              && grep -q 'width: 120px !important' /tmp/lb-refine.css \
               && grep -q '"countries"' /tmp/lb-codebook.json; then
               ok='true'
               break
@@ -181,7 +179,7 @@ jobs:
             sleep 10
           done
 
-          export ok index_code app_code ui_code theme_js_code layout_js_code sensory_js_code css_code grid_css_code theme_css_code refine_css_code red_code white_code mascot_code grid_svg_code codebook_code release_code release_version release_source_sha base
+          export ok index_code app_code package_code quality_code bridge_code ui_code layout_code sensory_code recognition_css_code codebook_code release_code release_version release_source_sha base
           python - <<'PY'
           import json, os
           from datetime import datetime, timezone
@@ -192,18 +190,13 @@ jobs:
               'expected_source_sha': os.environ['LUCKYBEAN_SOURCE_SHA'],
               'index_http': os.environ['index_code'],
               'app_js_http': os.environ['app_code'],
-              'v095_js_http': os.environ['ui_code'],
-              'theme_bridge_js_http': os.environ['theme_js_code'],
-              'layout_gear_js_http': os.environ['layout_js_code'],
-              'professional_sensory_js_http': os.environ['sensory_js_code'],
-              'v095_css_http': os.environ['css_code'],
-              'action_grid_css_http': os.environ['grid_css_code'],
-              'light_theme_css_http': os.environ['theme_css_code'],
-              'refinement_css_http': os.environ['refine_css_code'],
-              'splash_red_http': os.environ['red_code'],
-              'splash_white_http': os.environ['white_code'],
-              'settings_mascot_http': os.environ['mascot_code'],
-              'action_grid_svg_http': os.environ['grid_svg_code'],
+              'package_capture_js_http': os.environ['package_code'],
+              'image_quality_js_http': os.environ['quality_code'],
+              'recognition_bridge_js_http': os.environ['bridge_code'],
+              'v095_ui_js_http': os.environ['ui_code'],
+              'layout_gear_js_http': os.environ['layout_code'],
+              'professional_sensory_js_http': os.environ['sensory_code'],
+              'recognition_css_http': os.environ['recognition_css_code'],
               'codebook_http': os.environ['codebook_code'],
               'release_http': os.environ['release_code'],
               'release_version': os.environ.get('release_version', ''),
