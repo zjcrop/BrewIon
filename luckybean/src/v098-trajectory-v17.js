@@ -209,7 +209,7 @@ function renderTrajectory(svg) {
 
   const shell = svg.closest('.trajectory-shell');
   const legend = $('.trajectory-legend', shell);
-  if (legend) legend.innerHTML = '<span class="v098-legend-temp">温度中线及±1℃范围</span><span class="v098-legend-flow">流量中线及±0.3g/s范围</span><span class="v098-legend-water">累计注水</span><span class="v098-legend-flavor">风味覆盖轨迹</span><span class="v098-legend-risk">木质/苦涩风险</span>';
+  if (legend) legend.innerHTML = '<span class="v099-legend-trajectory">白色实线：冲煮萃取轨迹（重点）</span><span class="v098-legend-temp">温度中线及±1℃范围</span><span class="v098-legend-flow">流量中线及±0.3g/s范围</span><span class="v098-legend-water">累计注水</span><span class="v098-legend-risk">木质/苦涩风险</span>';
   let bar = $('.phase-marker-bar', shell);
   if (!bar && shell) {
     bar = document.createElement('div');
@@ -221,7 +221,7 @@ function renderTrajectory(svg) {
     bar.innerHTML = `<span class="phase-seg" style="width:${width(bloomEnd)};background:rgba(126,219,255,.30)"></span><span class="phase-seg" style="width:${width(acidEnd - bloomEnd)};background:rgba(255,164,74,.35)"></span><span class="phase-seg" style="width:${width(aromaEnd - acidEnd)};background:rgba(139,240,197,.30)"></span><span class="phase-seg" style="width:${width(totalTime - aromaEnd)};background:rgba(255,120,120,.25)"></span>`;
   }
   const note = shell?.nextElementSibling;
-  if (note?.matches('.muted.small')) note.textContent = '按 v17 阶段时间轴绘制：白色虚线应贯穿正面风味窗口；尾段温度和流量下压，避开木质与苦涩风险。橙线为温度，青线为流量，绿色虚线为累计注水。';
+  if (note?.matches('.muted.small')) note.textContent = '按 v17 阶段时间轴绘制：粗白色实线是需要重点观察的冲煮萃取轨迹：计算器反向调整温度、流量、等待、总时间、研磨与粉水比，使轨迹穿过正向风味窗口，并通过降温、加快注水或提前截流避开木质、苦涩与收敛风险。橙线为温度，青线为流量，绿色虚线为累计注水。';
 }
 
 function sync() {

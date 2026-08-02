@@ -1,0 +1,66 @@
+name: Fix and verify v0.9.9 radar
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/fix-v099-radar-test.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Fix dynamic radar pointer geometry
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/v095-sensory-pro.js')
+          text = p.read_text(encoding='utf-8')
+          old = '''function pointerRadarValue(event, svg, index) {
+            const rect = svg.getBoundingClientRect();
+            const x = (event.clientX - rect.left) * 240 / rect.width - 120;
+            const y = (event.clientY - rect.top) * 240 / rect.height - 120;
+            const angle = -Math.PI / 2 + index * Math.PI * 2 / 5;
+            return ((x * Math.cos(angle) + y * Math.sin(angle)) / 88) * 10;
+          }'''.replace('          ', '')
+          new = '''function pointerRadarValue(event, svg, key, index) {
+            const rect = svg.getBoundingClientRect();
+            const x = (event.clientX - rect.left) * 240 / rect.width - 120;
+            const y = (event.clientY - rect.top) * 240 / rect.height - 120;
+            const count = Math.max(1, wizard.radar[key]?.length || radarLabels(key).length);
+            const angle = -Math.PI / 2 + index * Math.PI * 2 / count;
+            return ((x * Math.cos(angle) + y * Math.sin(angle)) / 88) * 10;
+          }'''.replace('          ', '')
+          if old not in text:
+            raise SystemExit('pointerRadarValue block not found')
+          text = text.replace(old, new, 1)
+          text = text.replace('pointerRadarValue(moveEvent, svg, index)', 'pointerRadarValue(moveEvent, svg, key, index)')
+          text = text.replace('pointerRadarValue(event, svg, index)', 'pointerRadarValue(event, svg, key, index)')
+          p.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Run targeted v0.9.9 tests
+        run: node --test tests/v099-upgrade.test.mjs
+
+      - name: Commit verified fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/v095-sensory-pro.js tests/v099-upgrade.test.mjs
+          if git diff --cached --quiet; then
+            echo "Already fixed"
+            exit 0
+          fi
+          git commit -m "fix: use dynamic geometry for eight-axis radar"
+          git push origin HEAD:main

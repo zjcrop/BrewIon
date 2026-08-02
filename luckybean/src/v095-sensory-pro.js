@@ -17,7 +17,8 @@ const ACIDITY = ['明亮', '活泼', '圆润', '柔和', '柑橘酸', '苹果酸
 const SWEETNESS = ['蜂蜜', '蔗糖', '红糖', '焦糖', '糖浆', '果糖感', '成熟水果', '甜感清晰', '甜感弱', '无明显甜感'];
 const MOUTHFEEL = ['轻盈', '丝滑', '顺滑', '圆润', '奶油感', '饱满', '厚重', '多汁', '茶汤感', '粗糙', '干涩', '收敛'];
 const AROMA_AXES = ['花香', '果香', '茶感', '坚果', '酵感'];
-const STYLE_AXES = ['风味', '余韵', '酸质', '甜感', '醇厚'];
+const STYLE_AXES = ['风味', '余韵', '酸质', '甜感', '醇厚', '干净度', '一致性', '平衡度'];
+const DEFECT_GROUPS = Object.freeze({ major: { label: '明缺陷', note: '霉腐，坏发酵', tags: ['霉腐', '坏发酵'], multiplier: 2 }, minor: { label: '暗缺陷', note: '轻微涩', tags: ['轻微涩'], multiplier: 1 } });
 const AFFECTIVE = ['香气 / 干湿香', '风味 / 余韵', '酸质', '甜感', '口感'];
 
 const STEPS = [
@@ -115,7 +116,8 @@ async function startMode(mode) {
     step: 0,
     selections: Object.fromEntries(STEPS.map(step => [step.id, []])),
     intensities: Object.fromEntries(STEPS.map(step => [step.id, 7.5])),
-    radar: { aroma: [5, 5, 5, 5, 5], style: [5, 5, 5, 5, 5] },
+    radar: { aroma: [5, 5, 5, 5, 5], style: [5, 5, 5, 5, 5, 5, 5, 5] },
+    defects: { major: [], minor: [] },
     selectedRadar: null,
     affective: Object.fromEntries(AFFECTIVE.map(label => [label, 5]))
   };
@@ -167,7 +169,7 @@ function radarPoints(values, center = 120, radius = 88) {
 
 function radarMarkup(key, title, labels, values) {
   const center = 120, radius = 88;
-  const rings = [2, 4, 6, 8, 10].map(level => `<polygon points="${radarPoints(Array(5).fill(level), center, radius)}"></polygon>`).join('');
+  const rings = [2, 4, 6, 8, 10].map(level => `<polygon points="${radarPoints(Array(labels.length).fill(level), center, radius)}"></polygon>`).join('');
   const axes = labels.map((label, index) => {
     const angle = -Math.PI / 2 + index * Math.PI * 2 / labels.length;
     const x = center + Math.cos(angle) * radius;
@@ -188,27 +190,41 @@ function radarMarkup(key, title, labels, values) {
 function radarSlider(key, labels, values) {
   if (!wizard.selectedRadar || wizard.selectedRadar.key !== key) return '<div class="v095-radar-slider-slot" aria-hidden="true"></div>';
   const index = wizard.selectedRadar.index;
-  return `<label class="v095-radar-slider"><span>${esc(labels[index])}强度</span><input type="range" min="0" max="10" step="0.1" value="${values[index]}" data-radar-slider="${key}:${index}"><output>${Number(values[index]).toFixed(1)}</output></label>`;
+  return `<label class="v095-radar-slider"><span>${esc(labels[index])}得分</span><input type="range" min="0" max="10" step="0.1" value="${values[index]}" data-radar-slider="${key}:${index}"><output>${Number(values[index]).toFixed(1)}</output></label>`;
 }
 
 function radarStep() {
-  return `<section class="v095-pro-card wide"><p class="v095-step">雷达图</p><h2>风格标定</h2><p>雷达图是富贵盒子的视觉表达，不属于 SCA 官方表单字段。</p><div class="v095-radar-grid">${radarMarkup('aroma', '香气倾向', AROMA_AXES, wizard.radar.aroma)}${radarMarkup('style', '整体风格', STYLE_AXES, wizard.radar.style)}</div></section>`;
+  const score = qualityScoreBreakdown();
+  return `<section class="v095-pro-card wide"><p class="v095-step">雷达图</p><h2>风格与质量标定</h2><p>两个雷达图均按0–10分记录。第一张五轴取平均值计入总分；第二张除干净度外按各轴实际分计入，干净度未达到10分时该轴计0分。</p><div class="v095-radar-grid">${radarMarkup('aroma', '香气倾向', AROMA_AXES, wizard.radar.aroma)}${radarMarkup('style', '整体质量', STYLE_AXES, wizard.radar.style)}</div><div class="v095-quality-breakdown"><div><span>第一雷达贡献</span><strong>${score.aromaContribution.toFixed(1)}</strong></div><div><span>第二雷达暂计</span><strong>${score.styleContribution.toFixed(1)}</strong></div></div></section>`;
+}
+
+function qualityScoreBreakdown() {
+  const aromaContribution = wizard.radar.aroma.reduce((sum, value) => sum + Number(value || 0), 0) / 5;
+  const cleanIndex = STYLE_AXES.indexOf('干净度');
+  const cleanRaw = Number(wizard.radar.style[cleanIndex] || 0);
+  const cleanlinessContribution = cleanRaw >= 10 ? 10 : 0;
+  const styleContribution = wizard.radar.style.reduce((sum, value, index) => index === cleanIndex ? sum : sum + Number(value || 0), 0) + cleanlinessContribution;
+  const majorCount = wizard.defects.major.length;
+  const minorCount = wizard.defects.minor.length;
+  const defectDeduction = majorCount * 4 + minorCount * 2;
+  const raw = clamp(aromaContribution + styleContribution - defectDeduction, 0, 90);
+  return { aromaContribution, styleContribution, cleanlinessContribution, majorCount, minorCount, defectDeduction, raw, mapped100: raw / 90 * 100 };
 }
 
 function affectiveMappedScore() {
-  const values = Object.values(wizard.affective).map(Number);
-  const average = values.reduce((sum, value) => sum + value, 0) / values.length;
-  return clamp(50 + (average - 1) * 5.625, 50, 95);
+  return qualityScoreBreakdown().mapped100;
 }
 
-function affectiveStep() {
-  return `<section class="v095-pro-card wide"><p class="v095-step">最终评分</p><h2>偏好 / 质量印象</h2><p>分别记录各项质量印象；1 表示极不喜欢，9 表示极喜欢。评分完成后直接进入札记。</p><div class="v095-affective-grid">${AFFECTIVE.map(label => `<fieldset class="v095-affective-item"><legend>${esc(label)}</legend><div class="v095-nine-scale">${Array.from({ length: 9 }, (_, index) => index + 1).map(value => `<button type="button" data-affective="${esc(label)}" data-affective-value="${value}" class="${wizard.affective[label] === value ? 'selected' : ''}">${value}</button>`).join('')}</div><small>当前 ${wizard.affective[label]} / 9</small></fieldset>`).join('')}</div><div class="v095-pro-score"><span>应用映射建议分</span><strong>${affectiveMappedScore().toFixed(1)}</strong><small>用于兼容富贵盒子现有 100 分记录；不是 SCA 官方总分公式。</small></div></section>`;
+function defectStep() {
+  const score = qualityScoreBreakdown();
+  const groups = Object.entries(DEFECT_GROUPS).map(([key, group]) => `<section class="v095-defect-group"><h3>${esc(group.label)}</h3><small>${esc(group.note)} · ${group.multiplier === 2 ? '双倍扣分' : '单倍扣分'}</small><div class="v095-defect-tags">${group.tags.map(tag => `<button type="button" class="button subtle${wizard.defects[key].includes(tag) ? ' selected' : ''}" data-defect-group="${key}" data-defect-tag="${esc(tag)}">${esc(tag)}</button>`).join('')}</div></section>`).join('');
+  return `<section class="v095-pro-card wide"><p class="v095-step">瑕疵</p><h2>瑕疵标签与扣分</h2><p>仅在实际感知到对应瑕疵时标记。明缺陷按暗缺陷的两倍扣分。</p><div class="v095-defect-grid">${groups}</div><div class="v095-quality-breakdown"><div><span>雷达原始分</span><strong>${(score.aromaContribution + score.styleContribution).toFixed(1)} / 90</strong></div><div><span>瑕疵扣分</span><strong>-${score.defectDeduction.toFixed(1)}</strong></div><div><span>最终原始分</span><strong>${score.raw.toFixed(1)} / 90</strong></div><div><span>应用映射分</span><strong>${score.mapped100.toFixed(1)} / 100</strong></div></div></section>`;
 }
 
 function currentStepKind() {
   if (wizard.step < STEPS.length) return 'descriptor';
   if (wizard.step === STEPS.length) return 'radar';
-  return 'affective';
+  return 'defect';
 }
 
 function renderWizard() {
@@ -219,15 +235,15 @@ function renderWizard() {
     document.body.append(root);
   }
   const kind = currentStepKind();
-  const body = kind === 'descriptor' ? descriptorStep(STEPS[wizard.step], wizard.step) : kind === 'radar' ? radarStep() : affectiveStep();
-  const final = kind === 'affective';
-  root.innerHTML = `<div class="v095-wizard-overlay v095-professional-overlay"><div class="v095-wizard-dialog v095-professional-dialog">${body}<div class="v095-wizard-actions"><button type="button" class="button subtle" data-pro-cancel>取消</button><button type="button" class="button" data-pro-back${wizard.step === 0 ? ' disabled' : ''}>返回</button><button type="button" class="button primary" data-pro-next>${final ? '确认评分，进入札记' : '继续'}</button></div></div></div>`;
+  const body = kind === 'descriptor' ? descriptorStep(STEPS[wizard.step], wizard.step) : kind === 'radar' ? radarStep() : defectStep();
+  const final = kind === 'defect';
+  root.innerHTML = `<div class="v095-wizard-overlay v095-professional-overlay"><div class="v095-wizard-dialog v095-professional-dialog">${body}<div class="v095-wizard-actions"><button type="button" class="button subtle" data-pro-cancel>取消</button><button type="button" class="button" data-pro-back${wizard.step === 0 ? ' disabled' : ''}>返回</button><button type="button" class="button primary" data-pro-next>${final ? '确认瑕疵，进入札记' : '继续'}</button></div></div></div>`;
   $('[data-pro-cancel]', root)?.addEventListener('click', closeWizard);
   $('[data-pro-back]', root)?.addEventListener('click', () => { if (wizard.step > 0) { wizard.step -= 1; wizard.selectedRadar = null; renderWizard(); } });
   $('[data-pro-next]', root)?.addEventListener('click', () => final ? finishProfessional() : advanceProfessional());
   if (kind === 'descriptor') bindDescriptorStep(STEPS[wizard.step]);
   if (kind === 'radar') bindRadarStep();
-  if (kind === 'affective') bindAffectiveStep();
+  if (kind === 'defect') bindDefectStep();
 }
 
 function closeWizard() {
@@ -320,7 +336,7 @@ function updateRadarValue(key, index, value) {
   if (polygon) polygon.setAttribute('points', radarPoints(wizard.radar[key]));
   const handle = $(`[data-radar-axis="${key}:${index}"].v095-radar-handle`, card);
   if (handle) {
-    const angle = -Math.PI / 2 + index * Math.PI * 2 / 5;
+    const angle = -Math.PI / 2 + index * Math.PI * 2 / wizard.radar[key].length;
     const length = 88 * wizard.radar[key][index] / 10;
     handle.setAttribute('cx', 120 + Math.cos(angle) * length);
     handle.setAttribute('cy', 120 + Math.sin(angle) * length);
@@ -333,11 +349,12 @@ function updateRadarValue(key, index, value) {
   }
 }
 
-function pointerRadarValue(event, svg, index) {
+function pointerRadarValue(event, svg, key, index) {
   const rect = svg.getBoundingClientRect();
   const x = (event.clientX - rect.left) * 240 / rect.width - 120;
   const y = (event.clientY - rect.top) * 240 / rect.height - 120;
-  const angle = -Math.PI / 2 + index * Math.PI * 2 / 5;
+  const count = Math.max(1, wizard.radar[key]?.length || radarLabels(key).length);
+  const angle = -Math.PI / 2 + index * Math.PI * 2 / count;
   return ((x * Math.cos(angle) + y * Math.sin(angle)) / 88) * 10;
 }
 
@@ -355,7 +372,7 @@ function bindRadarStep() {
     const svg = handle.ownerSVGElement;
     handle.setPointerCapture(event.pointerId);
     handle.classList.add('dragging', 'selected');
-    const move = moveEvent => updateRadarValue(key, index, pointerRadarValue(moveEvent, svg, index));
+    const move = moveEvent => updateRadarValue(key, index, pointerRadarValue(moveEvent, svg, key, index));
     const end = () => {
       handle.removeEventListener('pointermove', move);
       handle.removeEventListener('pointerup', end);
@@ -365,12 +382,21 @@ function bindRadarStep() {
     handle.addEventListener('pointermove', move);
     handle.addEventListener('pointerup', end);
     handle.addEventListener('pointercancel', end);
-    updateRadarValue(key, index, pointerRadarValue(event, svg, index));
+    updateRadarValue(key, index, pointerRadarValue(event, svg, key, index));
   }));
   $('[data-radar-slider]')?.addEventListener('input', event => {
     const [key, index] = event.target.dataset.radarSlider.split(':');
     updateRadarValue(key, Number(index), Number(event.target.value));
   });
+}
+
+function bindDefectStep() {
+  $$('[data-defect-tag]').forEach(button => button.addEventListener('click', () => {
+    const key = button.dataset.defectGroup;
+    const tag = button.dataset.defectTag;
+    wizard.defects[key] = wizard.defects[key].includes(tag) ? wizard.defects[key].filter(item => item !== tag) : [...wizard.defects[key], tag];
+    renderWizard();
+  }));
 }
 
 function bindAffectiveStep() {
@@ -390,15 +416,24 @@ function intensityWord(value) {
 
 function professionalSummary() {
   const lines = ['【专业品鉴】'];
+  const phaseCode = { high: 'H', mid: 'W', low: 'C' };
   for (const step of STEPS) {
     const tags = wizard.selections[step.id];
-    lines.push(`${step.title}：${tags.length ? tags.join(' ＞ ') : '未标记'}；强度 ${Number(wizard.intensities[step.id]).toFixed(1)}/15`);
+    const label = phaseCode[step.id] || step.title;
+    const marker = tags.length ? tags.join(' ＞ ') : '-';
+    lines.push(`${label}/${marker}/${Number(wizard.intensities[step.id]).toFixed(1)}`);
   }
-  lines.push(`香气倾向：${AROMA_AXES.map((label, index) => `${label}${wizard.radar.aroma[index].toFixed(1)}`).join('、')}`);
-  lines.push(`整体风格：${STYLE_AXES.map((label, index) => `${label}${wizard.radar.style[index].toFixed(1)}`).join('、')}`);
-  lines.push(`偏好评分：${AFFECTIVE.map(label => `${label}${wizard.affective[label]}/9`).join('、')}`);
-  lines.push(`应用映射建议分：${affectiveMappedScore().toFixed(1)}`);
-  return lines.join('\n');
+  const score = qualityScoreBreakdown();
+  lines.push(`香气倾向/${AROMA_AXES.map((label, index) => `${label}${wizard.radar.aroma[index].toFixed(1)}`).join('、')}`);
+  lines.push(`整体质量/${STYLE_AXES.map((label, index) => `${label}${wizard.radar.style[index].toFixed(1)}`).join('、')}`);
+  lines.push(`第一雷达贡献/${score.aromaContribution.toFixed(1)}`);
+  lines.push(`第二雷达贡献/${score.styleContribution.toFixed(1)}`);
+  lines.push(`明缺陷/${wizard.defects.major.length ? wizard.defects.major.join('、') : '-'}`);
+  lines.push(`暗缺陷/${wizard.defects.minor.length ? wizard.defects.minor.join('、') : '-'}`);
+  lines.push(`瑕疵扣分/${score.defectDeduction.toFixed(1)}`);
+  lines.push(`应用映射建议分/${score.mapped100.toFixed(1)}`);
+  return lines.join('
+');
 }
 
 function nativePreferences() {
@@ -414,7 +449,7 @@ function nativePreferences() {
     酸: { 0: [find(/柑橘|柠檬|苹果|葡萄|醋酸/) || '柑橘'], 1: [Number(wizard.intensities.acidity) < 2 ? '无' : Number(wizard.intensities.acidity) < 6 ? '微酸' : Number(wizard.intensities.acidity) < 11 ? '圆润舒适' : '尖锐'] },
     苦: { 0: ['无'] },
     口感: { 0: [find(/轻盈|顺滑|圆润|奶油|厚重|干涩|收敛/) || '顺滑'] },
-    负面: { 0: [find(/纸味|木质|土味|霉味|药感|橡胶/) || '无'] }
+    负面: { 0: [wizard.defects.major[0] || wizard.defects.minor[0] || find(/纸味|木质|土味|霉味|药感|橡胶/) || '无'] }
   };
 }
 

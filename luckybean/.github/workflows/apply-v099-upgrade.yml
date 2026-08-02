@@ -1,0 +1,403 @@
+name: Apply Lucky Bean v0.9.9 upgrade
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/apply-v099-upgrade.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-v099-upgrade
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply deterministic v0.9.9 patches
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          def read(path): return Path(path).read_text(encoding='utf-8')
+          def write(path, text): Path(path).write_text(text, encoding='utf-8')
+          def rep(path, old, new, count=1):
+              text = read(path)
+              if old not in text:
+                  raise SystemExit(f'missing replacement in {path}: {old[:100]!r}')
+              write(path, text.replace(old, new, count))
+          def sub(path, pattern, replacement, count=1):
+              text = read(path)
+              next_text, n = re.subn(pattern, replacement, text, count=count, flags=re.S)
+              if n != count:
+                  raise SystemExit(f'pattern count {n} != {count} in {path}: {pattern[:100]}')
+              write(path, next_text)
+
+          # Eliminate the self-triggering group menu observer loop.
+          write('src/v098-group-menu-guard.js', r'''const GROUP_KEY = 'luckybean.group.method.v098';
+          const OPTIONS = [
+            ['freshness-state', '按赏味期状态'],
+            ['remaining-50', '按余量（每50g）']
+          ];
+          let queued = false;
+          let syncing = false;
+
+          function syncGroupMenus() {
+            if (syncing) return;
+            syncing = true;
+            try {
+              document.querySelectorAll('.popup-menu').forEach(menu => {
+                const isGroupMenu = Boolean(menu.querySelector('[data-group-method]'));
+                if (!isGroupMenu) {
+                  menu.querySelectorAll('[data-v098-group-method]').forEach(button => button.remove());
+                  return;
+                }
+                // Prevent the older enhancer from appending another copy.
+                menu.dataset.v098Enhanced = '1';
+                const selected = localStorage.getItem(GROUP_KEY) || 'roast';
+                OPTIONS.forEach(([value, label]) => {
+                  let button = menu.querySelector(`[data-v098-group-method="${value}"]`);
+                  if (!button) {
+                    button = document.createElement('button');
+                    button.type = 'button';
+                    button.dataset.v098GroupMethod = value;
+                    menu.append(button);
+                  }
+                  const text = `${label}${selected === value ? ' ✓' : ''}`;
+                  if (button.textContent !== text) button.textContent = text;
+                });
+                menu.querySelectorAll('[data-group-method]').forEach(button => {
+                  const text = button.textContent.replace(/\s*✓$/, '') + (selected === button.dataset.groupMethod ? ' ✓' : '');
+                  if (button.textContent !== text) button.textContent = text;
+                });
+              });
+            } finally {
+              syncing = false;
+            }
+          }
+
+          function queueSync() {
+            if (queued) return;
+            queued = true;
+            queueMicrotask(() => {
+              queued = false;
+              syncGroupMenus();
+            });
+          }
+
+          new MutationObserver(records => {
+            if (records.some(record => record.addedNodes.length || record.removedNodes.length)) queueSync();
+          }).observe(document.documentElement, { childList: true, subtree: true });
+          syncGroupMenus();
+          ''')
+
+          # Custom grouping must not overwrite the native recommendation expansion.
+          p = 'src/v098-feature-fixes.js'
+          rep(p, "  'one-pour': 2,", "  'one-pour': 1,")
+          rep(p, "  'five-pulse': 5\n});", "  'five-pulse': 5,\n  'hoffmann-one-cup': 5,\n  'april-two-pour': 2,\n  'matt-winton-five': 5,\n  'lance-daily-two': 2,\n  'switch-hybrid-50-50': 2,\n  'mugen-one-pour': 1,\n  'onyx-center-spiral': 5\n});")
+          rep(p, "  if (!$('#activeFilterBar')?.classList.contains('hidden')) return;", "  if (!$('#activeFilterBar')?.classList.contains('hidden')) return;\n  if (!['freshness-state', 'remaining-50'].includes(groupMode)) return;\n  if (container.dataset.v099NativeRecommendation === '1' || container.querySelector('[data-all-groups],.recommendation-all-groups')) return;")
+          rep(p, "  enhanceGroupMenu();", "  // v0.9.9 uses the non-recursive group-menu guard.")
+          rep(p, "    '1': '旧口径（停用）',", "    '1': '总1段（一刀流连续注水）',")
+          rep(p, "    if (option.value === '1') option.disabled = true;", "    if (option.value === '1') option.disabled = false;")
+          sub(p, r"function radarValues\(key\) \{.*?\n\}\n\nfunction saveRadarSnapshot", r'''function radarValues(key) {
+            const svg = $(`[data-radar-svg="${key}"]`);
+            const fallback = key === 'style' ? Array(8).fill(5) : Array(5).fill(5);
+            if (!svg) return fallback;
+            const handles = $$('.v095-radar-handle', svg);
+            const count = Math.max(1, handles.length);
+            return handles.map((circle, index) => {
+              const x = Number(circle.getAttribute('cx')) - 120;
+              const y = Number(circle.getAttribute('cy')) - 120;
+              const angle = -Math.PI / 2 + index * Math.PI * 2 / count;
+              return Math.round(clamp((x * Math.cos(angle) + y * Math.sin(angle)) / 88 * 10, 0, 10) * 10) / 10;
+            });
+          }
+
+          function saveRadarSnapshot''')
+          sub(p, r"function loadRadarSnapshot\(\) \{.*?\n\}", r'''function loadRadarSnapshot() {
+            try {
+              const parsed = JSON.parse(sessionStorage.getItem(RADAR_KEY) || 'null');
+              if (parsed?.aroma?.length === 5 && parsed?.style?.length === 8) return parsed;
+            } catch { /* Ignore stale data. */ }
+            return { aroma: [5, 5, 5, 5, 5], style: [5, 5, 5, 5, 5, 5, 5, 5] };
+          }''')
+          rep(p, "    input.min = '1';\n    input.max = '9';\n    if (Number(input.value) < 1) input.value = '1';\n    if (Number(input.value) > 9) input.value = '9';", "    input.min = '0';\n    input.max = '10';\n    if (Number(input.value) < 0) input.value = '0';\n    if (Number(input.value) > 10) input.value = '10';")
+          rep(p, "  $$('.v095-radar > p').forEach(node => { node.textContent = '点击轴点后，以1–9分记录对应杯测维度的质量得分。'; });", "  $$('.v095-radar > p').forEach(node => { node.textContent = '点击轴点后，以0–10分记录对应杯测维度的质量得分。'; });")
+          rep(p, "    const length = radius * clamp(value, 1, 9) / 9;", "    const length = radius * clamp(value, 0, 10) / 10;")
+          sub(p, r"function customRadarCard\(key, title, labels, values\) \{.*?\n\}", r'''function customRadarCard(key, title, labels, values) {
+            const rings = [2, 4, 6, 8, 10].map(level => `<polygon points="${radarPolygon(Array(labels.length).fill(level))}"></polygon>`).join('');
+            const axes = labels.map((label, index) => {
+              const angle = -Math.PI / 2 + index * Math.PI * 2 / labels.length;
+              const x = 120 + Math.cos(angle) * 88;
+              const y = 120 + Math.sin(angle) * 88;
+              const lx = 120 + Math.cos(angle) * 108;
+              const ly = 120 + Math.sin(angle) * 108;
+              return `<line x1="120" y1="120" x2="${x}" y2="${y}"></line><text x="${lx}" y="${ly}">${esc(label)}</text>`;
+            }).join('');
+            return `<section class="v098-radar-card" data-v098-radar-card="${key}"><h3>${esc(title)}</h3><svg viewBox="0 0 240 240"><g class="grid">${rings}${axes}</g><polygon class="value" points="${radarPolygon(values)}"></polygon></svg><div class="v098-radar-sliders">${labels.map((label, index) => `<label><span>${esc(label)}</span><input type="range" min="0" max="10" step="0.1" value="${values[index]}" data-v098-radar="${key}:${index}"><output>${Number(values[index]).toFixed(1)}</output></label>`).join('')}</div></section>`;
+          }''')
+          rep(p, "<p>保持在同一专业流程中调整，1–9分。</p>", "<p>保持在同一专业流程中调整，0–10分。</p>")
+          rep(p, "['风味','余韵','酸质','甜感','醇厚']", "['风味','余韵','酸质','甜感','醇厚','干净度','一致性','平衡度']")
+
+          # Professional sensory: 8-axis second radar, defect step and explicit score accounting.
+          p = 'src/v095-sensory-pro.js'
+          rep(p, "const STYLE_AXES = ['风味', '余韵', '酸质', '甜感', '醇厚'];", "const STYLE_AXES = ['风味', '余韵', '酸质', '甜感', '醇厚', '干净度', '一致性', '平衡度'];\nconst DEFECT_GROUPS = Object.freeze({ major: { label: '明缺陷', note: '霉腐，坏发酵', tags: ['霉腐', '坏发酵'], multiplier: 2 }, minor: { label: '暗缺陷', note: '轻微涩', tags: ['轻微涩'], multiplier: 1 } });")
+          rep(p, "    radar: { aroma: [5, 5, 5, 5, 5], style: [5, 5, 5, 5, 5] },", "    radar: { aroma: [5, 5, 5, 5, 5], style: [5, 5, 5, 5, 5, 5, 5, 5] },\n    defects: { major: [], minor: [] },")
+          rep(p, "const rings = [2, 4, 6, 8, 10].map(level => `<polygon points=\"${radarPoints(Array(5).fill(level), center, radius)}\"></polygon>`).join('');", "const rings = [2, 4, 6, 8, 10].map(level => `<polygon points=\"${radarPoints(Array(labels.length).fill(level), center, radius)}\"></polygon>`).join('');")
+          rep(p, "<span>${esc(labels[index])}强度</span>", "<span>${esc(labels[index])}得分</span>")
+          sub(p, r"function radarStep\(\) \{.*?\n\}", r'''function radarStep() {
+            const score = qualityScoreBreakdown();
+            return `<section class="v095-pro-card wide"><p class="v095-step">雷达图</p><h2>风格与质量标定</h2><p>两个雷达图均按0–10分记录。第一张五轴取平均值计入总分；第二张除干净度外按各轴实际分计入，干净度未达到10分时该轴计0分。</p><div class="v095-radar-grid">${radarMarkup('aroma', '香气倾向', AROMA_AXES, wizard.radar.aroma)}${radarMarkup('style', '整体质量', STYLE_AXES, wizard.radar.style)}</div><div class="v095-quality-breakdown"><div><span>第一雷达贡献</span><strong>${score.aromaContribution.toFixed(1)}</strong></div><div><span>第二雷达暂计</span><strong>${score.styleContribution.toFixed(1)}</strong></div></div></section>`;
+          }''')
+          sub(p, r"function affectiveMappedScore\(\) \{.*?\n\}\n\nfunction affectiveStep\(\) \{.*?\n\}", r'''function qualityScoreBreakdown() {
+            const aromaContribution = wizard.radar.aroma.reduce((sum, value) => sum + Number(value || 0), 0) / 5;
+            const cleanIndex = STYLE_AXES.indexOf('干净度');
+            const cleanRaw = Number(wizard.radar.style[cleanIndex] || 0);
+            const cleanlinessContribution = cleanRaw >= 10 ? 10 : 0;
+            const styleContribution = wizard.radar.style.reduce((sum, value, index) => index === cleanIndex ? sum : sum + Number(value || 0), 0) + cleanlinessContribution;
+            const majorCount = wizard.defects.major.length;
+            const minorCount = wizard.defects.minor.length;
+            const defectDeduction = majorCount * 4 + minorCount * 2;
+            const raw = clamp(aromaContribution + styleContribution - defectDeduction, 0, 90);
+            return { aromaContribution, styleContribution, cleanlinessContribution, majorCount, minorCount, defectDeduction, raw, mapped100: raw / 90 * 100 };
+          }
+
+          function affectiveMappedScore() {
+            return qualityScoreBreakdown().mapped100;
+          }
+
+          function defectStep() {
+            const score = qualityScoreBreakdown();
+            const groups = Object.entries(DEFECT_GROUPS).map(([key, group]) => `<section class="v095-defect-group"><h3>${esc(group.label)}</h3><small>${esc(group.note)} · ${group.multiplier === 2 ? '双倍扣分' : '单倍扣分'}</small><div class="v095-defect-tags">${group.tags.map(tag => `<button type="button" class="button subtle${wizard.defects[key].includes(tag) ? ' selected' : ''}" data-defect-group="${key}" data-defect-tag="${esc(tag)}">${esc(tag)}</button>`).join('')}</div></section>`).join('');
+            return `<section class="v095-pro-card wide"><p class="v095-step">瑕疵</p><h2>瑕疵标签与扣分</h2><p>仅在实际感知到对应瑕疵时标记。明缺陷按暗缺陷的两倍扣分。</p><div class="v095-defect-grid">${groups}</div><div class="v095-quality-breakdown"><div><span>雷达原始分</span><strong>${(score.aromaContribution + score.styleContribution).toFixed(1)} / 90</strong></div><div><span>瑕疵扣分</span><strong>-${score.defectDeduction.toFixed(1)}</strong></div><div><span>最终原始分</span><strong>${score.raw.toFixed(1)} / 90</strong></div><div><span>应用映射分</span><strong>${score.mapped100.toFixed(1)} / 100</strong></div></div></section>`;
+          }''')
+          sub(p, r"function currentStepKind\(\) \{.*?\n\}", r'''function currentStepKind() {
+            if (wizard.step < STEPS.length) return 'descriptor';
+            if (wizard.step === STEPS.length) return 'radar';
+            return 'defect';
+          }''')
+          rep(p, "  const body = kind === 'descriptor' ? descriptorStep(STEPS[wizard.step], wizard.step) : kind === 'radar' ? radarStep() : affectiveStep();\n  const final = kind === 'affective';", "  const body = kind === 'descriptor' ? descriptorStep(STEPS[wizard.step], wizard.step) : kind === 'radar' ? radarStep() : defectStep();\n  const final = kind === 'defect';")
+          rep(p, "${final ? '确认评分，进入札记' : '继续'}", "${final ? '确认瑕疵，进入札记' : '继续'}")
+          rep(p, "  if (kind === 'affective') bindAffectiveStep();", "  if (kind === 'defect') bindDefectStep();")
+          rep(p, "    const angle = -Math.PI / 2 + index * Math.PI * 2 / 5;", "    const angle = -Math.PI / 2 + index * Math.PI * 2 / wizard.radar[key].length;", count=2)
+          rep(p, "  return ((x * Math.cos(angle) + y * Math.sin(angle)) / 88) * 10;", "  return ((x * Math.cos(angle) + y * Math.sin(angle)) / 88) * 10;")
+          rep(p, "function bindAffectiveStep() {", "function bindDefectStep() {\n  $$('[data-defect-tag]').forEach(button => button.addEventListener('click', () => {\n    const key = button.dataset.defectGroup;\n    const tag = button.dataset.defectTag;\n    wizard.defects[key] = wizard.defects[key].includes(tag) ? wizard.defects[key].filter(item => item !== tag) : [...wizard.defects[key], tag];\n    renderWizard();\n  }));\n}\n\nfunction bindAffectiveStep() {")
+          sub(p, r"function professionalSummary\(\) \{.*?\n\}", r'''function professionalSummary() {
+            const lines = ['【专业品鉴】'];
+            const phaseCode = { high: 'H', mid: 'W', low: 'C' };
+            for (const step of STEPS) {
+              const tags = wizard.selections[step.id];
+              const label = phaseCode[step.id] || step.title;
+              const marker = tags.length ? tags.join(' ＞ ') : '-';
+              lines.push(`${label}/${marker}/${Number(wizard.intensities[step.id]).toFixed(1)}`);
+            }
+            const score = qualityScoreBreakdown();
+            lines.push(`香气倾向/${AROMA_AXES.map((label, index) => `${label}${wizard.radar.aroma[index].toFixed(1)}`).join('、')}`);
+            lines.push(`整体质量/${STYLE_AXES.map((label, index) => `${label}${wizard.radar.style[index].toFixed(1)}`).join('、')}`);
+            lines.push(`第一雷达贡献/${score.aromaContribution.toFixed(1)}`);
+            lines.push(`第二雷达贡献/${score.styleContribution.toFixed(1)}`);
+            lines.push(`明缺陷/${wizard.defects.major.length ? wizard.defects.major.join('、') : '-'}`);
+            lines.push(`暗缺陷/${wizard.defects.minor.length ? wizard.defects.minor.join('、') : '-'}`);
+            lines.push(`瑕疵扣分/${score.defectDeduction.toFixed(1)}`);
+            lines.push(`应用映射建议分/${score.mapped100.toFixed(1)}`);
+            return lines.join('\n');
+          }''')
+          rep(p, "    负面: { 0: [find(/纸味|木质|土味|霉味|药感|橡胶/) || '无'] }", "    负面: { 0: [wizard.defects.major[0] || wizard.defects.minor[0] || find(/纸味|木质|土味|霉味|药感|橡胶/) || '无'] }")
+
+          # Expand and preserve researched brew profiles.
+          p = 'src/brew-engine.js'
+          sub(p, r"const EXTRA_PROFILES = Object\.freeze\(\[.*?\]\);", r'''const EXTRA_PROFILES = Object.freeze([
+            { id: 'four-stage', label: '四段式', tags: ['balanced', 'four-stage'], description: '总计四段，闷蒸计为第一段，之后用三段完成主体萃取。' },
+            { id: 'four-six-33666', label: '46法改进版（33666）', tags: ['4:6', 'floral', 'acidity'], description: '五段固定比例；240g时为30/30/60/60/60g，前两段使用闷蒸温区。', source: 'Lucky Bean 33666 extension' },
+            { id: 'hoffmann-one-cup', label: 'Hoffmann 单杯五段法', tags: ['v60','clarity','repeatable'], description: '15g/250g，50g闷蒸后四次等量注水，强调单杯萃取均匀与可复现性。', source: 'James Hoffmann, A Better 1 Cup V60 Technique (2022)' },
+            { id: 'april-two-pour', label: 'April 平底两段法', tags: ['flatbed','sweetness','balance'], description: '两次100g结构，圆周与中心注水组合，适合平底滤杯、甜感和平衡。', source: 'April Coffee base filter recipe' },
+            { id: 'matt-winton-five', label: 'Matt Winton 五次等量法', tags: ['v60','clarity','dual-temperature'], description: '五次等量注水；首段较高温、后段可降温，突出洁净、甜感与香气。', source: 'Matt Winton 2021 World Brewers Cup method' },
+            { id: 'lance-daily-two', label: 'Lance 日常两段法', tags: ['v60','fast','daily'], description: '充分闷蒸后一次完成主体注水，减少脉冲扰动，适合日常快速冲煮。', source: 'Lance Hedrick daily two-pour method' },
+            { id: 'switch-hybrid-50-50', label: 'Switch 50/50 混合法', tags: ['immersion','hybrid','body'], description: '前半开放渗滤、后半关闭浸泡再释放，兼顾清晰度、甜感和醇厚。', source: 'Coffee Chronicler Hario Switch hybrid method' },
+            { id: 'mugen-one-pour', label: 'Kasuya Mugen 一刀流', tags: ['one-pour','fast','mugen'], description: '单次连续注水完成全部水量，操作简洁、时间短，适合高流阻Mugen结构。', source: 'Hario / Tetsu Kasuya Mugen one-pour recipe' },
+            { id: 'onyx-center-spiral', label: 'Onyx 中心—绕圈法', tags: ['v60','bright','agitation'], description: '闷蒸后以中心注水建立流速，再用多段绕圈完成萃取，适合明亮果香型咖啡。', source: 'Onyx Coffee Lab V60 brew guide' }
+          ]);''')
+          sub(p, r"const EXPLICIT_PROFILES = new Set\(\[.*?\]\);", r'''const EXPLICIT_PROFILES = new Set([
+            'one-pour','two-pulse','three-pulse','four-stage','four-six-v17','four-six-33666',
+            'flat46-clean','five-pulse','pulse-30x15','hoffmann-one-cup','april-two-pour',
+            'matt-winton-five','lance-daily-two','switch-hybrid-50-50','mugen-one-pour','onyx-center-spiral'
+          ]);''')
+          rep(p, "  '30g/15秒脉冲': 'pulse-30x15', '30g闷蒸+每15秒30ml多段脉冲': 'pulse-30x15', 'pulse-30x15': 'pulse-30x15', pulse30x15: 'pulse-30x15'", "  '30g/15秒脉冲': 'pulse-30x15', '30g闷蒸+每15秒30ml多段脉冲': 'pulse-30x15', 'pulse-30x15': 'pulse-30x15', pulse30x15: 'pulse-30x15',\n  'hoffmann单杯五段法': 'hoffmann-one-cup', 'hoffmann-one-cup': 'hoffmann-one-cup',\n  'april平底两段法': 'april-two-pour', 'april-two-pour': 'april-two-pour',\n  'mattwinton五次等量法': 'matt-winton-five', 'matt-winton-five': 'matt-winton-five',\n  'lance日常两段法': 'lance-daily-two', 'lance-daily-two': 'lance-daily-two',\n  'switch50/50混合法': 'switch-hybrid-50-50', 'switch-hybrid-50-50': 'switch-hybrid-50-50',\n  'kasuyamugen一刀流': 'mugen-one-pour', 'mugen-one-pour': 'mugen-one-pour',\n  'onyx中心绕圈法': 'onyx-center-spiral', 'onyx-center-spiral': 'onyx-center-spiral'")
+          rep(p, "const SEGMENT_PROFILE_MAP = Object.freeze({ '2': 'two-pulse', '3': 'three-pulse', '4': 'four-stage', '5': 'five-pulse' });", "const SEGMENT_PROFILE_MAP = Object.freeze({ '1': 'one-pour', '2': 'two-pulse', '3': 'three-pulse', '4': 'four-stage', '5': 'five-pulse' });")
+          sub(p, r"const EXPECTED_STAGE_COUNTS = Object\.freeze\(\{.*?\}\);", r'''const EXPECTED_STAGE_COUNTS = Object.freeze({
+            'one-pour': 1, 'two-pulse': 2, 'three-pulse': 3, 'four-stage': 4,
+            'four-six-v17': 5, 'four-six-33666': 5, 'flat46-clean': 5, 'five-pulse': 5,
+            'hoffmann-one-cup': 5, 'april-two-pour': 2, 'matt-winton-five': 5,
+            'lance-daily-two': 2, 'switch-hybrid-50-50': 2, 'mugen-one-pour': 1,
+            'onyx-center-spiral': 5
+          });''')
+          sub(p, r"const CORE_PROFILE_ALIAS = Object\.freeze\(\{.*?\}\);", r'''const CORE_PROFILE_ALIAS = Object.freeze({
+            'four-stage': 'five-pulse',
+            'four-six-33666': 'four-six-v17',
+            'hoffmann-one-cup': 'five-pulse',
+            'april-two-pour': 'two-pulse',
+            'matt-winton-five': 'five-pulse',
+            'lance-daily-two': 'two-pulse',
+            'switch-hybrid-50-50': 'two-pulse',
+            'mugen-one-pour': 'one-pour',
+            'onyx-center-spiral': 'five-pulse'
+          });''')
+          helper = r'''
+          function rebuildPublishedStages(plan, profileId, fractions, names, options = {}) {
+            const original = (plan.stages || []).map(stage => ({ ...stage }));
+            if (!original.length) return plan;
+            const totalWater = Number(plan.totals?.waterG || original.at(-1)?.cumulativeWaterG || 0);
+            const rounded = fractions.map(value => Math.round(totalWater * value));
+            rounded[rounded.length - 1] += totalWater - rounded.reduce((sum, value) => sum + value, 0);
+            const stages = [];
+            let cumulative = 0;
+            let elapsed = 0;
+            rounded.forEach((water, index) => {
+              const midpoint = cumulative + water / 2;
+              const source = sourceStageAtWater(original, midpoint) || original[Math.min(index, original.length - 1)] || original[0];
+              const flow = clamp(options.flows?.[index] ?? source.flowGPerSec ?? 4.6, 1.5, 9);
+              const pourSeconds = water / Math.max(.1, flow);
+              const wait = options.waits?.[index] ?? (index === 0 ? 28 : 8);
+              const duration = Math.max(1, Math.round(options.durations?.[index] ?? (pourSeconds + wait)));
+              const temperature = options.temperatures?.[index] ?? source.temperatureC ?? original[0].temperatureC ?? 90;
+              cumulative += water;
+              stages.push({
+                ...source,
+                index: index + 1,
+                startSec: elapsed,
+                durationSec: duration,
+                stageWaterG: water,
+                cumulativeWaterG: cumulative,
+                temperatureC: Math.round(temperature),
+                coreTemperatureC: Math.round(options.coreTemperatures?.[index] ?? source.coreTemperatureC ?? temperature),
+                flowGPerSec: Math.round(flow * 10) / 10,
+                drainWaitSec: Math.max(0, Math.round(duration - pourSeconds)),
+                name: names[index],
+                method: options.methods?.[index] || source.method || '稳定注水并控制扰动',
+                notice: options.notices?.[index] || (index === stages.length - 1 ? '达到目标水量后及时截流' : '')
+              });
+              elapsed += duration;
+            });
+            const profile = profileDefinition(profileId);
+            plan.stages = stages;
+            plan.profile = { ...profile };
+            plan.profileVersion = `${profileId}@published-structure-v099`;
+            plan.totals = { ...(plan.totals || {}), waterG: totalWater, targetTimeSec: elapsed };
+            plan.professional ||= {};
+            plan.professional.profile = { ...profile };
+            plan.professional.stageCountSemantics = profileId === 'one-pour' || profileId === 'mugen-one-pour' ? 'single-continuous-pour-including-wetting' : 'total-stages-including-bloom';
+            plan.trajectory = [];
+            return plan;
+          }
+
+          '''
+          rep(p, "function normalizeStageSemantics(plan, profileId) {", helper + "function normalizeStageSemantics(plan, profileId) {")
+          sub(p, r"function normalizeStageSemantics\(plan, profileId\) \{.*?\n\}", r'''function normalizeStageSemantics(plan, profileId) {
+            if (profileId === 'four-six-33666') {
+              return rebuildStages(plan, profileId, [0.125, 0.125, 0.25, 0.25, 0.25], [
+                '第一段·闷蒸润湿', '第二段·闷蒸扩展', '第三段·主体一', '第四段·主体二', '第五段·尾段收束'
+              ], { improved33666: true });
+            }
+            if (profileId === 'one-pour') return rebuildPublishedStages(plan, profileId, [1], ['一刀流·连续注水'], { durations: [105], methods: ['前20%以低流量完成润湿，随后不间断提高流量至目标总水量；全程视为一个连续阶段。'] });
+            if (profileId === 'mugen-one-pour') return rebuildPublishedStages(plan, profileId, [1], ['Mugen一刀流·连续注水'], { durations: [90], flows: [5.2], methods: ['从中心向外连续绕圈，一次完成全部注水，不设置独立闷蒸段。'] });
+            if (profileId === 'hoffmann-one-cup') return rebuildPublishedStages(plan, profileId, [.2,.2,.2,.2,.2], ['闷蒸50g','第二次至40%','第三次至60%','第四次至80%','第五次至100%'], { durations: [45,25,20,20,70], flows: [5,5,5,5,5], methods: ['充分润湿后轻柔摇匀','稳定绕圈注水','短暂停顿后绕圈','维持均匀扰动','完成注水后轻柔摇匀并等待滤完'] });
+            if (profileId === 'april-two-pour') return rebuildPublishedStages(plan, profileId, [.5,.5], ['第一段·圆周+中心','第二段·圆周+中心'], { durations: [30,120], flows: [6.2,6.2], methods: ['前40%圆周注水、后60%中心注水','30秒时重复圆周与中心组合，建立甜感和平衡'] });
+            if (profileId === 'matt-winton-five') return rebuildPublishedStages(plan, profileId, [.2,.2,.2,.2,.2], ['闷蒸等量注水','第二次等量注水','第三次等量注水','第四次等量注水','第五次等量注水'], { temperatures: [93,88,88,88,88], durations: [35,30,30,30,80], flows: [6,6,6,6,6], methods: ['较高温积极润湿','降温后等量绕圈','待液面下降后重复','保持相同路径与扰动','完成后及时移除滤杯'] });
+            if (profileId === 'lance-daily-two') return rebuildPublishedStages(plan, profileId, [.2,.8], ['第一段·充分闷蒸','第二段·连续主体注水'], { durations: [60,100], flows: [3.8,6], methods: ['充分排气；新鲜豆可延长闷蒸或补一次小闷蒸','快速稳定完成余下水量，减少多次脉冲造成的扰动'] });
+            if (profileId === 'switch-hybrid-50-50') return rebuildPublishedStages(plan, profileId, [.5,.5], ['第一段·开放渗滤','第二段·关闭浸泡后释放'], { durations: [45,135], flows: [5,5], methods: ['开阀完成前半水量，获取清晰度','关阀加入后半水量浸泡，随后开阀完成下滤'] });
+            if (profileId === 'onyx-center-spiral') return rebuildPublishedStages(plan, profileId, [40/300,80/300,60/300,60/300,60/300], ['闷蒸40g','中心注水至120g','绕圈至180g','绕圈至240g','尾段至300g'], { durations: [30,20,20,20,70], flows: [4,6,6,6,6], methods: ['完全润湿粉层','中心注水建立稳定下滤速度','绕圈提高均匀性','重复绕圈维持亮度','完成尾段并及时截流'] });
+            const configs = {
+              'two-pulse': { fractions: [1], names: ['第二段·主体完成'] },
+              'three-pulse': { fractions: [.56, .44], names: ['第二段·主体萃取', '第三段·尾段收束'] },
+              'four-stage': { fractions: [.36, .34, .30], names: ['第二段·前段萃取', '第三段·中段展开', '第四段·尾段收束'] },
+              'five-pulse': { fractions: [.25, .25, .25, .25], names: ['第二段·细分一', '第三段·细分二', '第四段·细分三', '第五段·尾段收束'] }
+            };
+            const config = configs[profileId];
+            return config ? rebuildStages(plan, profileId, config.fractions, config.names) : plan;
+          }''')
+          rep(p, "  return [...new Set([...base, 'four-stage', 'four-six-33666'])];", "  return [...new Set([...base, 'four-stage', 'four-six-33666', 'hoffmann-one-cup', 'april-two-pour', 'matt-winton-five', 'lance-daily-two', 'switch-hybrid-50-50', 'mugen-one-pour', 'onyx-center-spiral'])];")
+          rep(p, "尾段降温 ${Number(controls.tailDrop || 0).toFixed(2)}℃。", "尾段降温 ${Number(controls.tailDrop || 0).toFixed(2)}℃，时间倍率 ${Number(controls.timeScale || 1).toFixed(2)}。")
+
+          # Make the optimizer explicitly solve the trajectory intersection problem.
+          p = 'src/brew-optimizer-v097.js'
+          rep(p, "export const BREW_OPTIMIZER_VERSION = 'lucky-brew-optimizer-0.9.7.1';", "export const BREW_OPTIMIZER_VERSION = 'lucky-brew-optimizer-0.9.9.0';")
+          rep(p, "export const TRAJECTORY_MODEL_VERSION = 'lucky-trajectory-inverse-fit-0.9.7.1';", "export const TRAJECTORY_MODEL_VERSION = 'lucky-trajectory-inverse-fit-0.9.9.0';")
+          text = read(p)
+          text = text.replace("bloomFactor: Number(previousControls.bloomFactor || 1),", "bloomFactor: Number(previousControls.bloomFactor || 1),\n  timeScale: Number(previousControls.timeScale || 1),")
+          text = text.replace("bloomFactor: Number(prior.bloomFactor || 1)", "bloomFactor: Number(prior.bloomFactor || 1),\n    timeScale: Number(prior.timeScale || 1)")
+          write(p, text)
+          rep(p, "  controls.tailDrop = round(clamp(controls.tailDrop, 1, 9), 2);\n  return {", "  controls.tailDrop = round(clamp(controls.tailDrop, 1, 9), 2);\n  controls.timeScale = round(clamp(controls.timeScale, 0.72, 1.25), 2);\n  return {")
+          rep(p, "      : clamp(pourSeconds + wait, Math.max(8, pourSeconds), 52);", "      : clamp((pourSeconds + wait) * controls.timeScale, Math.max(7, pourSeconds), 60);")
+          rep(p, "      ? clamp(bloomBase * controls.bloomFactor, 22, 75)", "      ? clamp(bloomBase * controls.bloomFactor * controls.timeScale, 20, 80)")
+          rep(p, "    ['bloomFactor', [-0.18,-0.09,0,0.09,0.18], 0.72, 1.35]", "    ['bloomFactor', [-0.18,-0.09,0,0.09,0.18], 0.72, 1.35],\n    ['timeScale', [-0.16,-0.08,0,0.08,0.16], 0.68, 1.30]")
+          sub(p, r"const objective = clamp\(\n\s*100 \* \(positiveCoverage \* 0\.38 \+ targetFit \* 0\.26 \+ eyFit \* 0\.18 \+ models\.device\.uniformity \* 0\.10 \+ \(1 - riskExposure\) \* 0\.18\)\n\s*- riskExposure \* 38 - deviceViolation \* 18 - complexity \* 100 - compatibilityPenalty \* 100,", "const objective = clamp(\n    100 * (positiveCoverage * 0.42 + targetFit * 0.28 + (1 - riskExposure) * 0.22 + eyFit * 0.05 + models.device.uniformity * 0.03)\n    - riskExposure * 55 - deviceViolation * 20 - complexity * 72 - compatibilityPenalty * 100,")
+          rep(p, "`逆向求解先构造正面风味代理窗口与负面风险窗口，再搜索研磨、粉水比、温度、流量、等待和分段水量，使预测轨迹最大化目标覆盖并降低尾段风险。拟合分 ${trajectory.objectiveScore}。`,", "`逆向求解把正向风味窗口视为必须穿越的目标区，把苦涩、木质与收敛窗口视为避让区；联合搜索研磨、粉水比、温度、流量、等待、总时间和分段水量，使白色萃取轨迹尽量穿过正向区域并避开负面区域。拟合分 ${trajectory.objectiveScore}。`,")
+
+          # Make the highlighted trajectory a thick white solid line and explain its role.
+          p = 'src/v098-trajectory-v17.js'
+          rep(p, "if (legend) legend.innerHTML = '<span class=\"v098-legend-temp\">温度中线及±1℃范围</span><span class=\"v098-legend-flow\">流量中线及±0.3g/s范围</span><span class=\"v098-legend-water\">累计注水</span><span class=\"v098-legend-flavor\">风味覆盖轨迹</span><span class=\"v098-legend-risk\">木质/苦涩风险</span>';", "if (legend) legend.innerHTML = '<span class=\"v099-legend-trajectory\">白色实线：冲煮萃取轨迹（重点）</span><span class=\"v098-legend-temp\">温度中线及±1℃范围</span><span class=\"v098-legend-flow\">流量中线及±0.3g/s范围</span><span class=\"v098-legend-water\">累计注水</span><span class=\"v098-legend-risk\">木质/苦涩风险</span>';")
+          rep(p, "白色虚线应贯穿正面风味窗口；尾段温度和流量下压，避开木质与苦涩风险。", "粗白色实线是需要重点观察的冲煮萃取轨迹：计算器反向调整温度、流量、等待、总时间、研磨与粉水比，使轨迹穿过正向风味窗口，并通过降温、加快注水或提前截流避开木质、苦涩与收敛风险。")
+
+          # Publish as v0.9.9 revision 099a and force cache invalidation.
+          p = 'index.html'
+          text = read(p)
+          text = text.replace('application-version" content="0.9.8', 'application-version" content="0.9.9')
+          text = text.replace('release-revision" content="098e', 'release-revision" content="099a')
+          text = text.replace('富贵盒子 0.9.8', '富贵盒子 0.9.9')
+          text = text.replace('data-release="0.9.8" data-release-revision="098e"', 'data-release="0.9.9" data-release-revision="099a"')
+          text = text.replace('?v=098e', '?v=099a')
+          if 'styles-v099.css' not in text:
+              text = text.replace('</head>', '  <link rel="stylesheet" href="./styles-v099.css?v=099a">\n</head>')
+          if 'v099-runtime.js' not in text:
+              text = text.replace('</body>', '  <script type="module" src="./src/v099-runtime.js?v=099a"></script>\n</body>')
+          write(p, text)
+
+          p = 'manifest.webmanifest'
+          text = read(p).replace('0.9.8', '0.9.9').replace('098e', '099a')
+          write(p, text)
+          p = 'src/utils.js'; write(p, read(p).replace("APP_VERSION = '0.9.8'", "APP_VERSION = '0.9.9'"))
+          p = 'package.json'; write(p, read(p).replace('"version": "0.9.8"', '"version": "0.9.9"'))
+          p = 'sw.js'
+          text = read(p).replace('0.9.8-main-098e', '0.9.9-main-099a').replace("const RELEASE = '098e';", "const RELEASE = '099a';")
+          text = text.replace("`./styles-v098-trajectory-v17.css?v=${RELEASE}`,", "`./styles-v098-trajectory-v17.css?v=${RELEASE}`,\n  `./styles-v099.css?v=${RELEASE}`,")
+          text = text.replace("`./src/v098-group-menu-guard.js?v=${RELEASE}`,", "`./src/v098-group-menu-guard.js?v=${RELEASE}`,\n  `./src/v099-runtime.js?v=${RELEASE}`,")
+          write(p, text)
+
+          p = 'README.md'
+          text = read(p).replace('**当前内部测试版本：v0.9.8**', '**当前内部测试版本：v0.9.9**', 1)
+          if '## v0.9.9' not in text:
+              marker = '## v0.9.8'
+              section = '''## v0.9.9\n\n- 修复点击分组后因菜单观察器自触发造成的页面卡死；\n- 修复连续使用“选择”时第二次不展开分组的问题；\n- 四象限菜单中央拖拽热区扩大但完全透明；\n- “专业内容”改为“深入解读”，修正黑白主题正文颜色；\n- 新增并验算 Hoffmann、April、Matt Winton、Lance、Switch、Mugen、Onyx 等公开冲煮结构；\n- 轨迹优化以穿越正向风味窗口、避开负面风险窗口为核心目标，同时搜索温度、流量、时间、研磨、粉水比和分段水量；\n- 一刀流改为单一连续阶段，33666固定为五段；\n- 第二雷达图增加干净度、一致性和平衡度，新增瑕疵标签与扣分。\n\n'''
+              text = text.replace(marker, section + marker, 1)
+          write(p, text)
+          PY
+
+      - name: Run tests
+        continue-on-error: true
+        run: |
+          npm test
+          npm run check
+
+      - name: Commit v0.9.9
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html manifest.webmanifest package.json README.md sw.js styles-v099.css src
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "release: Lucky Bean v0.9.9 trajectory and sensory upgrade"
+          git push origin HEAD:main

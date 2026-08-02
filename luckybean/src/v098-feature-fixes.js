@@ -14,14 +14,21 @@ const GROUP_KEY = 'luckybean.group.method.v098';
 const SELECTED_KEY = 'luckybean.selected.bean.v098';
 const RADAR_KEY = 'luckybean.professional.radar.v098';
 const FIXED_PROFILE_STAGES = Object.freeze({
-  'one-pour': 2,
+  'one-pour': 1,
   'two-pulse': 2,
   'three-pulse': 3,
   'four-stage': 4,
   'four-six-v17': 5,
   'four-six-33666': 5,
   'flat46-clean': 5,
-  'five-pulse': 5
+  'five-pulse': 5,
+  'hoffmann-one-cup': 5,
+  'april-two-pour': 2,
+  'matt-winton-five': 5,
+  'lance-daily-two': 2,
+  'switch-hybrid-50-50': 2,
+  'mugen-one-pour': 1,
+  'onyx-center-spiral': 5
 });
 const ROAST_LABELS = Object.freeze({
   'RL-L0': '极浅烘', 'RL-L1': '浅烘', 'RL-L2': '浅中烘', 'RL-L3': '中烘',
@@ -120,6 +127,8 @@ async function renderCustomGroups() {
   const container = $('#beanGroups');
   if (!container || !$('#pageBeans.active')) return;
   if (!$('#activeFilterBar')?.classList.contains('hidden')) return;
+  if (!['freshness-state', 'remaining-50'].includes(groupMode)) return;
+  if (container.dataset.v099NativeRecommendation === '1' || container.querySelector('[data-all-groups],.recommendation-all-groups')) return;
   groupBusy = true;
   try {
     const [{ index }, beans, records] = await Promise.all([codebookContext(), all('beans'), all('sensoryRecords')]);
@@ -201,7 +210,7 @@ function syncBrewControls() {
 
   const labels = {
     auto: '模型自动决定总段数',
-    '1': '旧口径（停用）',
+    '1': '总1段（一刀流连续注水）',
     '2': '总2段（含闷蒸）',
     '3': '总3段（含闷蒸）',
     '4': '总4段（含闷蒸）',
@@ -209,7 +218,7 @@ function syncBrewControls() {
   };
   for (const option of segments.options) {
     if (labels[option.value]) option.textContent = labels[option.value];
-    if (option.value === '1') option.disabled = true;
+    if (option.value === '1') option.disabled = false;
   }
   const helper = field?.querySelector('.helper,.muted,small');
   if (helper) helper.textContent = '这里的段数为总段数，闷蒸计为第一段；仅在冲煮法未固定段数时显示。';
@@ -336,12 +345,15 @@ function v17Trajectory(svg) {
 
 function radarValues(key) {
   const svg = $(`[data-radar-svg="${key}"]`);
-  if (!svg) return [5, 5, 5, 5, 5];
-  return $$('.v095-radar-handle', svg).map((circle, index) => {
+  const fallback = key === 'style' ? Array(8).fill(5) : Array(5).fill(5);
+  if (!svg) return fallback;
+  const handles = $$('.v095-radar-handle', svg);
+  const count = Math.max(1, handles.length);
+  return handles.map((circle, index) => {
     const x = Number(circle.getAttribute('cx')) - 120;
     const y = Number(circle.getAttribute('cy')) - 120;
-    const angle = -Math.PI / 2 + index * Math.PI * 2 / 5;
-    return Math.round(clamp((x * Math.cos(angle) + y * Math.sin(angle)) / 88 * 10, 1, 9) * 10) / 10;
+    const angle = -Math.PI / 2 + index * Math.PI * 2 / count;
+    return Math.round(clamp((x * Math.cos(angle) + y * Math.sin(angle)) / 88 * 10, 0, 10) * 10) / 10;
   });
 }
 
@@ -354,21 +366,21 @@ function saveRadarSnapshot() {
 function loadRadarSnapshot() {
   try {
     const parsed = JSON.parse(sessionStorage.getItem(RADAR_KEY) || 'null');
-    if (parsed?.aroma?.length === 5 && parsed?.style?.length === 5) return parsed;
+    if (parsed?.aroma?.length === 5 && parsed?.style?.length === 8) return parsed;
   } catch { /* Ignore stale data. */ }
-  return { aroma: [5, 5, 5, 5, 5], style: [5, 5, 5, 5, 5] };
+  return { aroma: [5, 5, 5, 5, 5], style: [5, 5, 5, 5, 5, 5, 5, 5] };
 }
 
 function normalizeRadarUi() {
   $$('.v095-radar-slider input').forEach(input => {
-    input.min = '1';
-    input.max = '9';
-    if (Number(input.value) < 1) input.value = '1';
-    if (Number(input.value) > 9) input.value = '9';
+    input.min = '0';
+    input.max = '10';
+    if (Number(input.value) < 0) input.value = '0';
+    if (Number(input.value) > 10) input.value = '10';
     const label = input.closest('label')?.querySelector('span');
     if (label) label.textContent = label.textContent.replace('强度', '质量得分');
   });
-  $$('.v095-radar > p').forEach(node => { node.textContent = '点击轴点后，以1–9分记录对应杯测维度的质量得分。'; });
+  $$('.v095-radar > p').forEach(node => { node.textContent = '点击轴点后，以0–10分记录对应杯测维度的质量得分。'; });
 }
 
 async function bypassAffectiveStep() {
@@ -421,22 +433,22 @@ function normalizeProfessionalSummary() {
 function radarPolygon(values, center = 120, radius = 88) {
   return values.map((value, index) => {
     const angle = -Math.PI / 2 + index * Math.PI * 2 / values.length;
-    const length = radius * clamp(value, 1, 9) / 9;
+    const length = radius * clamp(value, 0, 10) / 10;
     return `${(center + Math.cos(angle) * length).toFixed(1)},${(center + Math.sin(angle) * length).toFixed(1)}`;
   }).join(' ');
 }
 
 function customRadarCard(key, title, labels, values) {
-  const rings = [1.8, 3.6, 5.4, 7.2, 9].map(level => `<polygon points="${radarPolygon(Array(5).fill(level))}"></polygon>`).join('');
+  const rings = [2, 4, 6, 8, 10].map(level => `<polygon points="${radarPolygon(Array(labels.length).fill(level))}"></polygon>`).join('');
   const axes = labels.map((label, index) => {
-    const angle = -Math.PI / 2 + index * Math.PI * 2 / 5;
+    const angle = -Math.PI / 2 + index * Math.PI * 2 / labels.length;
     const x = 120 + Math.cos(angle) * 88;
     const y = 120 + Math.sin(angle) * 88;
     const lx = 120 + Math.cos(angle) * 108;
     const ly = 120 + Math.sin(angle) * 108;
     return `<line x1="120" y1="120" x2="${x}" y2="${y}"></line><text x="${lx}" y="${ly}">${esc(label)}</text>`;
   }).join('');
-  return `<section class="v098-radar-card" data-v098-radar-card="${key}"><h3>${esc(title)}</h3><svg viewBox="0 0 240 240"><g class="grid">${rings}${axes}</g><polygon class="value" points="${radarPolygon(values)}"></polygon></svg><div class="v098-radar-sliders">${labels.map((label, index) => `<label><span>${esc(label)}</span><input type="range" min="1" max="9" step="0.1" value="${values[index]}" data-v098-radar="${key}:${index}"><output>${Number(values[index]).toFixed(1)}</output></label>`).join('')}</div></section>`;
+  return `<section class="v098-radar-card" data-v098-radar-card="${key}"><h3>${esc(title)}</h3><svg viewBox="0 0 240 240"><g class="grid">${rings}${axes}</g><polygon class="value" points="${radarPolygon(values)}"></polygon></svg><div class="v098-radar-sliders">${labels.map((label, index) => `<label><span>${esc(label)}</span><input type="range" min="0" max="10" step="0.1" value="${values[index]}" data-v098-radar="${key}:${index}"><output>${Number(values[index]).toFixed(1)}</output></label>`).join('')}</div></section>`;
 }
 
 function openProfessionalRadarReturn() {
@@ -445,7 +457,7 @@ function openProfessionalRadarReturn() {
   const root = document.createElement('div');
   root.id = 'v098RadarReturn';
   root.className = 'overlay full v098-radar-return';
-  root.innerHTML = `<div class="dialog v098-radar-dialog"><div class="dialog-header centered"><div><h2>专业品鉴 · 雷达质量得分</h2><p>保持在同一专业流程中调整，1–9分。</p></div></div><div class="v098-radar-grid">${customRadarCard('aroma', '香气倾向', ['花香','果香','茶感','坚果','酵感'], snapshot.aroma)}${customRadarCard('style', '整体质量', ['风味','余韵','酸质','甜感','醇厚'], snapshot.style)}</div><div class="v098-radar-actions"><button class="button" type="button" data-v098-radar-cancel>返回札记</button><button class="button primary" type="button" data-v098-radar-save>确认并返回札记</button></div></div>`;
+  root.innerHTML = `<div class="dialog v098-radar-dialog"><div class="dialog-header centered"><div><h2>专业品鉴 · 雷达质量得分</h2><p>保持在同一专业流程中调整，0–10分。</p></div></div><div class="v098-radar-grid">${customRadarCard('aroma', '香气倾向', ['花香','果香','茶感','坚果','酵感'], snapshot.aroma)}${customRadarCard('style', '整体质量', ['风味','余韵','酸质','甜感','醇厚','干净度','一致性','平衡度'], snapshot.style)}</div><div class="v098-radar-actions"><button class="button" type="button" data-v098-radar-cancel>返回札记</button><button class="button primary" type="button" data-v098-radar-save>确认并返回札记</button></div></div>`;
   document.body.append(root);
   root.addEventListener('input', event => {
     const input = event.target.closest('[data-v098-radar]');
@@ -545,7 +557,7 @@ async function enhanceArchivedDetail() {
 }
 
 function syncUi() {
-  enhanceGroupMenu();
+  // v0.9.9 uses the non-recursive group-menu guard.
   syncBrewControls();
   $$('.trajectory-chart.detailed').forEach(v17Trajectory);
   normalizeRadarUi();

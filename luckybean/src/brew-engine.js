@@ -18,7 +18,14 @@ export {
 
 const EXTRA_PROFILES = Object.freeze([
   { id: 'four-stage', label: '四段式', tags: ['balanced', 'four-stage'], description: '总计四段，闷蒸计为第一段，之后用三段完成主体萃取。' },
-  { id: 'four-six-33666', label: '46法改进版（33666）', tags: ['4:6', 'floral', 'acidity'], description: '按30/30/60/60/60比例缩放；前两段均作为闷蒸温区，强调酸质与花香。' }
+  { id: 'four-six-33666', label: '46法改进版（33666）', tags: ['4:6', 'floral', 'acidity'], description: '五段固定比例；240g时为30/30/60/60/60g，前两段使用闷蒸温区。', source: 'Lucky Bean 33666 extension' },
+  { id: 'hoffmann-one-cup', label: 'Hoffmann 单杯五段法', tags: ['v60','clarity','repeatable'], description: '15g/250g，50g闷蒸后四次等量注水，强调单杯萃取均匀与可复现性。', source: 'James Hoffmann, A Better 1 Cup V60 Technique (2022)' },
+  { id: 'april-two-pour', label: 'April 平底两段法', tags: ['flatbed','sweetness','balance'], description: '两次100g结构，圆周与中心注水组合，适合平底滤杯、甜感和平衡。', source: 'April Coffee base filter recipe' },
+  { id: 'matt-winton-five', label: 'Matt Winton 五次等量法', tags: ['v60','clarity','dual-temperature'], description: '五次等量注水；首段较高温、后段可降温，突出洁净、甜感与香气。', source: 'Matt Winton 2021 World Brewers Cup method' },
+  { id: 'lance-daily-two', label: 'Lance 日常两段法', tags: ['v60','fast','daily'], description: '充分闷蒸后一次完成主体注水，减少脉冲扰动，适合日常快速冲煮。', source: 'Lance Hedrick daily two-pour method' },
+  { id: 'switch-hybrid-50-50', label: 'Switch 50/50 混合法', tags: ['immersion','hybrid','body'], description: '前半开放渗滤、后半关闭浸泡再释放，兼顾清晰度、甜感和醇厚。', source: 'Coffee Chronicler Hario Switch hybrid method' },
+  { id: 'mugen-one-pour', label: 'Kasuya Mugen 一刀流', tags: ['one-pour','fast','mugen'], description: '单次连续注水完成全部水量，操作简洁、时间短，适合高流阻Mugen结构。', source: 'Hario / Tetsu Kasuya Mugen one-pour recipe' },
+  { id: 'onyx-center-spiral', label: 'Onyx 中心—绕圈法', tags: ['v60','bright','agitation'], description: '闷蒸后以中心注水建立流速，再用多段绕圈完成萃取，适合明亮果香型咖啡。', source: 'Onyx Coffee Lab V60 brew guide' }
 ]);
 const EXTRA_PROFILE_MAP = new Map(EXTRA_PROFILES.map(profile => [profile.id, profile]));
 
@@ -28,7 +35,8 @@ export function listBrewProfiles() {
 
 const EXPLICIT_PROFILES = new Set([
   'one-pour','two-pulse','three-pulse','four-stage','four-six-v17','four-six-33666',
-  'flat46-clean','five-pulse','pulse-30x15'
+  'flat46-clean','five-pulse','pulse-30x15','hoffmann-one-cup','april-two-pour',
+  'matt-winton-five','lance-daily-two','switch-hybrid-50-50','mugen-one-pour','onyx-center-spiral'
 ]);
 
 const PROFILE_ALIASES = Object.freeze({
@@ -40,18 +48,35 @@ const PROFILE_ALIASES = Object.freeze({
   '46法改进版': 'four-six-33666', '四六法改进版': 'four-six-33666', '33666': 'four-six-33666', 'four-six-33666': 'four-six-33666',
   '平底四六法': 'flat46-clean', '46法·平底净化': 'flat46-clean', 'flat46-clean': 'flat46-clean',
   '五段式': 'five-pulse', 'five-pulse': 'five-pulse', fivepulse: 'five-pulse',
-  '30g/15秒脉冲': 'pulse-30x15', '30g闷蒸+每15秒30ml多段脉冲': 'pulse-30x15', 'pulse-30x15': 'pulse-30x15', pulse30x15: 'pulse-30x15'
+  '30g/15秒脉冲': 'pulse-30x15', '30g闷蒸+每15秒30ml多段脉冲': 'pulse-30x15', 'pulse-30x15': 'pulse-30x15', pulse30x15: 'pulse-30x15',
+  'hoffmann单杯五段法': 'hoffmann-one-cup', 'hoffmann-one-cup': 'hoffmann-one-cup',
+  'april平底两段法': 'april-two-pour', 'april-two-pour': 'april-two-pour',
+  'mattwinton五次等量法': 'matt-winton-five', 'matt-winton-five': 'matt-winton-five',
+  'lance日常两段法': 'lance-daily-two', 'lance-daily-two': 'lance-daily-two',
+  'switch50/50混合法': 'switch-hybrid-50-50', 'switch-hybrid-50-50': 'switch-hybrid-50-50',
+  'kasuyamugen一刀流': 'mugen-one-pour', 'mugen-one-pour': 'mugen-one-pour',
+  'onyx中心绕圈法': 'onyx-center-spiral', 'onyx-center-spiral': 'onyx-center-spiral'
 });
 
 // Segment counts are total stages and always include bloom.
-const SEGMENT_PROFILE_MAP = Object.freeze({ '2': 'two-pulse', '3': 'three-pulse', '4': 'four-stage', '5': 'five-pulse' });
+const SEGMENT_PROFILE_MAP = Object.freeze({ '1': 'one-pour', '2': 'two-pulse', '3': 'three-pulse', '4': 'four-stage', '5': 'five-pulse' });
 const EXPECTED_STAGE_COUNTS = Object.freeze({
-  'one-pour': 2, 'two-pulse': 2, 'three-pulse': 3, 'four-stage': 4,
-  'four-six-v17': 5, 'four-six-33666': 5, 'flat46-clean': 5, 'five-pulse': 5
+  'one-pour': 1, 'two-pulse': 2, 'three-pulse': 3, 'four-stage': 4,
+  'four-six-v17': 5, 'four-six-33666': 5, 'flat46-clean': 5, 'five-pulse': 5,
+  'hoffmann-one-cup': 5, 'april-two-pour': 2, 'matt-winton-five': 5,
+  'lance-daily-two': 2, 'switch-hybrid-50-50': 2, 'mugen-one-pour': 1,
+  'onyx-center-spiral': 5
 });
 const CORE_PROFILE_ALIAS = Object.freeze({
   'four-stage': 'five-pulse',
-  'four-six-33666': 'four-six-v17'
+  'four-six-33666': 'four-six-v17',
+  'hoffmann-one-cup': 'five-pulse',
+  'april-two-pour': 'two-pulse',
+  'matt-winton-five': 'five-pulse',
+  'lance-daily-two': 'two-pulse',
+  'switch-hybrid-50-50': 'two-pulse',
+  'mugen-one-pour': 'one-pour',
+  'onyx-center-spiral': 'five-pulse'
 });
 
 function normalizedProfileAlias(value) {
@@ -217,14 +242,69 @@ function rebuildStages(plan, profileId, fractions, names, { improved33666 = fals
   return plan;
 }
 
+
+function rebuildPublishedStages(plan, profileId, fractions, names, options = {}) {
+  const original = (plan.stages || []).map(stage => ({ ...stage }));
+  if (!original.length) return plan;
+  const totalWater = Number(plan.totals?.waterG || original.at(-1)?.cumulativeWaterG || 0);
+  const rounded = fractions.map(value => Math.round(totalWater * value));
+  rounded[rounded.length - 1] += totalWater - rounded.reduce((sum, value) => sum + value, 0);
+  const stages = [];
+  let cumulative = 0;
+  let elapsed = 0;
+  rounded.forEach((water, index) => {
+    const midpoint = cumulative + water / 2;
+    const source = sourceStageAtWater(original, midpoint) || original[Math.min(index, original.length - 1)] || original[0];
+    const flow = clamp(options.flows?.[index] ?? source.flowGPerSec ?? 4.6, 1.5, 9);
+    const pourSeconds = water / Math.max(.1, flow);
+    const wait = options.waits?.[index] ?? (index === 0 ? 28 : 8);
+    const duration = Math.max(1, Math.round(options.durations?.[index] ?? (pourSeconds + wait)));
+    const temperature = options.temperatures?.[index] ?? source.temperatureC ?? original[0].temperatureC ?? 90;
+    cumulative += water;
+    stages.push({
+      ...source,
+      index: index + 1,
+      startSec: elapsed,
+      durationSec: duration,
+      stageWaterG: water,
+      cumulativeWaterG: cumulative,
+      temperatureC: Math.round(temperature),
+      coreTemperatureC: Math.round(options.coreTemperatures?.[index] ?? source.coreTemperatureC ?? temperature),
+      flowGPerSec: Math.round(flow * 10) / 10,
+      drainWaitSec: Math.max(0, Math.round(duration - pourSeconds)),
+      name: names[index],
+      method: options.methods?.[index] || source.method || '稳定注水并控制扰动',
+      notice: options.notices?.[index] || (index === stages.length - 1 ? '达到目标水量后及时截流' : '')
+    });
+    elapsed += duration;
+  });
+  const profile = profileDefinition(profileId);
+  plan.stages = stages;
+  plan.profile = { ...profile };
+  plan.profileVersion = `${profileId}@published-structure-v099`;
+  plan.totals = { ...(plan.totals || {}), waterG: totalWater, targetTimeSec: elapsed };
+  plan.professional ||= {};
+  plan.professional.profile = { ...profile };
+  plan.professional.stageCountSemantics = profileId === 'one-pour' || profileId === 'mugen-one-pour' ? 'single-continuous-pour-including-wetting' : 'total-stages-including-bloom';
+  plan.trajectory = [];
+  return plan;
+}
+
 function normalizeStageSemantics(plan, profileId) {
   if (profileId === 'four-six-33666') {
     return rebuildStages(plan, profileId, [0.125, 0.125, 0.25, 0.25, 0.25], [
       '第一段·闷蒸润湿', '第二段·闷蒸扩展', '第三段·主体一', '第四段·主体二', '第五段·尾段收束'
     ], { improved33666: true });
   }
+  if (profileId === 'one-pour') return rebuildPublishedStages(plan, profileId, [1], ['一刀流·连续注水'], { durations: [105], methods: ['前20%以低流量完成润湿，随后不间断提高流量至目标总水量；全程视为一个连续阶段。'] });
+  if (profileId === 'mugen-one-pour') return rebuildPublishedStages(plan, profileId, [1], ['Mugen一刀流·连续注水'], { durations: [90], flows: [5.2], methods: ['从中心向外连续绕圈，一次完成全部注水，不设置独立闷蒸段。'] });
+  if (profileId === 'hoffmann-one-cup') return rebuildPublishedStages(plan, profileId, [.2,.2,.2,.2,.2], ['闷蒸50g','第二次至40%','第三次至60%','第四次至80%','第五次至100%'], { durations: [45,25,20,20,70], flows: [5,5,5,5,5], methods: ['充分润湿后轻柔摇匀','稳定绕圈注水','短暂停顿后绕圈','维持均匀扰动','完成注水后轻柔摇匀并等待滤完'] });
+  if (profileId === 'april-two-pour') return rebuildPublishedStages(plan, profileId, [.5,.5], ['第一段·圆周+中心','第二段·圆周+中心'], { durations: [30,120], flows: [6.2,6.2], methods: ['前40%圆周注水、后60%中心注水','30秒时重复圆周与中心组合，建立甜感和平衡'] });
+  if (profileId === 'matt-winton-five') return rebuildPublishedStages(plan, profileId, [.2,.2,.2,.2,.2], ['闷蒸等量注水','第二次等量注水','第三次等量注水','第四次等量注水','第五次等量注水'], { temperatures: [93,88,88,88,88], durations: [35,30,30,30,80], flows: [6,6,6,6,6], methods: ['较高温积极润湿','降温后等量绕圈','待液面下降后重复','保持相同路径与扰动','完成后及时移除滤杯'] });
+  if (profileId === 'lance-daily-two') return rebuildPublishedStages(plan, profileId, [.2,.8], ['第一段·充分闷蒸','第二段·连续主体注水'], { durations: [60,100], flows: [3.8,6], methods: ['充分排气；新鲜豆可延长闷蒸或补一次小闷蒸','快速稳定完成余下水量，减少多次脉冲造成的扰动'] });
+  if (profileId === 'switch-hybrid-50-50') return rebuildPublishedStages(plan, profileId, [.5,.5], ['第一段·开放渗滤','第二段·关闭浸泡后释放'], { durations: [45,135], flows: [5,5], methods: ['开阀完成前半水量，获取清晰度','关阀加入后半水量浸泡，随后开阀完成下滤'] });
+  if (profileId === 'onyx-center-spiral') return rebuildPublishedStages(plan, profileId, [40/300,80/300,60/300,60/300,60/300], ['闷蒸40g','中心注水至120g','绕圈至180g','绕圈至240g','尾段至300g'], { durations: [30,20,20,20,70], flows: [4,6,6,6,6], methods: ['完全润湿粉层','中心注水建立稳定下滤速度','绕圈提高均匀性','重复绕圈维持亮度','完成尾段并及时截流'] });
   const configs = {
-    'one-pour': { fractions: [1], names: ['第二段·主体一刀流'] },
     'two-pulse': { fractions: [1], names: ['第二段·主体完成'] },
     'three-pulse': { fractions: [.56, .44], names: ['第二段·主体萃取', '第三段·尾段收束'] },
     'four-stage': { fractions: [.36, .34, .30], names: ['第二段·前段萃取', '第三段·中段展开', '第四段·尾段收束'] },
@@ -274,7 +354,7 @@ function candidateInput(input, id) {
 
 function optimizerIds(input = {}) {
   const base = optimizerProfileIds(input);
-  return [...new Set([...base, 'four-stage', 'four-six-33666'])];
+  return [...new Set([...base, 'four-stage', 'four-six-33666', 'hoffmann-one-cup', 'april-two-pour', 'matt-winton-five', 'lance-daily-two', 'switch-hybrid-50-50', 'mugen-one-pour', 'onyx-center-spiral'])];
 }
 
 async function computeOptimizedPlan(input, { feedback = null, forceProfile = '' } = {}) {
@@ -326,7 +406,7 @@ function feedbackSummary(feedback) {
 
 function controlChangeText(controls = {}) {
   const signed = value => `${Number(value) >= 0 ? '+' : ''}${Number(value || 0).toFixed(2)}`;
-  return `逆向拟合修正：主温 ${signed(controls.tempOffset)}℃，流量 ${signed(controls.flowOffset)} g/s，研磨 ${signed(controls.grindDelta)} 标准单位，粉水比 ${signed(controls.ratioDelta)}，尾段降温 ${Number(controls.tailDrop || 0).toFixed(2)}℃。`;
+  return `逆向拟合修正：主温 ${signed(controls.tempOffset)}℃，流量 ${signed(controls.flowOffset)} g/s，研磨 ${signed(controls.grindDelta)} 标准单位，粉水比 ${signed(controls.ratioDelta)}，尾段降温 ${Number(controls.tailDrop || 0).toFixed(2)}℃，时间倍率 ${Number(controls.timeScale || 1).toFixed(2)}。`;
 }
 
 export async function buildCorrectedPlan(input, sensoryRecord, previousPlan = null) {

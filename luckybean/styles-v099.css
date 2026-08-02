@@ -1,0 +1,128 @@
+/* Lucky Bean v0.9.9 interaction and readability corrections. */
+.v097-fab-drag-handle {
+  width: 42px !important;
+  height: 42px !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* The touch target is intentionally large but visually invisible. */
+.v097-fab-drag-handle:focus,
+.v097-fab-drag-handle:active {
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] #generatedPlan .professional-result .details-content,
+html[data-theme="light"] #generatedPlan .professional-result .details-content :where(p,li,dd,dt,span,strong,small),
+html[data-theme="light"] #generatedPlan .professional-list,
+html[data-theme="light"] #generatedPlan .professional-list :where(dt,dd) {
+  color: #454542 !important;
+}
+
+html:not([data-theme="light"]) #generatedPlan .professional-result .details-content,
+html:not([data-theme="light"]) #generatedPlan .professional-result .details-content :where(p,li,dd,dt,span,strong,small),
+html:not([data-theme="light"]) #generatedPlan .professional-list,
+html:not([data-theme="light"]) #generatedPlan .professional-list :where(dt,dd) {
+  color: #cececa !important;
+}
+
+#generatedPlan details.professional-result > summary {
+  font-weight: 750 !important;
+}
+
+.trajectory-chart.detailed[data-v098-trajectory-model="v17-stage-time-window"] .v098-flavor-line {
+  fill: none !important;
+  stroke: #fff !important;
+  stroke-width: 3.4 !important;
+  stroke-dasharray: none !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  filter: drop-shadow(0 0 1.2px rgba(0,0,0,.95)) !important;
+  vector-effect: non-scaling-stroke !important;
+}
+
+.trajectory-legend .v099-legend-trajectory::before,
+.trajectory-legend .v098-legend-flavor::before {
+  content: "";
+  display: inline-block;
+  width: 25px;
+  margin-right: 6px;
+  vertical-align: middle;
+  border-top: 4px solid #fff;
+  filter: drop-shadow(0 0 1px rgba(0,0,0,.9));
+}
+
+.v095-radar-grid {
+  align-items: start;
+}
+
+.v095-radar[data-radar-card="style"] svg,
+.v098-radar-card[data-v098-radar-card="style"] svg {
+  overflow: visible;
+}
+
+.v095-defect-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.v095-defect-group {
+  padding: 14px;
+  border: 1px solid rgba(150,150,145,.35);
+  border-radius: 14px;
+}
+
+.v095-defect-group h3 {
+  margin: 0 0 2px;
+}
+
+.v095-defect-group > small {
+  display: block;
+  margin-bottom: 10px;
+  color: #999995;
+}
+
+.v095-defect-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.v095-defect-tags button.selected {
+  border-color: #b52626 !important;
+  background: rgba(181,38,38,.18) !important;
+}
+
+.v095-quality-breakdown {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.v095-quality-breakdown > div {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(127,127,120,.10);
+}
+
+.v095-quality-breakdown strong {
+  display: block;
+  font-size: 1.15rem;
+}
+
+@media (max-width: 640px) {
+  .v095-defect-grid,
+  .v095-quality-breakdown {
+    grid-template-columns: 1fr;
+  }
+  .v095-radar-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

@@ -1,7 +1,7 @@
-// Release marker: luckybean-v0.9.8-main-098e
+// Release marker: luckybean-v0.9.9-main-099a
 // Compatibility marker: luckybean-v0.9.8-main-098d
-const CACHE_NAME = 'luckybean-v0.9.8-main-098e';
-const RELEASE = '098e';
+const CACHE_NAME = 'luckybean-v0.9.9-main-099a';
+const RELEASE = '099a';
 const CORE = [
   './', `./?v=${RELEASE}`, './index.html', `./index.html?v=${RELEASE}`,
   `./manifest.webmanifest?v=${RELEASE}`,
@@ -16,6 +16,7 @@ const CORE = [
   `./styles-v097-fixes.css?v=${RELEASE}`,
   `./styles-v098-fixes.css?v=${RELEASE}`,
   `./styles-v098-trajectory-v17.css?v=${RELEASE}`,
+  `./styles-v099.css?v=${RELEASE}`,
   `./src/app.js?v=${RELEASE}`,
   `./src/v096-web-ocr.js?v=${RELEASE}`,
   `./src/v096-package-capture.js?v=${RELEASE}`,
@@ -34,6 +35,7 @@ const CORE = [
   `./src/v098-selection-bridge.js?v=${RELEASE}`,
   `./src/v098-feature-fixes.js?v=${RELEASE}`,
   `./src/v098-group-menu-guard.js?v=${RELEASE}`,
+  `./src/v099-runtime.js?v=${RELEASE}`,
   './src/recognition-candidates.js', './src/sensory-codec-v096.js', './src/privacy-codec-v096.js',
   './src/image-quality.js', './src/recognition-bridge.js', './src/utils.js', './src/brew-model-v09.js',
   './src/brew-trajectory-v096.js', './src/brew-optimizer-v097.js', './src/brew-engine-core.js',
