@@ -1,10 +1,25 @@
 import * as core from './brew-engine-core.js';
-import { buildVariableTrajectory, TRAJECTORY_MODEL_VERSION } from './brew-trajectory-v096.js';
+import {
+  BREW_OPTIMIZER_VERSION,
+  TRAJECTORY_MODEL_VERSION,
+  deriveSensoryFeedback,
+  optimizeBrewPlan,
+  optimizerProfileIds,
+  summarizeCandidate
+} from './brew-optimizer-v097.js';
 
 export * from './brew-engine-core.js';
-export { TRAJECTORY_MODEL_VERSION } from './brew-trajectory-v096.js';
+export {
+  BREW_OPTIMIZER_VERSION,
+  TRAJECTORY_MODEL_VERSION,
+  deriveSensoryFeedback,
+  optimizeBrewPlan
+} from './brew-optimizer-v097.js';
 
-const EXPLICIT_PROFILES = new Set(['one-pour', 'two-pulse', 'three-pulse', 'four-six-v17', 'flat46-clean', 'five-pulse', 'pulse-30x15']);
+const EXPLICIT_PROFILES = new Set([
+  'one-pour','two-pulse','three-pulse','four-six-v17',
+  'flat46-clean','five-pulse','pulse-30x15'
+]);
 const EXPECTED_STAGE_COUNTS = Object.freeze({
   'one-pour': 2,
   'two-pulse': 3,
@@ -37,14 +52,10 @@ function normalizeExplicitInput(input = {}, profileId = explicitProfileId(input)
   return next;
 }
 
-function attachVariableTrajectory(input, plan) {
-  const legacyTrajectory = Array.isArray(plan.trajectory) ? plan.trajectory : [];
-  const trajectoryModel = buildVariableTrajectory(input, plan);
-  plan.trajectoryModel = trajectoryModel;
-  // Keep the original stage-level contract for exports and older clients.
-  // The detailed 81-point curve lives only in trajectoryModel.points.
-  plan.trajectory = legacyTrajectory.length === plan.stages?.length
-    ? legacyTrajectory
+function attachLegacyTrajectory(plan) {
+  const legacy = Array.isArray(plan.trajectory) ? plan.trajectory : [];
+  plan.trajectory = legacy.length === plan.stages?.length
+    ? legacy
     : (plan.stages || []).map(stage => ({
         x: Number(stage.index || 1) / Math.max(1, plan.stages.length),
         y: Number(stage.cumulativeWaterG || 0) / Math.max(1, plan.totals?.waterG || 1),
@@ -52,12 +63,9 @@ function attachVariableTrajectory(input, plan) {
         label: stage.name
       }));
   plan.professional ||= {};
-  plan.professional.trajectoryModel = trajectoryModel;
-  plan.professional.calculationModelVersion = `${plan.professional.calculationModelVersion || plan.engineVersion || 'brew'}+${TRAJECTORY_MODEL_VERSION}`;
-  plan.explanation = [
-    ...(plan.explanation || []).filter(value => !String(value).includes('萃取轨迹')),
-    '冲煮轨迹按实际阶段水量、流速、温度、段间等待、研磨、烘焙、处理法、品种和水质逐时间步计算；属于相对模型，不替代折光仪实测。'
-  ];
+  plan.professional.trajectoryModel = plan.trajectoryModel;
+  plan.professional.calculationModelVersion =
+    `${plan.professional.calculationModelVersion || plan.engineVersion || 'brew'}+${TRAJECTORY_MODEL_VERSION}`;
   return plan;
 }
 
@@ -83,11 +91,77 @@ function assertProfileIntegrity(input, plan) {
   return plan;
 }
 
+function candidateInput(input, id) {
+  const next = structuredClone(input || {});
+  next.brew ||= {};
+  next.brew.profileId = id;
+  return normalizeExplicitInput(next, id);
+}
+
+async function computeOptimizedPlan(input, { feedback = null, forceProfile = '' } = {}) {
+  const explicit = forceProfile || explicitProfileId(input);
+  const ids = explicit ? [explicit] : optimizerProfileIds(input);
+  const candidates = [];
+
+  for (const id of ids) {
+    const nextInput = candidateInput(input, id);
+    const base = await core.computeFallbackPlan(nextInput);
+    const plan = optimizeBrewPlan(nextInput, base, { feedback });
+    candidates.push({ input: nextInput, plan, summary: summarizeCandidate(plan) });
+  }
+
+  candidates.sort((a, b) => b.summary.score - a.summary.score);
+  const best = candidates[0];
+  if (!best) throw new Error('冲煮优化器没有生成可用候选方案');
+
+  const profiles = new Map(core.listBrewProfiles().map(profile => [profile.id, profile]));
+  const ranked = candidates.map(candidate => ({
+    id: candidate.summary.profileId,
+    score: candidate.summary.score,
+    reason: `目标覆盖 ${(candidate.summary.positiveCoverage * 100).toFixed(1)}%，轨迹拟合 ${(candidate.summary.targetFit * 100).toFixed(1)}%，风险暴露 ${(candidate.summary.riskExposure * 100).toFixed(2)}%。`,
+    positiveCoverage: candidate.summary.positiveCoverage,
+    targetFit: candidate.summary.targetFit,
+    riskExposure: candidate.summary.riskExposure,
+    controls: candidate.summary.controls,
+    profile: profiles.get(candidate.summary.profileId)
+  }));
+
+  best.plan.recommendation = {
+    ...(best.plan.recommendation || {}),
+    selected: ranked[0],
+    candidates: ranked
+  };
+  best.plan.optimizer.candidateProfiles = ranked;
+  best.plan.optimizer.selectedBy = explicit ? 'user-profile-constraint' : 'inverse-trajectory-objective';
+  best.plan.optimizer.inputProfileId = explicit || 'recommended';
+  best.plan.input = best.input;
+  assertProfileIntegrity(explicit ? best.input : input, best.plan);
+  return attachLegacyTrajectory(best.plan);
+}
+
 export async function computeFallbackPlan(input = {}) {
-  const normalized = normalizeExplicitInput(input);
-  const plan = await core.computeFallbackPlan(normalized);
-  assertProfileIntegrity(normalized, plan);
-  return attachVariableTrajectory(normalized, plan);
+  return computeOptimizedPlan(input);
+}
+
+function feedbackSummary(feedback) {
+  const labels = {
+    underExtracted: '欠萃/酸尖',
+    overExtracted: '过萃/苦涩',
+    lowSweet: '甜感不足',
+    lowAroma: '香气不足',
+    muddy: '浑浊',
+    thin: '单薄',
+    heavy: '滞重'
+  };
+  const active = Object.entries(feedback?.flags || {})
+    .filter(([, value]) => value)
+    .map(([key]) => labels[key] || key);
+  return active.length ? active.join('、') : '未检测到明确缺陷，按评分残差做小幅校准';
+}
+
+function controlChangeText(controls = {}) {
+  const signed = value => `${Number(value) >= 0 ? '+' : ''}${Number(value || 0).toFixed(2)}`;
+  return `逆向拟合修正：主温 ${signed(controls.tempOffset)}℃，流量 ${signed(controls.flowOffset)} g/s，研磨 ${signed(controls.grindDelta)} 标准单位，粉水比 ${signed(controls.ratioDelta)}，尾段降温 ${Number(controls.tailDrop || 0).toFixed(2)}℃。`;
 }
 
 export async function buildCorrectedPlan(input, sensoryRecord, previousPlan = null) {
@@ -98,23 +172,38 @@ export async function buildCorrectedPlan(input, sensoryRecord, previousPlan = nu
 
   if (selectedProfile) {
     correctedInput = normalizeExplicitInput(correctedInput, selectedProfile);
-    draft.correction ||= {};
-    draft.correction.changes = [
-      ...(draft.correction.changes || []).filter(value => !/采用|方案|分段/.test(String(value))),
-      `保留用户指定的“${core.listBrewProfiles().find(item => item.id === selectedProfile)?.label || selectedProfile}”，仅调整温度、研磨、水量和风味目标。`
-    ];
   }
 
-  const rebuilt = await core.computeFallbackPlan(correctedInput);
-  assertProfileIntegrity(correctedInput, rebuilt);
-  attachVariableTrajectory(correctedInput, rebuilt);
+  const feedback = deriveSensoryFeedback(sensoryRecord || {}, previousPlan);
+  correctedInput.optimizerFeedback = feedback;
+  const rebuilt = await computeOptimizedPlan(correctedInput, {
+    feedback,
+    forceProfile: selectedProfile
+  });
+
+  const existingChanges = (draft.correction?.changes || [])
+    .filter(value => !selectedProfile || !/采用|方案|分段/.test(String(value)));
+  const changes = [
+    ...existingChanges,
+    selectedProfile
+      ? `保留用户指定的“${core.listBrewProfiles().find(item => item.id === selectedProfile)?.label || selectedProfile}”，不改变冲煮法，仅重算阶段参数。`
+      : `依据品鉴残差重新比较全部候选冲煮法，选择轨迹目标函数得分最高者。`,
+    `品鉴反馈识别：${feedbackSummary(feedback)}。`,
+    controlChangeText(rebuilt.optimizer?.controls)
+  ];
+
   return {
     ...rebuilt,
     id: undefined,
     input: correctedInput,
     correction: {
       ...(draft.correction || {}),
-      requestedProfileId: selectedProfile || correctedInput.brew.profileId || 'recommended'
+      changes,
+      requestedProfileId: selectedProfile || 'recommended',
+      feedback,
+      optimizerVersion: BREW_OPTIMIZER_VERSION,
+      previousObjectiveScore: Number(previousPlan?.optimizer?.objectiveScore || 0) || null,
+      correctedObjectiveScore: Number(rebuilt.optimizer?.objectiveScore || 0)
     },
     warnings: [...new Set([...(rebuilt.warnings || []), ...(draft.warnings || [])])]
   };
@@ -122,7 +211,8 @@ export async function buildCorrectedPlan(input, sensoryRecord, previousPlan = nu
 
 export async function requestPrivatePlan(endpoint, input, timeoutMs = 9000) {
   const normalized = normalizeExplicitInput(input);
-  const plan = await core.requestPrivatePlan(endpoint, normalized, timeoutMs);
-  assertProfileIntegrity(normalized, plan);
-  return attachVariableTrajectory(normalized, plan);
+  const privatePlan = await core.requestPrivatePlan(endpoint, normalized, timeoutMs);
+  const optimized = optimizeBrewPlan(normalized, privatePlan);
+  assertProfileIntegrity(normalized, optimized);
+  return attachLegacyTrajectory(optimized);
 }
