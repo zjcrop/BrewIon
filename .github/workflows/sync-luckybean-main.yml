@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  RELEASE_REVISION: 099a
+  RELEASE_REVISION: 099b
 
 jobs:
   sync:
