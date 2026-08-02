@@ -20,7 +20,6 @@ export function validateCodebook(book) {
   return book;
 }
 
-
 export function mergeCodebooks(primary, fallback) {
   const main = validateCodebook(structuredClone(primary));
   const reserve = validateCodebook(fallback);
@@ -67,7 +66,6 @@ export function displayName(index, table, code, fallback = '—') {
   const value = String(table === 'flavors' ? (row.length >= 9 ? row[4] : row[1]) : row[labelIndex] || '').trim();
   return value || fallback;
 }
-
 
 async function fetchJson(url, timeoutMs = 8000) {
   const controller = new AbortController();
@@ -129,9 +127,33 @@ export function relatedRows(book, table, parentCode) {
   return rows;
 }
 
+function normalizeCodeSource(value) {
+  return String(value || '')
+    .normalize('NFKC')
+    .toUpperCase()
+    .replace(/[‐‑‒–—―−﹣－]/g, '-')
+    .replace(/\s*-\s*/g, '-')
+    .replace(/[\t\r]+/g, ' ');
+}
+
+function directCodeMatch(source, rows) {
+  for (const row of rows || []) {
+    const code = normalizeCodeSource(row?.[0]);
+    if (!code) continue;
+    const index = source.indexOf(code);
+    if (index < 0) continue;
+    const before = source[index - 1] || '';
+    const after = source[index + code.length] || '';
+    if (/[A-Z0-9]/.test(before) || /[A-Z0-9]/.test(after)) continue;
+    return { code: row[0], alias: row[0], row, direct: true };
+  }
+  return null;
+}
+
 export function parseNaturalLanguage(text, book) {
   const source = String(text || '').trim();
   const lower = source.toLocaleLowerCase('zh-CN');
+  const normalizedCodes = normalizeCodeSource(source);
   const result = { confidence: {}, evidence: {}, sourceText: source };
   const tableMap = {
     countries: 'countryCode', regions: 'regionCode', entities: 'entityCode',
@@ -139,17 +161,19 @@ export function parseNaturalLanguage(text, book) {
   };
 
   for (const [table, field] of Object.entries(tableMap)) {
-    let best = null;
-    for (const row of book[table] || []) {
-      const aliases = row.slice(1).filter(v => typeof v === 'string' && v && !['active', 'candidate'].includes(v));
-      for (const alias of aliases.flatMap(v => v.split(/[\/、,，;；]/)).map(v => v.trim()).filter(v => v.length >= 2)) {
-        const needle = alias.toLocaleLowerCase('zh-CN');
-        if (lower.includes(needle) && (!best || needle.length > best.alias.length)) best = { code: row[0], alias, row };
+    let best = directCodeMatch(normalizedCodes, book[table]);
+    if (!best) {
+      for (const row of book[table] || []) {
+        const aliases = row.slice(1).filter(v => typeof v === 'string' && v && !['active', 'candidate'].includes(v));
+        for (const alias of aliases.flatMap(v => v.split(/[\/、,，;；]/)).map(v => v.trim()).filter(v => v.length >= 2)) {
+          const needle = alias.toLocaleLowerCase('zh-CN');
+          if (lower.includes(needle) && (!best || needle.length > best.alias.length)) best = { code: row[0], alias, row, direct: false };
+        }
       }
     }
     if (best) {
       result[field] = best.code;
-      result.confidence[field] = Math.min(0.98, 0.62 + best.alias.length / 20);
+      result.confidence[field] = best.direct ? 0.995 : Math.min(0.98, 0.62 + best.alias.length / 20);
       result.evidence[field] = best.alias;
     }
   }
@@ -159,6 +183,8 @@ export function parseNaturalLanguage(text, book) {
     [/中深|medium\s*dark/i, 'RL-L4'], [/中烘|中度|medium/i, 'RL-L3'], [/极深|法式|very\s*dark/i, 'RL-L6'], [/深烘|深度|dark/i, 'RL-L5']
   ];
   for (const [regex, code] of roastMap) if (regex.test(source)) { result.roastCode = code; result.confidence.roastCode = 0.9; result.evidence.roastCode = source.match(regex)?.[0]; break; }
+  const roastCode = normalizedCodes.match(/(?:^|[^A-Z0-9])(RL-L[0-6])(?:$|[^A-Z0-9])/);
+  if (roastCode) { result.roastCode = roastCode[1]; result.confidence.roastCode = 0.995; result.evidence.roastCode = roastCode[1]; }
 
   const date = source.match(/(20\d{2})[年./-](\d{1,2})[月./-](\d{1,2})日?/);
   if (date) {
@@ -175,6 +201,8 @@ export function parseNaturalLanguage(text, book) {
 
   const flavorMatches = [];
   for (const row of book.flavors || []) {
+    const direct = directCodeMatch(normalizedCodes, [row]);
+    if (direct) { flavorMatches.push(row[0]); continue; }
     const flavorFields = row.length >= 9 ? [row[4], row[5], row[6], row[7]] : [row[1], row[2], row[3]];
     const aliases = flavorFields.filter(v => typeof v === 'string').flatMap(v => v.split(/[/、,，;；]/).map(x => x.trim()).filter(Boolean));
     if (aliases.some(v => v.length >= 2 && lower.includes(v.toLocaleLowerCase('zh-CN')))) flavorMatches.push(row[0]);
