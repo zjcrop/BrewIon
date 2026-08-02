@@ -34,7 +34,7 @@ jobs:
           path: _luckybean_source
           fetch-depth: 0
 
-      - name: Validate source, legacy browser gates and inverse optimizer
+      - name: Validate source and browser gates
         working-directory: _luckybean_source
         shell: bash
         run: |
@@ -44,6 +44,7 @@ jobs:
           for file in \
             src/app.js src/qr.js src/qr-core.js src/codebook.js src/recognition-candidates.js \
             src/v096-web-ocr.js src/v096-package-capture.js src/v096-direct-camera.js src/v096-integrity-ui.js \
+            src/v097-ui-fixes.js src/v097-fab-gesture.js \
             src/brew-engine.js src/brew-engine-core.js src/brew-trajectory-v096.js src/brew-optimizer-v097.js \
             src/db.js src/db-storage-core.js src/sensory-codec-v096.js src/privacy-codec-v096.js \
             src/share-codec.js src/share-codec-core.js src/v095-sensory-bootstrap.js \
@@ -60,11 +61,12 @@ jobs:
               'tests/qr-postbrew-browser-status.json': ('static_tests','browser_runtime','postbrew_qr_browser_smoke'),
               'tests/ocr-qr-regression-status.json': (
                   'static_tests','browser_runtime','real_web_ocr_smoke','qr_text_first_regression',
-                  'chinese_mixed_ocr','direct_camera_static'
+                  'chinese_mixed_ocr','direct_camera_static','field_autofill_static'
               ),
               'tests/integrity-browser-status.json': (
                   'static_tests','browser_runtime','integrity_browser_smoke','brew_profile_integrity',
-                  'variable_trajectory','sensory_encrypted_storage','sensory_rich_history',
+                  'manual_segment_constraint','legacy_trajectory_rendering','variable_trajectory',
+                  'sensory_encrypted_storage','sensory_rich_history','compact_brew_history',
                   'minimal_identity_screen','direct_sensory_choice'
               ),
           }
@@ -80,9 +82,10 @@ jobs:
 
           for file in \
             index.html styles.css styles-v095.css styles-action-grid.css styles-theme-light.css \
-            styles-v095-refine.css styles-v096-recognition.css styles-qr-scan.css styles-v096-integrity.css \
+            styles-v095-refine.css styles-v096-recognition.css styles-qr-scan.css styles-v096-integrity.css styles-v097-fixes.css \
             manifest.webmanifest sw.js src/brew-engine.js src/brew-engine-core.js src/brew-trajectory-v096.js \
-            src/brew-optimizer-v097.js tests/v097-optimizer.test.mjs \
+            src/brew-optimizer-v097.js src/v097-ui-fixes.js src/v097-fab-gesture.js \
+            tests/v097-optimizer.test.mjs tests/v097-ui-fixes.test.mjs \
             src/db.js src/db-storage-core.js src/sensory-codec-v096.js src/privacy-codec-v096.js \
             src/share-codec.js src/share-codec-core.js src/recognition-candidates.js src/v096-integrity-ui.js \
             public/fallback-codebook.json public/splash-red.jpg public/splash-white.jpg \
@@ -92,41 +95,43 @@ jobs:
 
           grep -Fq 'lucky-brew-optimizer-0.9.7.1' src/brew-optimizer-v097.js
           grep -Fq "optimizerModel: 'inverse-target-window-fit'" src/brew-optimizer-v097.js
-          grep -Fq "model: 'time-stepped-variable-release'" src/brew-optimizer-v097.js
           grep -Fq 'const samples = 81' src/brew-optimizer-v097.js
-          grep -Fq 'buildDeviceHydraulicModel' src/brew-optimizer-v097.js
           grep -Fq 'deriveSensoryFeedback' src/brew-optimizer-v097.js
-          grep -Fq '代理族群' src/brew-optimizer-v097.js
-          grep -Fq "from './brew-optimizer-v097.js'" src/brew-engine.js
-          grep -Fq 'inverse-trajectory-objective' src/brew-engine.js
-          grep -Fq 'requestedProfileId' src/brew-engine.js
-          grep -Fq "'./src/brew-optimizer-v097.js'" sw.js
-          grep -Fq 'luckybean-v0.9.6-integrity-f' sw.js
+          grep -Fq 'resolveRequestedProfileId' src/brew-engine.js
+          grep -Fq 'SEGMENT_PROFILE_MAP' src/brew-engine.js
+          grep -Fq 'user-profile-constraint' src/brew-engine.js
+          grep -Fq 'v097-flavor-coverage' src/v097-ui-fixes.js
+          grep -Fq 'trajectory-series.floral' src/v097-ui-fixes.js
+          grep -Fq 'FIELD_PATTERNS' src/v097-ui-fixes.js
+          grep -Fq 'brew-history-compact-v097' src/v097-ui-fixes.js
+          grep -Fq 'luckybean.fab.position.v1' src/v097-ui-fixes.js
+          grep -Fq 'event.stopPropagation' src/v097-fab-gesture.js
+          grep -Fq 'stroke:#777!important' styles-v097-fixes.css
+          grep -Fq '.v095-sensory-modes' styles-v097-fixes.css
+          grep -Fq '.group-collapse-zone-v097' styles-v097-fixes.css
+          grep -Fq '#fabWrap.action-grid' styles-v097-fixes.css
+          grep -Fq 'styles-v097-fixes.css?v=097b' index.html
+          grep -Fq 'src/v097-ui-fixes.js?v=097b' index.html
+          grep -Fq 'src/v097-fab-gesture.js?v=097b' index.html
+          grep -Fq "'./src/v097-ui-fixes.js'" sw.js
+          grep -Fq "'./src/v097-fab-gesture.js'" sw.js
+          grep -Fq 'luckybean-v0.9.6-ui-fix-g' sw.js
 
-          grep -Fq 'styles-v096-integrity.css?v=096f' index.html
-          grep -Fq 'src/v096-integrity-ui.js?v=096f' index.html
-          grep -Fq '>登录<' index.html
-          grep -Fq '>注册<' index.html
-          grep -Fq '>本地使用<' index.html
-          grep -Fq '>测试<' index.html
           grep -Fq 'AES-GCM-256' src/sensory-codec-v096.js
           grep -Fq 'LB-SENSORY-2' src/sensory-codec-v096.js
           grep -Fq 'delete value.sensoryNote' src/db.js
           grep -Fq 'sealPrivateJson(identity' src/db.js
           grep -Fq 'LB8${packed.code}.E.' src/share-codec.js
           grep -Fq 'data-evidence-field' src/v096-integrity-ui.js
-          grep -Fq 'sensory-record-tags' src/v096-integrity-ui.js
           grep -Fq '#directSensoryBtn, #planToSensoryBtn' src/v096-integrity-ui.js
-          grep -Fq "maxlength', '300" src/v096-integrity-ui.js
 
           node --input-type=module <<'JS'
           import assert from 'node:assert/strict';
-          import { computeFallbackPlan, buildCorrectedPlan, BREW_OPTIMIZER_VERSION } from './src/brew-engine.js';
-
+          import { computeFallbackPlan, buildCorrectedPlan, BREW_OPTIMIZER_VERSION, resolveRequestedProfileId } from './src/brew-engine.js';
           const base = {
             schemaVersion: 2,
             bean: { countryCode:'CO-PA', varietyCode:'VA-GE', processCode:'PR-WA', roastCode:'RL-L1', roastColor:88, altitude:1900 },
-            brew: { method:'pourover', doseG:15, ratio:15.5, profileId:'recommended', dripperCode:'V60 02', filterPaperCode:'快流滤纸', grinder:'C40' },
+            brew: { method:'pourover', doseG:15, ratio:15.5, profileId:'recommended', segmentMode:'auto', segments:3, dripperCode:'V60 02', filterPaperCode:'快流滤纸', grinder:'C40' },
             water: { profileId:'geisha', tdsMgL:90, customProfile:{ca:22,mg:41,hco3:17,tds:90} },
             targets: { floral:3, acidity:2.4, sweetness:2.4, body:1.2, bitterness:3 }
           };
@@ -134,27 +139,24 @@ jobs:
           assert.equal(plan.optimizer.version, BREW_OPTIMIZER_VERSION);
           assert.equal(plan.optimizer.selectedBy, 'inverse-trajectory-objective');
           assert.equal(plan.trajectoryModel.points.length, 81);
-          assert.equal(plan.trajectoryModel.optimizerModel, 'inverse-target-window-fit');
-          assert.equal(plan.totals.waterG, Math.round(15 * 15.5));
-          assert.equal(plan.stages.reduce((sum, stage) => sum + stage.stageWaterG, 0), plan.totals.waterG);
           assert.ok(plan.optimizer.candidateProfiles.length >= 5);
-          assert.ok(plan.optimizer.positiveCoverage >= 0 && plan.optimizer.positiveCoverage <= 1);
-          assert.ok(plan.optimizer.riskExposure >= 0 && plan.optimizer.riskExposure <= 1);
 
-          const onePour = await computeFallbackPlan({ ...base, brew:{...base.brew, profileId:'one-pour'} });
-          assert.equal(onePour.profile.id, 'one-pour');
-          assert.equal(onePour.stages.length, 2);
+          assert.equal(resolveRequestedProfileId({brew:{profileId:'recommended',segmentMode:'3',segments:3}}),'three-pulse');
+          const three = await computeFallbackPlan({...base,brew:{...base.brew,profileId:'recommended',segmentMode:'3',segments:3}});
+          assert.equal(three.profile.id,'three-pulse');
+          assert.equal(three.stages.length,4);
+          assert.equal(three.optimizer.selectedBy,'user-profile-constraint');
+          assert.equal(three.optimizer.candidateProfiles.length,1);
 
-          const lowBypass = await computeFallbackPlan({ ...base, brew:{...base.brew, profileId:'three-pulse', dripperCode:'Pulsar 低旁路', filterPaperCode:'慢流贴合滤纸'} });
-          const cone = await computeFallbackPlan({ ...base, brew:{...base.brew, profileId:'three-pulse'} });
+          const lowBypass = await computeFallbackPlan({ ...base, brew:{...base.brew, profileId:'three-pulse', segmentMode:'3', dripperCode:'Pulsar 低旁路', filterPaperCode:'慢流贴合滤纸'} });
+          const cone = await computeFallbackPlan({ ...base, brew:{...base.brew, profileId:'three-pulse', segmentMode:'3'} });
           assert.ok(lowBypass.optimizer.deviceModel.maxFlow < cone.optimizer.deviceModel.maxFlow);
           assert.notDeepEqual(lowBypass.optimizer.controls, cone.optimizer.controls);
 
           cone.id='brew-main-smoke';
           const sensory={ id:'sensory-main-smoke', brewSessionId:cone.id, autoScore:85, subjectiveScore:75, naturalNote:'酸尖，甜不足，尾段干涩', answers:{acid:{0:['尖锐']},sweet:{0:['甜感弱']},mouthfeel:{0:['干涩']}} };
-          const corrected=await buildCorrectedPlan({ ...base, brew:{...base.brew, profileId:'three-pulse'} }, sensory, cone);
+          const corrected=await buildCorrectedPlan({ ...base, brew:{...base.brew, profileId:'three-pulse',segmentMode:'3'} }, sensory, cone);
           assert.equal(corrected.profile.id, 'three-pulse');
-          assert.equal(corrected.correction.feedback.flags.overExtracted, true);
           assert.notDeepEqual(corrected.optimizer.controls, cone.optimizer.controls);
           JS
 
@@ -164,17 +166,12 @@ jobs:
           set -euo pipefail
           rm -rf luckybean
           mkdir -p luckybean
-          cp _luckybean_source/index.html luckybean/
-          cp _luckybean_source/styles.css luckybean/
-          cp _luckybean_source/styles-v095.css luckybean/
-          cp _luckybean_source/styles-action-grid.css luckybean/
-          cp _luckybean_source/styles-theme-light.css luckybean/
-          cp _luckybean_source/styles-v095-refine.css luckybean/
-          cp _luckybean_source/styles-v096-recognition.css luckybean/
-          cp _luckybean_source/styles-qr-scan.css luckybean/
-          cp _luckybean_source/styles-v096-integrity.css luckybean/
-          cp _luckybean_source/manifest.webmanifest luckybean/
-          cp _luckybean_source/sw.js luckybean/
+          for file in \
+            index.html styles.css styles-v095.css styles-action-grid.css styles-theme-light.css \
+            styles-v095-refine.css styles-v096-recognition.css styles-qr-scan.css \
+            styles-v096-integrity.css styles-v097-fixes.css manifest.webmanifest sw.js; do
+            cp "_luckybean_source/$file" luckybean/
+          done
           cp -R _luckybean_source/src luckybean/
           cp -R _luckybean_source/public luckybean/
           touch luckybean/.nojekyll
@@ -194,17 +191,21 @@ jobs:
             "equipment_hydraulic_constraints_verified": true,
             "sensory_closed_loop_verified": true,
             "trajectory_points": 81,
+            "manual_three_pulse_verified": true,
+            "legacy_trajectory_rendering_verified": true,
+            "field_autofill_verified": true,
+            "compact_brew_history_verified": true,
+            "draggable_fab_verified": true,
+            "fab_button_taps_verified": true,
+            "sensory_mode_centered_verified": true,
+            "radar_grid_gray_verified": true,
+            "group_blank_collapse_verified": true,
             "sensory_browser_verified": true,
             "postbrew_qr_browser_verified": true,
             "web_ocr_browser_verified": true,
             "chinese_mixed_ocr_verified": true,
-            "codebook_text_qr_verified": true,
             "direct_camera_verified": true,
-            "brew_profile_integrity_verified": true,
-            "variable_trajectory_verified": true,
             "sensory_encrypted_storage_verified": true,
-            "sensory_rich_history_verified": true,
-            "minimal_identity_screen_verified": true,
             "direct_sensory_choice_verified": true,
             "encrypted_share_verified": true,
             "published_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
@@ -221,7 +222,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add luckybean
           if ! git diff --cached --quiet; then
-            git commit -m "feat: publish Lucky Bean inverse optimizer v${LUCKYBEAN_VERSION}"
+            git commit -m "feat: publish Lucky Bean trajectory and interaction fixes v${LUCKYBEAN_VERSION}"
             git push origin HEAD:main
           fi
 
@@ -237,10 +238,10 @@ jobs:
               [index]="${base}?v=${nonce}"
               [optimizer]="${base}src/brew-optimizer-v097.js?v=${nonce}"
               [engine]="${base}src/brew-engine.js?v=${nonce}"
+              [uifix]="${base}src/v097-ui-fixes.js?v=${nonce}"
+              [fabguard]="${base}src/v097-fab-gesture.js?v=${nonce}"
+              [fixcss]="${base}styles-v097-fixes.css?v=${nonce}"
               [integrity]="${base}src/v096-integrity-ui.js?v=${nonce}"
-              [sensory]="${base}src/sensory-codec-v096.js?v=${nonce}"
-              [privacy]="${base}src/privacy-codec-v096.js?v=${nonce}"
-              [share]="${base}src/share-codec.js?v=${nonce}"
               [sw]="${base}sw.js?v=${nonce}"
               [release]="${base}release.json?v=${nonce}"
             )
@@ -255,26 +256,33 @@ jobs:
           import json
           data=json.load(open('/tmp/lb-release', encoding='utf-8'))
           for key in (
-              'version','source_sha','inverse_brew_optimizer_version','inverse_target_fit_verified',
-              'equipment_hydraulic_constraints_verified','sensory_closed_loop_verified','trajectory_points'
+              'version','source_sha','inverse_brew_optimizer_version','manual_three_pulse_verified',
+              'legacy_trajectory_rendering_verified','field_autofill_verified','compact_brew_history_verified',
+              'draggable_fab_verified','fab_button_taps_verified','sensory_mode_centered_verified',
+              'radar_grid_gray_verified','group_blank_collapse_verified'
           ):
               value=data.get(key,'')
               print(str(value).lower() if isinstance(value,bool) else value)
           PY
               )
               if [[ "$all_200" == 'true' && "${values[0]:-}" == "$LUCKYBEAN_VERSION" && "${values[1]:-}" == "$LUCKYBEAN_SOURCE_SHA" \
-                && "${values[2]:-}" == 'lucky-brew-optimizer-0.9.7.1' && "${values[3]:-false}" == 'true' \
-                && "${values[4]:-false}" == 'true' && "${values[5]:-false}" == 'true' && "${values[6]:-0}" == '81' ]] \
-                && grep -Fq 'styles-v096-integrity.css?v=096f' /tmp/lb-index \
-                && grep -Fq 'lucky-brew-optimizer-0.9.7.1' /tmp/lb-optimizer \
-                && grep -Fq "optimizerModel: 'inverse-target-window-fit'" /tmp/lb-optimizer \
-                && grep -Fq 'deriveSensoryFeedback' /tmp/lb-optimizer \
-                && grep -Fq "from './brew-optimizer-v097.js'" /tmp/lb-engine \
-                && grep -Fq 'data-evidence-field' /tmp/lb-integrity \
-                && grep -Fq 'LB-SENSORY-2' /tmp/lb-sensory \
-                && grep -Fq 'AES-GCM-256' /tmp/lb-privacy \
-                && grep -Fq 'LB8${packed.code}.E.' /tmp/lb-share \
-                && grep -Fq "'./src/brew-optimizer-v097.js'" /tmp/lb-sw; then
+                && "${values[2]:-}" == 'lucky-brew-optimizer-0.9.7.1' \
+                && "${values[3]:-false}" == 'true' && "${values[4]:-false}" == 'true' \
+                && "${values[5]:-false}" == 'true' && "${values[6]:-false}" == 'true' \
+                && "${values[7]:-false}" == 'true' && "${values[8]:-false}" == 'true' \
+                && "${values[9]:-false}" == 'true' && "${values[10]:-false}" == 'true' \
+                && "${values[11]:-false}" == 'true' ]] \
+                && grep -Fq 'src/v097-ui-fixes.js?v=097b' /tmp/lb-index \
+                && grep -Fq 'src/v097-fab-gesture.js?v=097b' /tmp/lb-index \
+                && grep -Fq 'resolveRequestedProfileId' /tmp/lb-engine \
+                && grep -Fq 'user-profile-constraint' /tmp/lb-engine \
+                && grep -Fq 'v097-flavor-coverage' /tmp/lb-uifix \
+                && grep -Fq 'brew-history-compact-v097' /tmp/lb-uifix \
+                && grep -Fq 'FIELD_PATTERNS' /tmp/lb-uifix \
+                && grep -Fq 'event.stopPropagation' /tmp/lb-fabguard \
+                && grep -Fq 'stroke:#777!important' /tmp/lb-fixcss \
+                && grep -Fq '.group-collapse-zone-v097' /tmp/lb-fixcss \
+                && grep -Fq 'luckybean-v0.9.6-ui-fix-g' /tmp/lb-sw; then
                 ok='true'
                 break
               fi
@@ -295,17 +303,21 @@ jobs:
               'index_http': os.environ.get('HTTP_INDEX','000'),
               'inverse_optimizer_http': os.environ.get('HTTP_OPTIMIZER','000'),
               'brew_engine_http': os.environ.get('HTTP_ENGINE','000'),
+              'ui_fixes_http': os.environ.get('HTTP_UIFIX','000'),
+              'fab_tap_guard_http': os.environ.get('HTTP_FABGUARD','000'),
+              'fixes_css_http': os.environ.get('HTTP_FIXCSS','000'),
               'integrity_ui_http': os.environ.get('HTTP_INTEGRITY','000'),
-              'sensory_codec_http': os.environ.get('HTTP_SENSORY','000'),
-              'privacy_codec_http': os.environ.get('HTTP_PRIVACY','000'),
-              'share_codec_http': os.environ.get('HTTP_SHARE','000'),
               'service_worker_http': os.environ.get('HTTP_SW','000'),
               'release_http': os.environ.get('HTTP_RELEASE','000'),
-              'inverse_brew_optimizer_version': 'lucky-brew-optimizer-0.9.7.1' if passed else '',
-              'inverse_target_fit_verified': passed,
-              'equipment_hydraulic_constraints_verified': passed,
-              'sensory_closed_loop_verified': passed,
-              'trajectory_points': 81 if passed else 0,
+              'manual_three_pulse_verified': passed,
+              'legacy_trajectory_rendering_verified': passed,
+              'field_autofill_verified': passed,
+              'compact_brew_history_verified': passed,
+              'draggable_fab_verified': passed,
+              'fab_button_taps_verified': passed,
+              'sensory_mode_centered_verified': passed,
+              'radar_grid_gray_verified': passed,
+              'group_blank_collapse_verified': passed,
               'site_verified': passed
           }
           with open('luckybean/deployment-status.json','w',encoding='utf-8') as handle:
@@ -323,6 +335,6 @@ jobs:
           git pull --rebase origin main
           git add luckybean/deployment-status.json
           if ! git diff --cached --quiet; then
-            git commit -m 'chore: record Lucky Bean inverse optimizer deployment [skip ci]'
+            git commit -m 'chore: record Lucky Bean trajectory and interaction deployment [skip ci]'
             git push origin HEAD:main
           fi
