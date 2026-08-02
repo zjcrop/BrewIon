@@ -18,7 +18,7 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout BrewIon Pages repository
         uses: actions/checkout@v4
@@ -32,56 +32,68 @@ jobs:
           repository: zjcrop/luckybean
           ref: main
           path: _luckybean_source
+          fetch-depth: 0
 
-      - name: Validate Lucky Bean v0.9.6 source
+      - name: Validate Lucky Bean v0.9.6 source and browser gates
         working-directory: _luckybean_source
         shell: bash
         run: |
           set -euo pipefail
           npm test
           npm run check
-          node --check src/app.js
-          node --check src/v096-package-capture.js
-          node --check src/image-quality.js
-          node --check src/recognition-bridge.js
-          node --check src/v095-ui.js
-          node --check src/theme-bridge.js
-          node --check src/v095-layout-gear.js
-          node --check src/v095-sensory-pro.js
+          for file in \
+            src/app.js src/qr.js src/v096-package-capture.js src/image-quality.js src/recognition-bridge.js \
+            src/v095-sensory-bootstrap.js src/v095-sensory-pro.js src/v095-sensory-flow-guard.js \
+            src/v095-postbrew-sensory.js src/v095-qr-ui.js src/v095-ui.js src/theme-bridge.js src/v095-layout-gear.js; do
+            node --check "$file"
+          done
           test "$(node -p "require('./package.json').version")" = '0.9.6'
-          test -s index.html
-          test -s styles.css
-          test -s styles-v095.css
-          test -s styles-action-grid.css
-          test -s styles-theme-light.css
-          test -s styles-v095-refine.css
-          test -s styles-v096-recognition.css
-          test -s src/app.js
-          test -s src/v096-package-capture.js
-          test -s src/image-quality.js
-          test -s src/recognition-bridge.js
-          test -s src/v095-ui.js
-          test -s src/theme-bridge.js
-          test -s src/v095-layout-gear.js
-          test -s src/v095-sensory-pro.js
-          test -s public/fallback-codebook.json
-          test -s public/splash-red.jpg
-          test -s public/splash-white.jpg
-          test -s public/settings-mascot.png
-          test -s public/action-grid.svg
-          grep -q 'styles-v096-recognition.css' index.html
-          grep -q 'src/v096-package-capture.js' index.html
-          grep -q '拍袋录入' src/v096-package-capture.js
-          grep -q 'PackageRecognitionBridge' src/recognition-bridge.js
-          grep -q 'analyzeImageQuality' src/image-quality.js
+          python - <<'PY'
+          import json, subprocess
+          for path, fields in {
+              'tests/sensory-browser-status.json': ('static_tests','browser_runtime','sensory_browser_smoke'),
+              'tests/qr-postbrew-browser-status.json': ('static_tests','browser_runtime','postbrew_qr_browser_smoke'),
+          }.items():
+              status = json.load(open(path, encoding='utf-8'))
+              assert status.get('verified') is True, (path, status)
+              for field in fields:
+                  assert status.get(field) == 'success', (path, field, status)
+              sha = status.get('source_sha', '')
+              assert len(sha) == 40, (path, status)
+              subprocess.run(['git', 'merge-base', '--is-ancestor', sha, 'HEAD'], check=True)
+          PY
+
+          for file in \
+            index.html styles.css styles-v095.css styles-action-grid.css styles-theme-light.css styles-v095-refine.css \
+            styles-v096-recognition.css styles-qr-scan.css manifest.webmanifest sw.js \
+            public/fallback-codebook.json public/splash-red.jpg public/splash-white.jpg public/settings-mascot.png public/action-grid.svg; do
+            test -s "$file"
+          done
+
+          grep -q 'styles-v096-recognition.css?v=096a' index.html
+          grep -q 'styles-qr-scan.css?v=096b' index.html
+          grep -q 'src/app.js?v=096b' index.html
+          grep -q 'src/v096-package-capture.js?v=096a' index.html
+          grep -q 'src/v095-sensory-bootstrap.js?v=095f' index.html
+          grep -q 'src/v095-postbrew-sensory.js?v=096b' index.html
+          grep -q 'src/v095-qr-ui.js?v=096b' index.html
+          grep -q '@zxing/browser@0.2.0/+esm' src/qr.js
+          grep -q 'decodeFromConstraints' src/qr.js
+          grep -q 'BarcodeDetector' src/qr.js
+          grep -q 'extractShareEncoded' src/qr.js
+          grep -q '#recordConsumptionBtn' src/v095-postbrew-sensory.js
+          grep -q 'professional-v2' src/v095-postbrew-sensory.js
+          grep -q '无需按快门' src/v095-qr-ui.js
+          grep -q '自动捕捉中' src/v095-qr-ui.js
           grep -q '专业品鉴' src/v095-sensory-pro.js
           grep -q '玩家互动品鉴' src/v095-sensory-pro.js
-          grep -q '手冲常用刻度范围' src/v095-layout-gear.js
-          grep -q 'luckybean-v0.9.6-recognition-a' sw.js
-          grep -q "'./styles-v096-recognition.css'" sw.js
-          grep -q "'./src/v096-package-capture.js'" sw.js
-          grep -q "'./src/image-quality.js'" sw.js
-          grep -q "'./src/recognition-bridge.js'" sw.js
+          grep -q '拍袋录入' src/v096-package-capture.js
+          grep -q 'luckybean-v0.9.6-qr-b' sw.js
+          for asset in \
+            './styles-v096-recognition.css' './styles-qr-scan.css' './src/v096-package-capture.js' \
+            './src/v095-postbrew-sensory.js' './src/v095-qr-ui.js' './src/qr.js'; do
+            grep -q "'$asset'" sw.js
+          done
 
       - name: Publish runtime under BrewIon/luckybean
         shell: bash
@@ -96,6 +108,7 @@ jobs:
           cp _luckybean_source/styles-theme-light.css luckybean/
           cp _luckybean_source/styles-v095-refine.css luckybean/
           cp _luckybean_source/styles-v096-recognition.css luckybean/
+          cp _luckybean_source/styles-qr-scan.css luckybean/
           cp _luckybean_source/manifest.webmanifest luckybean/
           cp _luckybean_source/sw.js luckybean/
           cp -R _luckybean_source/src luckybean/
@@ -113,6 +126,9 @@ jobs:
             "version": "$app_version",
             "source_repository": "zjcrop/luckybean",
             "source_sha": "$source_sha",
+            "sensory_browser_verified": true,
+            "postbrew_qr_browser_verified": true,
+            "qr_share_decode_verified": true,
             "published_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "url": "https://zjcrop.github.io/BrewIon/luckybean/"
           }
@@ -124,10 +140,10 @@ jobs:
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
-          git config user.email '4189826+github-actions[bot]@users.noreply.github.com'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add luckybean
           if ! git diff --cached --quiet; then
-            git commit -m "feat: publish verified Lucky Bean web stable v${LUCKYBEAN_VERSION}"
+            git commit -m "feat: publish browser-verified Lucky Bean web v${LUCKYBEAN_VERSION}"
             git push origin HEAD:main
           fi
 
@@ -137,40 +153,56 @@ jobs:
           set -euo pipefail
           base='https://zjcrop.github.io/BrewIon/luckybean/'
           ok='false'
-          index_code='000'; app_code='000'; package_code='000'; quality_code='000'; bridge_code='000'
-          ui_code='000'; layout_code='000'; sensory_code='000'; recognition_css_code='000'; codebook_code='000'; release_code='000'
-          release_version=''; release_source_sha=''
+          index_code='000'; app_code='000'; qr_code='000'; postbrew_code='000'; qr_ui_code='000'; qr_css_code='000'
+          package_code='000'; bootstrap_code='000'; sensory_code='000'; recognition_css_code='000'; codebook_code='000'; release_code='000'
+          release_version=''; release_source_sha=''; release_sensory='false'; release_postbrew='false'; release_qr='false'
 
           for attempt in $(seq 1 24); do
             nonce="$(date +%s)-$attempt"
             index_code="$(curl -L -sS -o /tmp/lb-index.html -w '%{http_code}' --max-time 20 "${base}?v=${nonce}" || true)"
             app_code="$(curl -L -sS -o /tmp/lb-app.js -w '%{http_code}' --max-time 20 "${base}src/app.js?v=${nonce}" || true)"
+            qr_code="$(curl -L -sS -o /tmp/lb-qr.js -w '%{http_code}' --max-time 20 "${base}src/qr.js?v=${nonce}" || true)"
+            postbrew_code="$(curl -L -sS -o /tmp/lb-postbrew.js -w '%{http_code}' --max-time 20 "${base}src/v095-postbrew-sensory.js?v=${nonce}" || true)"
+            qr_ui_code="$(curl -L -sS -o /tmp/lb-qr-ui.js -w '%{http_code}' --max-time 20 "${base}src/v095-qr-ui.js?v=${nonce}" || true)"
+            qr_css_code="$(curl -L -sS -o /tmp/lb-qr.css -w '%{http_code}' --max-time 20 "${base}styles-qr-scan.css?v=${nonce}" || true)"
             package_code="$(curl -L -sS -o /tmp/lb-package.js -w '%{http_code}' --max-time 20 "${base}src/v096-package-capture.js?v=${nonce}" || true)"
-            quality_code="$(curl -L -sS -o /tmp/lb-quality.js -w '%{http_code}' --max-time 20 "${base}src/image-quality.js?v=${nonce}" || true)"
-            bridge_code="$(curl -L -sS -o /tmp/lb-bridge.js -w '%{http_code}' --max-time 20 "${base}src/recognition-bridge.js?v=${nonce}" || true)"
-            ui_code="$(curl -L -sS -o /tmp/lb-ui.js -w '%{http_code}' --max-time 20 "${base}src/v095-ui.js?v=${nonce}" || true)"
-            layout_code="$(curl -L -sS -o /tmp/lb-layout.js -w '%{http_code}' --max-time 20 "${base}src/v095-layout-gear.js?v=${nonce}" || true)"
+            bootstrap_code="$(curl -L -sS -o /tmp/lb-bootstrap.js -w '%{http_code}' --max-time 20 "${base}src/v095-sensory-bootstrap.js?v=${nonce}" || true)"
             sensory_code="$(curl -L -sS -o /tmp/lb-sensory.js -w '%{http_code}' --max-time 20 "${base}src/v095-sensory-pro.js?v=${nonce}" || true)"
             recognition_css_code="$(curl -L -sS -o /tmp/lb-recognition.css -w '%{http_code}' --max-time 20 "${base}styles-v096-recognition.css?v=${nonce}" || true)"
             codebook_code="$(curl -L -sS -o /tmp/lb-codebook.json -w '%{http_code}' --max-time 20 "${base}public/fallback-codebook.json?v=${nonce}" || true)"
             release_code="$(curl -L -sS -o /tmp/lb-release.json -w '%{http_code}' --max-time 20 "${base}release.json?v=${nonce}" || true)"
 
             if [[ "$release_code" == '200' ]]; then
-              release_version="$(python -c "import json; print(json.load(open('/tmp/lb-release.json', encoding='utf-8')).get('version', ''))" || true)"
-              release_source_sha="$(python -c "import json; print(json.load(open('/tmp/lb-release.json', encoding='utf-8')).get('source_sha', ''))" || true)"
+              readarray -t release_values < <(python - <<'PY'
+          import json
+          data=json.load(open('/tmp/lb-release.json', encoding='utf-8'))
+          for key in ('version','source_sha','sensory_browser_verified','postbrew_qr_browser_verified','qr_share_decode_verified'):
+              print(str(data.get(key,'')).lower() if isinstance(data.get(key), bool) else data.get(key,''))
+          PY
+              )
+              release_version="${release_values[0]:-}"
+              release_source_sha="${release_values[1]:-}"
+              release_sensory="${release_values[2]:-false}"
+              release_postbrew="${release_values[3]:-false}"
+              release_qr="${release_values[4]:-false}"
             fi
 
-            if [[ "$index_code" == '200' && "$app_code" == '200' && "$package_code" == '200' \
-              && "$quality_code" == '200' && "$bridge_code" == '200' && "$ui_code" == '200' \
-              && "$layout_code" == '200' && "$sensory_code" == '200' && "$recognition_css_code" == '200' \
-              && "$codebook_code" == '200' && "$release_code" == '200' \
-              && "$release_version" == "$LUCKYBEAN_VERSION" && "$release_source_sha" == "$LUCKYBEAN_SOURCE_SHA" ]] \
-              && grep -q 'styles-v096-recognition.css' /tmp/lb-index.html \
-              && grep -q 'src/v096-package-capture.js' /tmp/lb-index.html \
+            if [[ "$index_code" == '200' && "$app_code" == '200' && "$qr_code" == '200' \
+              && "$postbrew_code" == '200' && "$qr_ui_code" == '200' && "$qr_css_code" == '200' \
+              && "$package_code" == '200' && "$bootstrap_code" == '200' && "$sensory_code" == '200' \
+              && "$recognition_css_code" == '200' && "$codebook_code" == '200' && "$release_code" == '200' \
+              && "$release_version" == "$LUCKYBEAN_VERSION" && "$release_source_sha" == "$LUCKYBEAN_SOURCE_SHA" \
+              && "$release_sensory" == 'true' && "$release_postbrew" == 'true' && "$release_qr" == 'true' ]] \
+              && grep -q 'styles-qr-scan.css?v=096b' /tmp/lb-index.html \
+              && grep -q 'src/v095-postbrew-sensory.js?v=096b' /tmp/lb-index.html \
+              && grep -q 'src/v095-qr-ui.js?v=096b' /tmp/lb-index.html \
+              && grep -q '@zxing/browser@0.2.0/+esm' /tmp/lb-qr.js \
+              && grep -q 'extractShareEncoded' /tmp/lb-qr.js \
+              && grep -q '#recordConsumptionBtn' /tmp/lb-postbrew.js \
+              && grep -q '无需按快门' /tmp/lb-qr-ui.js \
+              && grep -q 'v095-qr-frame' /tmp/lb-qr.css \
               && grep -q '拍袋录入' /tmp/lb-package.js \
-              && grep -q 'PackageRecognitionBridge' /tmp/lb-bridge.js \
-              && grep -q 'analyzeImageQuality' /tmp/lb-quality.js \
-              && grep -q '手冲常用刻度范围' /tmp/lb-layout.js \
+              && grep -q 'safe-null-root' /tmp/lb-bootstrap.js \
               && grep -q '专业品鉴' /tmp/lb-sensory.js \
               && grep -q '"countries"' /tmp/lb-codebook.json; then
               ok='true'
@@ -179,7 +211,7 @@ jobs:
             sleep 10
           done
 
-          export ok index_code app_code package_code quality_code bridge_code ui_code layout_code sensory_code recognition_css_code codebook_code release_code release_version release_source_sha base
+          export ok base index_code app_code qr_code postbrew_code qr_ui_code qr_css_code package_code bootstrap_code sensory_code recognition_css_code codebook_code release_code release_version release_source_sha release_sensory release_postbrew release_qr
           python - <<'PY'
           import json, os
           from datetime import datetime, timezone
@@ -190,17 +222,21 @@ jobs:
               'expected_source_sha': os.environ['LUCKYBEAN_SOURCE_SHA'],
               'index_http': os.environ['index_code'],
               'app_js_http': os.environ['app_code'],
+              'qr_engine_js_http': os.environ['qr_code'],
+              'postbrew_sensory_js_http': os.environ['postbrew_code'],
+              'qr_ui_js_http': os.environ['qr_ui_code'],
+              'qr_scan_css_http': os.environ['qr_css_code'],
               'package_capture_js_http': os.environ['package_code'],
-              'image_quality_js_http': os.environ['quality_code'],
-              'recognition_bridge_js_http': os.environ['bridge_code'],
-              'v095_ui_js_http': os.environ['ui_code'],
-              'layout_gear_js_http': os.environ['layout_code'],
+              'sensory_bootstrap_js_http': os.environ['bootstrap_code'],
               'professional_sensory_js_http': os.environ['sensory_code'],
               'recognition_css_http': os.environ['recognition_css_code'],
               'codebook_http': os.environ['codebook_code'],
               'release_http': os.environ['release_code'],
-              'release_version': os.environ.get('release_version', ''),
-              'release_source_sha': os.environ.get('release_source_sha', ''),
+              'release_version': os.environ.get('release_version',''),
+              'release_source_sha': os.environ.get('release_source_sha',''),
+              'sensory_browser_verified': os.environ.get('release_sensory') == 'true',
+              'postbrew_qr_browser_verified': os.environ.get('release_postbrew') == 'true',
+              'qr_share_decode_verified': os.environ.get('release_qr') == 'true',
               'site_verified': os.environ['ok'] == 'true',
           }
           with open('luckybean/deployment-status.json', 'w', encoding='utf-8') as fh:
