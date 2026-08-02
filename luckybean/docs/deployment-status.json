@@ -1,0 +1,16 @@
+{
+  "checked_at": "2026-07-27T15:59:30.476628+00:00",
+  "source_sha": "91e7a5071480a09a6009ec53a7fb051566450cca",
+  "build_result": "failure",
+  "steps": {
+    "validate": "success",
+    "configure_pages": "failure",
+    "prepare_site": "success",
+    "upload_artifact": "skipped"
+  },
+  "deploy_result": "skipped",
+  "page_url": "https://zjcrop.github.io/luckybean/",
+  "http_status": "000",
+  "title_found": false,
+  "site_verified": false
+}

@@ -1,0 +1,149 @@
+{
+  "results": {
+    "nav": [
+      "藏",
+      "拾",
+      "鉴",
+      "器"
+    ],
+    "headings": [
+      "豆藏",
+      "拾味",
+      "品鉴",
+      "器设"
+    ],
+    "actions": [
+      "寻",
+      "添",
+      "撷",
+      "择"
+    ],
+    "group_cards": 7,
+    "cards_before_group_open": 0,
+    "group_open_cards": 1,
+    "compact_card": {
+      "title": "巴西 · 波旁",
+      "process": "日晒",
+      "pick": "拾",
+      "height": 96.14488220214844
+    },
+    "freshness_progress": {
+      "solid": 1,
+      "dashed": 1,
+      "width": "width:74%;background:#8b9383"
+    },
+    "group_collapsed": true,
+    "group_blank_closed": true,
+    "bean_form": {
+      "region_zh": true,
+      "region_code_leak": false,
+      "flavor_count": 127,
+      "empty_flavors": 0,
+      "flavor_back_to_form": true
+    },
+    "search": {
+      "close_buttons": 0,
+      "flavors": 17,
+      "countries": 8,
+      "closed_by_blank": true
+    },
+    "recommend_focus": {
+      "expanded": true,
+      "marked": true
+    },
+    "bean_detail": {
+      "curve": true,
+      "today": true,
+      "trend": true,
+      "closed_by_blank": true
+    },
+    "brew": {
+      "direct_sensory": true,
+      "rows": 4,
+      "bean_heading": 1,
+      "filter_select": 1,
+      "cooling_gold": true
+    },
+    "plan": {
+      "stages": 5,
+      "trajectory": 1,
+      "trajectory_paths": 7,
+      "trajectory_windows": 4,
+      "trajectory_toggle": true,
+      "professional_hidden": true,
+      "export": 1,
+      "method_codes": 5,
+      "water_text": false
+    },
+    "timer_labels": [
+      "退",
+      "驻",
+      "进",
+      "终"
+    ],
+    "timer_pause": true,
+    "consume": {
+      "title": "记录本次消耗",
+      "dose": "15.0g",
+      "record": "扣除克重进入品鉴",
+      "skip": "不记录则返回拾味",
+      "filter_after": 4
+    },
+    "sensory": {
+      "nodes": [
+        "花香",
+        "果香",
+        "其他",
+        "甜",
+        "酸",
+        "苦",
+        "口感",
+        "负面",
+        "总分",
+        "札记"
+      ],
+      "correction": true,
+      "note": true
+    },
+    "recommended_badges": 1,
+    "leaderboard": 1,
+    "replay_corrected": true,
+    "replay_loaded": true,
+    "share": {
+      "compact": true,
+      "records": true
+    },
+    "history": {
+      "not_full": true,
+      "bottom": true,
+      "return": "退"
+    },
+    "gear": {
+      "star": 1,
+      "low": 1,
+      "open": true,
+      "single_open": true
+    }
+  },
+  "checks": {
+    "nav": true,
+    "headings": true,
+    "action_grid": true,
+    "groups": true,
+    "compact_card": true,
+    "bean_form": true,
+    "search": true,
+    "brew": true,
+    "plan": true,
+    "timer": true,
+    "consume": true,
+    "sensory": true,
+    "recommend": true,
+    "replay": true,
+    "share": true,
+    "gear": true,
+    "history": true
+  },
+  "page_errors": [],
+  "console": []
+}

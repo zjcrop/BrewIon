@@ -1,0 +1,770 @@
+
+> luckybean@0.9.6 test
+> node --test tests/*.test.mjs
+
+TAP version 13
+# Subtest: BrewIon 回退编码表结构完整且编码唯一
+ok 1 - BrewIon 回退编码表结构完整且编码唯一
+  ---
+  duration_ms: 35.162334
+  type: 'test'
+  ...
+# Subtest: Beta 冲煮引擎输出完整协议、守恒和专业模型
+ok 2 - Beta 冲煮引擎输出完整协议、守恒和专业模型
+  ---
+  duration_ms: 702.060612
+  type: 'test'
+  ...
+# Subtest: 冲煮方案库覆盖旧版主要方案类型
+ok 3 - 冲煮方案库覆盖旧版主要方案类型
+  ---
+  duration_ms: 0.349705
+  type: 'test'
+  ...
+# Subtest: 调水模块对标 Brew-Water-Calibrato 咖啡参数
+ok 4 - 调水模块对标 Brew-Water-Calibrato 咖啡参数
+  ---
+  duration_ms: 0.749056
+  type: 'test'
+  ...
+# Subtest: 低分品鉴可生成问题定向修正方案
+ok 5 - 低分品鉴可生成问题定向修正方案
+  ---
+  duration_ms: 671.529868
+  type: 'test'
+  ...
+# Subtest: 自动得分、主观分差和偏好标签可累计
+ok 6 - 自动得分、主观分差和偏好标签可累计
+  ---
+  duration_ms: 2.440427
+  type: 'test'
+  ...
+# Subtest: 压缩分享包含 BrewIon 字段、冲煮记录与品鉴记录
+ok 7 - 压缩分享包含 BrewIon 字段、冲煮记录与品鉴记录
+  ---
+  duration_ms: 440.298155
+  type: 'test'
+  ...
+# Subtest: 导航、田字快捷区和双字题注严格对应
+ok 8 - 导航、田字快捷区和双字题注严格对应
+  ---
+  duration_ms: 1.459784
+  type: 'test'
+  ...
+# Subtest: HTML 不含重复 ID 或内联事件处理器
+ok 9 - HTML 不含重复 ID 或内联事件处理器
+  ---
+  duration_ms: 1.468127
+  type: 'test'
+  ...
+# Subtest: 应用代码保持单一初始化和主渲染函数
+ok 10 - 应用代码保持单一初始化和主渲染函数
+  ---
+  duration_ms: 2.390773
+  type: 'test'
+  ...
+# Subtest: 私有仓库凭据和私有 GitHub API 不进入前端
+ok 11 - 私有仓库凭据和私有 GitHub API 不进入前端
+  ---
+  duration_ms: 3.483706
+  type: 'test'
+  ...
+# Subtest: 自然语言识别回填确定性字段和 BrewIon 代码
+ok 12 - 自然语言识别回填确定性字段和 BrewIon 代码
+  ---
+  duration_ms: 12.225844
+  type: 'test'
+  ...
+# Subtest: BrewIon 固定字段二维码执行 CRC 和行索引解码
+ok 13 - BrewIon 固定字段二维码执行 CRC 和行索引解码
+  ---
+  duration_ms: 4.698151
+  type: 'test'
+  ...
+# Subtest: 视觉、卡片、分组、搜索和撷页交互标记已落地
+ok 14 - 视觉、卡片、分组、搜索和撷页交互标记已落地
+  ---
+  duration_ms: 2.997094
+  type: 'test'
+  ...
+# Subtest: 豆卡名称、烘焙色值和现有数据筛选逻辑正确
+ok 15 - 豆卡名称、烘焙色值和现有数据筛选逻辑正确
+  ---
+  duration_ms: 1.83012
+  type: 'test'
+  ...
+# Subtest: 远程编码表与内置表合并时保留缺失风味
+ok 16 - 远程编码表与内置表合并时保留缺失风味
+  ---
+  duration_ms: 14.425089
+  type: 'test'
+  ...
+# Subtest: 编码表产区与庄园使用正确中文列且不生成空标签
+ok 17 - 编码表产区与庄园使用正确中文列且不生成空标签
+  ---
+  duration_ms: 13.301501
+  type: 'test'
+  ...
+# Subtest: 十阶段赏味进度从20%起步并在赏味期后一周达到100%
+ok 18 - 十阶段赏味进度从20%起步并在赏味期后一周达到100%
+  ---
+  duration_ms: 0.848094
+  type: 'test'
+  ...
+# Subtest: 负面缺陷扣分显著高于正面风味叠加
+ok 19 - 负面缺陷扣分显著高于正面风味叠加
+  ---
+  duration_ms: 0.418539
+  type: 'test'
+  ...
+# Subtest: v0.9 交互与器具库存标记完整
+ok 20 - v0.9 交互与器具库存标记完整
+  ---
+  duration_ms: 7.212429
+  type: 'test'
+  ...
+# Subtest: 计时、消耗、品鉴札记、复刻与方案导出功能已落地
+ok 21 - 计时、消耗、品鉴札记、复刻与方案导出功能已落地
+  ---
+  duration_ms: 3.667502
+  type: 'test'
+  ...
+# Subtest: header controls are forced into one horizontal row
+ok 22 - header controls are forced into one horizontal row
+  ---
+  duration_ms: 5.818584
+  type: 'test'
+  ...
+# Subtest: theme bridge intercepts dynamic buttons and delegates to native state
+ok 23 - theme bridge intercepts dynamic buttons and delegates to native state
+  ---
+  duration_ms: 1.642127
+  type: 'test'
+  ...
+# Subtest: light theme covers main pages, overlays, forms, navigation and tasting wizard
+ok 24 - light theme covers main pages, overlays, forms, navigation and tasting wizard
+  ---
+  duration_ms: 1.208847
+  type: 'test'
+  ...
+# Subtest: runtime entry and PWA cache include theme patch assets
+ok 25 - runtime entry and PWA cache include theme patch assets
+  ---
+  duration_ms: 2.357292
+  type: 'test'
+  ...
+# Subtest: 0.9.6 keeps 0.9.2 interaction baseline
+ok 26 - 0.9.6 keeps 0.9.2 interaction baseline
+  ---
+  duration_ms: 11.204313
+  type: 'test'
+  ...
+# Subtest: recommendation animation and prompt libraries are complete
+ok 27 - recommendation animation and prompt libraries are complete
+  ---
+  duration_ms: 2.518164
+  type: 'test'
+  ...
+# Subtest: timer, inventory, delta wheel and trajectory requirements
+ok 28 - timer, inventory, delta wheel and trajectory requirements
+  ---
+  duration_ms: 5.077972
+  type: 'test'
+  ...
+# Subtest: 0.9.6 version and visual assets
+ok 29 - 0.9.6 version and visual assets
+  ---
+  duration_ms: 8.900396
+  type: 'test'
+  ...
+# Subtest: 0.9.3 sensory, cold storage and gear requirements remain available
+ok 30 - 0.9.3 sensory, cold storage and gear requirements remain available
+  ---
+  duration_ms: 5.783763
+  type: 'test'
+  ...
+# Subtest: refinement runtime files are loaded in deterministic order and cached
+ok 31 - refinement runtime files are loaded in deterministic order and cached
+  ---
+  duration_ms: 10.415383
+  type: 'test'
+  ...
+# Subtest: light mode covers seals, groups, leaderboard and collapse row
+ok 32 - light mode covers seals, groups, leaderboard and collapse row
+  ---
+  duration_ms: 1.351501
+  type: 'test'
+  ...
+# Subtest: remaining recommendation, manage menu and structured grinder range are implemented
+ok 33 - remaining recommendation, manage menu and structured grinder range are implemented
+  ---
+  duration_ms: 3.08127
+  type: 'test'
+  ...
+# Subtest: settings mascot uses fixed one-third size
+ok 34 - settings mascot uses fixed one-third size
+  ---
+  duration_ms: 1.842839
+  type: 'test'
+  ...
+# Subtest: three sensory modes have distinct non-duplicated workflows
+ok 35 - three sensory modes have distinct non-duplicated workflows
+  ---
+  duration_ms: 1.345081
+  type: 'test'
+  ...
+# Subtest: professional sensory uses CATA tags, ordering, conditional radar slider and final affective score
+ok 36 - professional sensory uses CATA tags, ordering, conditional radar slider and final affective score
+  ---
+  duration_ms: 1.544511
+  type: 'test'
+  ...
+# Subtest: simple note mode reveals score before note
+ok 37 - simple note mode reveals score before note
+  ---
+  duration_ms: 2.677794
+  type: 'test'
+  ...
+# Subtest: current v0.9.6 release retains v0.9.5 runtime entry
+not ok 38 - current v0.9.6 release retains v0.9.5 runtime entry
+  ---
+  duration_ms: 24.299985
+  type: 'test'
+  location: '/home/runner/work/luckybean/luckybean/tests/v095.test.mjs:7:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /APP_VERSION = '0\.9\.6'/. Input:
+    
+    "export const APP_VERSION = '0.9.8';\n" +
+      'export const SCHEMA_VERSION = 6;\n' +
+      '\n' +
+      'export const $ = (selector, root = document) => root.querySelector(selector);\n' +
+      'export const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];\n' +
+      '\n' +
+      "export function uid(prefix = 'id') {\n" +
+      '  if (globalThis.crypto?.randomUUID) return `${prefix}_${crypto.randomUUID()}`;\n' +
+      '  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;\n' +
+      '}\n' +
+      '\n' +
+      'export function esc(value) {\n' +
+      "  return String(value ?? '')\n" +
+      "    .replaceAll('&', '&amp;')\n" +
+      "    .replaceAll('<', '&lt;')\n" +
+      "    .replaceAll('>', '&gt;')\n" +
+      `    .replaceAll('"', '&quot;')\n` +
+      `    .replaceAll("'", '&#39;');\n` +
+      '}\n' +
+      '\n' +
+      'export function clamp(value, min, max) {\n' +
+      '  return Math.min(max, Math.max(min, Number(value) || 0));\n' +
+      '}\n' +
+      '\n' +
+      'export function todayISO() {\n' +
+      '  return new Date().toISOString().slice(0, 10);\n' +
+      '}\n' +
+      '\n' +
+      'export function formatDate(value) {\n' +
+      "  if (!value) return '—';\n" +
+      '  const d = new Date(value);\n' +
+      "  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString('zh-CN');\n" +
+      '}\n' +
+      '\n' +
+      'export function daysBetween(a, b = new Date()) {\n' +
+      '  const da = new Date(a);\n' +
+      '  const db = new Date(b);\n' +
+      '  if (Number.isNaN(da.getTime()) || Number.isNaN(db.getTime())) return 0;\n' +
+      '  return Math.floor((db - da) / 86400000);\n' +
+      '}\n' +
+      '\n' +
+      'export function debounce(fn, wait = 160) {\n' +
+      '  let timer;\n' +
+      '  return (...args) => {\n' +
+      '    clearTimeout(timer);\n' +
+      '    timer = setTimeout(() => fn(...args), wait);\n' +
+      '  };\n' +
+      '}\n' +
+      '\n' +
+      "export function downloadBlob(filename, content, type = 'application/octet-stream') {\n" +
+      '  const blob = content instanceof Blob ? content : new Blob([content], { type });\n' +
+      '  const url = URL.createObjectURL(blob);\n' +
+      "  const anchor = document.createElement('a');\n" +
+      '  anchor.href = url;\n' +
+      '  anchor.download = filename;\n' +
+      '  document.body.append(anchor);\n' +
+      '  anchor.click();\n' +
+      '  anchor.remove();\n' +
+      '  setTimeout(() => URL.revokeObjectURL(url), 0);\n' +
+      '}\n' +
+      '\n' +
+      'export function parseNumber(value, fallback = 0) {\n' +
+      '  const n = Number(value);\n' +
+      '  return Number.isFinite(n) ? n : fallback;\n' +
+      '}\n' +
+      '\n' +
+      'export async function sha256Hex(value) {\n' +
+      "  const bytes = typeof value === 'string' ? new TextEncoder().encode(value) : value;\n" +
+      "  if (!crypto?.subtle) return '';\n" +
+      "  const digest = await crypto.subtle.digest('SHA-256', bytes);\n" +
+      "  return [...new Uint8Array(digest)].map(v => v.toString(16).padStart(2, '0')).join('');\n" +
+      '}\n' +
+      '\n' +
+      'export function safeJsonParse(text, fallback = null) {\n' +
+      '  try { return JSON.parse(text); } catch { return fallback; }\n' +
+      '}\n' +
+      '\n' +
+      "export function assertSafeJson(value, path = 'root', depth = 0) {\n" +
+      '  if (depth > 20) throw new Error(`${path} 嵌套层级过深`);\n' +
+      "  if (value === null || ['string', 'number', 'boolean'].includes(typeof value)) return value;\n" +
+      '  if (Array.isArray(value)) {\n' +
+      '    if (value.length > 100000) throw new Error(`${path} 数组过大`);\n' +
+      '    value.forEach((item, index) => assertSafeJson(item, `${path}[${index}]`, depth + 1));\n' +
+      '    return value;\n' +
+      '  }\n' +
+      "  if (typeof value !== 'object') throw new Error(`${path} 包含不支持的数据类型`);\n" +
+      '  for (const [key, item] of Object.entries(value)) {\n' +
+      "    if (['__proto__', 'prototype', 'constructor'].includes(key)) throw new Error(`${path} 包含危险字段 ${key}`);\n" +
+      '    assertSafeJson(item, `${path}.${key}`, depth + 1);\n' +
+      '  }\n' +
+      '  return value;\n' +
+      '}\n' +
+      '\n' +
+      "export function assertPlainObject(value, label = '对象') {\n" +
+      "  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`${label}格式无效`);\n" +
+      '  for (const key of Object.keys(value)) {\n' +
+      "    if (['__proto__', 'prototype', 'constructor'].includes(key)) throw new Error(`${label}包含危险字段`);\n" +
+      '  }\n' +
+      '  return value;\n' +
+      '}\n' +
+      '\n' +
+      'export function browserTitle(pageTitle) {\n' +
+      '  document.title = `${pageTitle} · 富贵盒子`;\n' +
+      '}\n' +
+      '\n' +
+      'export function freshnessProfile(bean, now = new Date()) {\n' +
+      '  const rawAge = Math.max(0, daysBetween(bean.roastDate, now));\n' +
+      "  const roast = bean.roastCode || 'RL-L2';\n" +
+      '  const frozen = Boolean(bean.refrigerated);\n' +
+      '  const frozenDays = frozen ? Math.max(0, daysBetween(bean.freezeDate || bean.roastDate, now)) : 0;\n' +
+      '  const effectiveAge = Math.max(0, rawAge - frozenDays * 0.78);\n' +
+      '  const ranges = {\n' +
+      "    'RL-L0': [10, 35, 65], 'RL-L1': [8, 30, 55], 'RL-L2': [7, 25, 45],\n" +
+      "    'RL-L3': [5, 20, 35], 'RL-L4': [4, 16, 28], 'RL-L5': [3, 12, 22], 'RL-L6': [2, 9, 16]\n" +
+      '  };\n' +
+      "  let [start, peakEnd, end] = ranges[roast] || ranges['RL-L2'];\n" +
+      "  const variety = String(bean.varietyCode || '').toUpperCase();\n" +
+      "  const process = String(bean.processCode || '').toUpperCase();\n" +
+      '  if (/GE|GESHA|JA58|JA10|JA12|SL28|SL34|PB|SID/.test(variety)) { start += 3; peakEnd += 7; end += 8; }\n' +
+      '  if (/NA|ANA|CM|FERM|DF|TS/.test(process)) { peakEnd += 3; end += 5; }\n' +
+      '  const peakDay = start + (peakEnd - start) * 0.58;\n' +
+      '  const fullDay = end + 7;\n' +
+      '  const progress = clamp(0.2 + 0.8 * effectiveAge / Math.max(1, fullDay), 0.2, 1);\n' +
+      '  let stage;\n' +
+      '  if (effectiveAge < start * .33) stage = 0;\n' +
+      '  else if (effectiveAge < start * .67) stage = 1;\n' +
+      '  else if (effectiveAge < start) stage = 2;\n' +
+      '  else if (effectiveAge < peakDay - 4) stage = 3;\n' +
+      '  else if (effectiveAge < peakDay - 1) stage = 4;\n' +
+      '  else if (effectiveAge <= peakDay + 2) stage = 5;\n' +
+      '  else if (effectiveAge <= peakEnd) stage = 6;\n' +
+      '  else if (effectiveAge <= end) stage = 7;\n' +
+      '  else if (effectiveAge <= end + 7) stage = 8;\n' +
+      '  else stage = 9;\n' +
+      "  const colors = ['#ff8a24','#f69a24','#e8b72d','#d5d83b','#8dc75b','#3fa56a','#74a566','#8b9383','#747474','#595959'];\n" +
+      "  const labels = ['养豆初期','养豆中','养豆末期','风味上升','接近高峰','赏味高峰','高峰后段','风味衰减','赏味期后','尽快处理'];\n" +
+      '  const sigma = Math.max(5, (end - start) / 2.2);\n' +
+      '  let flavorScore = 100 * Math.exp(-((effectiveAge - peakDay) ** 2) / (2 * sigma ** 2));\n' +
+      '  if (effectiveAge > end) flavorScore *= Math.exp(-(effectiveAge - end) / 22);\n' +
+      '  flavorScore = clamp(flavorScore, 0, 100);\n' +
+      '  const rising = effectiveAge < peakDay;\n' +
+      '  return {\n' +
+      '    age: rawAge, effectiveAge, start, peakDay, peakEnd, end, fullDay,\n' +
+      '    stage, color: colors[stage], label: labels[stage], progress,\n' +
+      "    flavorScore: Math.round(flavorScore), trend: rising ? '上升' : '下降', rising,\n" +
+      '    remaining: end - effectiveAge,\n' +
+      "    key: stage <= 2 ? 'resting' : stage <= 6 ? 'peak' : stage === 7 ? 'good' : stage === 8 ? 'decline' : 'urgent',\n" +
+      '    rank: 10 - stage\n' +
+      '  };\n' +
+      '}\n' +
+      '\n' +
+      'export function freshness(bean) {\n' +
+      '  return freshnessProfile(bean);\n' +
+      '}\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    export const APP_VERSION = '0.9.8';
+    export const SCHEMA_VERSION = 6;
+    
+    export const $ = (selector, root = document) => root.querySelector(selector);
+    export const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+    
+    export function uid(prefix = 'id') {
+      if (globalThis.crypto?.randomUUID) return `${prefix}_${crypto.randomUUID()}`;
+      return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+    }
+    
+    export function esc(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+    
+    export function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, Number(value) || 0));
+    }
+    
+    export function todayISO() {
+      return new Date().toISOString().slice(0, 10);
+    }
+    
+    export function formatDate(value) {
+      if (!value) return '—';
+      const d = new Date(value);
+      return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString('zh-CN');
+    }
+    
+    export function daysBetween(a, b = new Date()) {
+      const da = new Date(a);
+      const db = new Date(b);
+      if (Number.isNaN(da.getTime()) || Number.isNaN(db.getTime())) return 0;
+      return Math.floor((db - da) / 86400000);
+    }
+    
+    export function debounce(fn, wait = 160) {
+      let timer;
+      return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), wait);
+      };
+    }
+    
+    export function downloadBlob(filename, content, type = 'application/octet-stream') {
+      const blob = content instanceof Blob ? content : new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+    
+    export function parseNumber(value, fallback = 0) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : fallback;
+    }
+    
+    export async function sha256Hex(value) {
+      const bytes = typeof value === 'string' ? new TextEncoder().encode(value) : value;
+      if (!crypto?.subtle) return '';
+      const digest = await crypto.subtle.digest('SHA-256', bytes);
+      return [...new Uint8Array(digest)].map(v => v.toString(16).padStart(2, '0')).join('');
+    }
+    
+    export function safeJsonParse(text, fallback = null) {
+      try { return JSON.parse(text); } catch { return fallback; }
+    }
+    
+    export function assertSafeJson(value, path = 'root', depth = 0) {
+      if (depth > 20) throw new Error(`${path} 嵌套层级过深`);
+      if (value === null || ['string', 'number', 'boolean'].includes(typeof value)) return value;
+      if (Array.isArray(value)) {
+        if (value.length > 100000) throw new Error(`${path} 数组过大`);
+        value.forEach((item, index) => assertSafeJson(item, `${path}[${index}]`, depth + 1));
+        return value;
+      }
+      if (typeof value !== 'object') throw new Error(`${path} 包含不支持的数据类型`);
+      for (const [key, item] of Object.entries(value)) {
+        if (['__proto__', 'prototype', 'constructor'].includes(key)) throw new Error(`${path} 包含危险字段 ${key}`);
+        assertSafeJson(item, `${path}.${key}`, depth + 1);
+      }
+      return value;
+    }
+    
+    export function assertPlainObject(value, label = '对象') {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`${label}格式无效`);
+      for (const key of Object.keys(value)) {
+        if (['__proto__', 'prototype', 'constructor'].includes(key)) throw new Error(`${label}包含危险字段`);
+      }
+      return value;
+    }
+    
+    export function browserTitle(pageTitle) {
+      document.title = `${pageTitle} · 富贵盒子`;
+    }
+    
+    export function freshnessProfile(bean, now = new Date()) {
+      const rawAge = Math.max(0, daysBetween(bean.roastDate, now));
+      const roast = bean.roastCode || 'RL-L2';
+      const frozen = Boolean(bean.refrigerated);
+      const frozenDays = frozen ? Math.max(0, daysBetween(bean.freezeDate || bean.roastDate, now)) : 0;
+      const effectiveAge = Math.max(0, rawAge - frozenDays * 0.78);
+      const ranges = {
+        'RL-L0': [10, 35, 65], 'RL-L1': [8, 30, 55], 'RL-L2': [7, 25, 45],
+        'RL-L3': [5, 20, 35], 'RL-L4': [4, 16, 28], 'RL-L5': [3, 12, 22], 'RL-L6': [2, 9, 16]
+      };
+      let [start, peakEnd, end] = ranges[roast] || ranges['RL-L2'];
+      const variety = String(bean.varietyCode || '').toUpperCase();
+      const process = String(bean.processCode || '').toUpperCase();
+      if (/GE|GESHA|JA58|JA10|JA12|SL28|SL34|PB|SID/.test(variety)) { start += 3; peakEnd += 7; end += 8; }
+      if (/NA|ANA|CM|FERM|DF|TS/.test(process)) { peakEnd += 3; end += 5; }
+      const peakDay = start + (peakEnd - start) * 0.58;
+      const fullDay = end + 7;
+      const progress = clamp(0.2 + 0.8 * effectiveAge / Math.max(1, fullDay), 0.2, 1);
+      let stage;
+      if (effectiveAge < start * .33) stage = 0;
+      else if (effectiveAge < start * .67) stage = 1;
+      else if (effectiveAge < start) stage = 2;
+      else if (effectiveAge < peakDay - 4) stage = 3;
+      else if (effectiveAge < peakDay - 1) stage = 4;
+      else if (effectiveAge <= peakDay + 2) stage = 5;
+      else if (effectiveAge <= peakEnd) stage = 6;
+      else if (effectiveAge <= end) stage = 7;
+      else if (effectiveAge <= end + 7) stage = 8;
+      else stage = 9;
+      const colors = ['#ff8a24','#f69a24','#e8b72d','#d5d83b','#8dc75b','#3fa56a','#74a566','#8b9383','#747474','#595959'];
+      const labels = ['养豆初期','养豆中','养豆末期','风味上升','接近高峰','赏味高峰','高峰后段','风味衰减','赏味期后','尽快处理'];
+      const sigma = Math.max(5, (end - start) / 2.2);
+      let flavorScore = 100 * Math.exp(-((effectiveAge - peakDay) ** 2) / (2 * sigma ** 2));
+      if (effectiveAge > end) flavorScore *= Math.exp(-(effectiveAge - end) / 22);
+      flavorScore = clamp(flavorScore, 0, 100);
+      const rising = effectiveAge < peakDay;
+      return {
+        age: rawAge, effectiveAge, start, peakDay, peakEnd, end, fullDay,
+        stage, color: colors[stage], label: labels[stage], progress,
+        flavorScore: Math.round(flavorScore), trend: rising ? '上升' : '下降', rising,
+        remaining: end - effectiveAge,
+        key: stage <= 2 ? 'resting' : stage <= 6 ? 'peak' : stage === 7 ? 'good' : stage === 8 ? 'decline' : 'urgent',
+        rank: 10 - stage
+      };
+    }
+    
+    export function freshness(bean) {
+      return freshnessProfile(bean);
+    }
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///home/runner/work/luckybean/luckybean/tests/v095.test.mjs:15:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: v0.9.5 requested modes, labels and artwork exist
+ok 39 - v0.9.5 requested modes, labels and artwork exist
+  ---
+  duration_ms: 6.078886
+  type: 'test'
+  ...
+# Subtest: sensory modes preserve interaction and only note mode skips nodes
+ok 40 - sensory modes preserve interaction and only note mode skips nodes
+  ---
+  duration_ms: 1.700355
+  type: 'test'
+  ...
+# Subtest: v0.9.5 layout and theme selectors exist
+ok 41 - v0.9.5 layout and theme selectors exist
+  ---
+  duration_ms: 1.634456
+  type: 'test'
+  ...
+# Subtest: header controls remain horizontal and theme binding is stable
+ok 42 - header controls remain horizontal and theme binding is stable
+  ---
+  duration_ms: 2.143381
+  type: 'test'
+  ...
+# Subtest: explicit one-pour remains bloom plus one pour before and after correction
+ok 43 - explicit one-pour remains bloom plus one pour before and after correction
+  ---
+  duration_ms: 242.233948
+  type: 'test'
+  ...
+# Subtest: trajectory is calculated from temperature grind water and profile variables
+ok 44 - trajectory is calculated from temperature grind water and profile variables
+  ---
+  duration_ms: 147.097199
+  type: 'test'
+  ...
+# Subtest: sensory records are coded compressed encrypted and note-limited
+ok 45 - sensory records are coded compressed encrypted and note-limited
+  ---
+  duration_ms: 71.88152
+  type: 'test'
+  ...
+# Subtest: encrypted share omits plaintext public identity and remains decodable
+ok 46 - encrypted share omits plaintext public identity and remains decodable
+  ---
+  duration_ms: 12.839276
+  type: 'test'
+  ...
+# Subtest: OCR evidence candidates support per-field fuzzy correction
+ok 47 - OCR evidence candidates support per-field fuzzy correction
+  ---
+  duration_ms: 1.673825
+  type: 'test'
+  ...
+# Subtest: runtime provides minimal identity screen rich history and selection-only tasting navigation
+ok 48 - runtime provides minimal identity screen rich history and selection-only tasting navigation
+  ---
+  duration_ms: 6.758717
+  type: 'test'
+  ...
+# Subtest: JSON QR text is parsed before misleading raw bytes
+ok 49 - JSON QR text is parsed before misleading raw bytes
+  ---
+  duration_ms: 1.456119
+  type: 'test'
+  ...
+# Subtest: official codebook codes from OCR text are parsed directly
+ok 50 - official codebook codes from OCR text are parsed directly
+  ---
+  duration_ms: 2.499807
+  type: 'test'
+  ...
+# Subtest: codebook text QR is decoded without CRC branch
+ok 51 - codebook text QR is decoded without CRC branch
+  ---
+  duration_ms: 0.525329
+  type: 'test'
+  ...
+# Subtest: invalid binary QR no longer exposes a raw CRC16 error
+ok 52 - invalid binary QR no longer exposes a raw CRC16 error
+  ---
+  duration_ms: 1.685073
+  type: 'test'
+  ...
+# Subtest: Chinese-first OCR runtime and direct camera are loaded and cached
+ok 53 - Chinese-first OCR runtime and direct camera are loaded and cached
+  ---
+  duration_ms: 11.167854
+  type: 'test'
+  ...
+# Subtest: Lucky Bean encrypted share URL QR is expanded to a bean record
+ok 54 - Lucky Bean encrypted share URL QR is expanded to a bean record
+  ---
+  duration_ms: 139.809997
+  type: 'test'
+  ...
+# Subtest: QR wrapper preserves pinned scanner core and parses text before bytes
+ok 55 - QR wrapper preserves pinned scanner core and parses text before bytes
+  ---
+  duration_ms: 4.123367
+  type: 'test'
+  ...
+# Subtest: post-brew flow cancels automatic evaluation and restores mode selection
+ok 56 - post-brew flow cancels automatic evaluation and restores mode selection
+  ---
+  duration_ms: 1.062116
+  type: 'test'
+  ...
+# Subtest: QR capture UI and integrity runtime files are loaded and cached
+ok 57 - QR capture UI and integrity runtime files are loaded and cached
+  ---
+  duration_ms: 2.606822
+  type: 'test'
+  ...
+# Subtest: v17 chemistry priors are migrated into the inverse optimizer
+ok 58 - v17 chemistry priors are migrated into the inverse optimizer
+  ---
+  duration_ms: 3.395222
+  type: 'test'
+  ...
+# Subtest: dripper and paper library values alter the hydraulic envelope
+ok 59 - dripper and paper library values alter the hydraulic envelope
+  ---
+  duration_ms: 1.165231
+  type: 'test'
+  ...
+# Subtest: target and risk windows are bean preference water and device linked
+ok 60 - target and risk windows are bean preference water and device linked
+  ---
+  duration_ms: 1.251401
+  type: 'test'
+  ...
+# Subtest: recommended plan is selected by trajectory objective and retains full protocol
+ok 61 - recommended plan is selected by trajectory objective and retains full protocol
+  ---
+  duration_ms: 806.24257
+  type: 'test'
+  ...
+# Subtest: explicit brew method is a hard constraint while its parameters are inverse fitted
+ok 62 - explicit brew method is a hard constraint while its parameters are inverse fitted
+  ---
+  duration_ms: 78.275779
+  type: 'test'
+  ...
+# Subtest: gear constraints and bean chemistry change optimized trajectory and controls
+ok 63 - gear constraints and bean chemistry change optimized trajectory and controls
+  ---
+  duration_ms: 113.597152
+  type: 'test'
+  ...
+# Subtest: sensory feedback becomes a closed-loop parameter correction
+ok 64 - sensory feedback becomes a closed-loop parameter correction
+  ---
+  duration_ms: 67.422468
+  type: 'test'
+  ...
+# Subtest: flat-only profile is not considered for cone equipment but is considered for flat equipment
+ok 65 - flat-only profile is not considered for cone equipment but is considered for flat equipment
+  ---
+  duration_ms: 0.43889
+  type: 'test'
+  ...
+# Subtest: explicit segment selector constrains the optimizer and counts bloom as stage one
+ok 66 - explicit segment selector constrains the optimizer and counts bloom as stage one
+  ---
+  duration_ms: 332.36521
+  type: 'test'
+  ...
+# Subtest: v097 runtime preserves the original time-series trajectory and requested interactions
+ok 67 - v097 runtime preserves the original time-series trajectory and requested interactions
+  ---
+  duration_ms: 5.530281
+  type: 'test'
+  ...
+# Subtest: brew history abbreviation follows five-character rule
+ok 68 - brew history abbreviation follows five-character rule
+  ---
+  duration_ms: 1.866495
+  type: 'test'
+  ...
+# Subtest: recognition field splitter covers labeled Chinese and English package fields
+ok 69 - recognition field splitter covers labeled Chinese and English package fields
+  ---
+  duration_ms: 6.621812
+  type: 'test'
+  ...
+# Subtest: segment numbers mean total stages including bloom
+ok 70 - segment numbers mean total stages including bloom
+  ---
+  duration_ms: 406.656926
+  type: 'test'
+  ...
+# Subtest: improved 4:6 profile uses exact scaled 33666 split and two bloom-temperature stages
+ok 71 - improved 4:6 profile uses exact scaled 33666 split and two bloom-temperature stages
+  ---
+  duration_ms: 72.921687
+  type: 'test'
+  ...
+# Subtest: v098 runtime and styles contain grouping, selected-card, radar, archive and flavor-record fixes
+ok 72 - v098 runtime and styles contain grouping, selected-card, radar, archive and flavor-record fixes
+  ---
+  duration_ms: 3.170875
+  type: 'test'
+  ...
+1..72
+# tests 72
+# suites 0
+# pass 71
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2028.916792

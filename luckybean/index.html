@@ -4,9 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#080909">
+  <meta name="application-version" content="0.9.8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; worker-src 'self' blob: https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://raw.githubusercontent.com https:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
-  <title>富贵盒子</title>
-  <link rel="manifest" href="./manifest.webmanifest">
+  <title>富贵盒子 0.9.8</title>
+  <link rel="manifest" href="./manifest.webmanifest?v=098d">
   <link rel="icon" href="./public/app-logo.webp" type="image/webp">
   <link rel="apple-touch-icon" href="./public/app-logo.webp">
   <link rel="stylesheet" href="./styles.css">
@@ -17,9 +18,11 @@
   <link rel="stylesheet" href="./styles-v096-recognition.css?v=096e">
   <link rel="stylesheet" href="./styles-qr-scan.css?v=096b">
   <link rel="stylesheet" href="./styles-v096-integrity.css?v=096f">
-  <link rel="stylesheet" href="./styles-v097-fixes.css?v=097b">
+  <link rel="stylesheet" href="./styles-v097-fixes.css?v=097d">
+  <link rel="stylesheet" href="./styles-v098-fixes.css?v=098a">
+  <link rel="stylesheet" href="./styles-v098-trajectory-v17.css?v=098b">
 </head>
-<body>
+<body data-release="0.9.8">
   <section id="splashScreen" class="splash-screen" role="button" tabindex="0" aria-label="点击进入富贵盒子">
     <img id="splashImage" src="./public/splash-red.jpg?v=095" alt="富贵盒子启动画面">
     <span>点击进入</span>
@@ -61,7 +64,11 @@
   <script type="module" src="./src/v095-postbrew-sensory.js?v=096b"></script>
   <script type="module" src="./src/v095-qr-ui.js?v=096b"></script>
   <script type="module" src="./src/v096-integrity-ui.js?v=096f"></script>
-  <script type="module" src="./src/v097-ui-fixes.js?v=097b"></script>
-  <script type="module" src="./src/v097-fab-gesture.js?v=097b"></script>
+  <script type="module" src="./src/v097-ui-fixes.js?v=097d"></script>
+  <script type="module" src="./src/v097-fab-gesture.js?v=097d"></script>
+  <script type="module" src="./src/v098-trajectory-v17.js?v=098c"></script>
+  <script type="module" src="./src/v098-selection-bridge.js?v=098b"></script>
+  <script type="module" src="./src/v098-feature-fixes.js?v=098a"></script>
+  <script type="module" src="./src/v098-group-menu-guard.js?v=098b"></script>
 </body>
 </html>

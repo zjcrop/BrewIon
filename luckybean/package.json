@@ -1,0 +1,11 @@
+{
+  "name": "luckybean",
+  "version": "0.9.8",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "node tests/static-check.mjs",
+    "browser:smoke": "python tests/browser-smoke.py"
+  }
+}

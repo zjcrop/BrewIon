@@ -1,0 +1,17 @@
+{
+  "checked_at": "2026-08-02T16:58:08.824405+00:00",
+  "source_sha": "ce1be8a3d7aa41f8474f598865adca8dc05759d9",
+  "static_tests": "failure",
+  "browser_runtime": "success",
+  "integrity_browser_smoke": "success",
+  "brew_profile_integrity": "failure",
+  "manual_segment_constraint": "failure",
+  "legacy_trajectory_rendering": "failure",
+  "variable_trajectory": "failure",
+  "sensory_encrypted_storage": "success",
+  "sensory_rich_history": "success",
+  "compact_brew_history": "success",
+  "minimal_identity_screen": "success",
+  "direct_sensory_choice": "success",
+  "verified": false
+}

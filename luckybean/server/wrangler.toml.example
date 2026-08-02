@@ -1,0 +1,18 @@
+name = "luckybean-brew-api"
+main = "cloudflare-worker.js"
+compatibility_date = "2026-07-27"
+
+[vars]
+GITHUB_REPOSITORY = "zjcrop/brew-profiles"
+GITHUB_REF = "main"
+PROFILE_PATH = "profiles/default.json"
+ALLOWED_ORIGINS = "https://zjcrop.github.io"
+REQUESTS_PER_MINUTE = "30"
+
+# 正式部署时创建 KV 后填写：
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT_KV"
+# id = "YOUR_KV_NAMESPACE_ID"
+# preview_id = "YOUR_PREVIEW_KV_NAMESPACE_ID"
+#
+# GITHUB_TOKEN 必须使用 wrangler secret put GITHUB_TOKEN，禁止写在本文件。

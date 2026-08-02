@@ -1,0 +1,1 @@
+{"entry_labels": ["登录", "注册", "本地使用", "测试"], "compact_brew_history": "2026-08-02\n一刀流\n86.0\n复刻", "compact_brew_history_height": 44, "direct_modes": ["专业品鉴", "玩家互动品鉴", "札记"], "raw_sensory_encryption": "AES-GCM-256", "raw_identity_encryption": "AES-GCM-256", "history_has_full_note": true, "history_has_radar": true}
