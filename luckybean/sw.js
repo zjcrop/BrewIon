@@ -1,7 +1,7 @@
-// Release marker: luckybean-v0.9.9-main-099n
-// Compatibility marker: luckybean-v0.9.9-main-099m
-const CACHE_NAME = 'luckybean-v0.9.9-main-099n';
-const RELEASE = '099n';
+// Release marker: luckybean-v0.9.9-main-099o
+// Compatibility marker: luckybean-v0.9.9-main-099n
+const CACHE_NAME = 'luckybean-v0.9.9-main-099o';
+const RELEASE = '099o';
 const CORE = [
   './', `./?v=${RELEASE}`, './index.html', `./index.html?v=${RELEASE}`,
   `./manifest.webmanifest?v=${RELEASE}`,
@@ -14,6 +14,7 @@ const CORE = [
   `./styles-v099g.css?v=${RELEASE}`, `./styles-v099h.css?v=${RELEASE}`,
   `./styles-v099i.css?v=${RELEASE}`, `./styles-v099j.css?v=${RELEASE}`,
   `./styles-v099l.css?v=${RELEASE}`, `./styles-v099m.css?v=${RELEASE}`,
+  `./styles-v099o.css?v=${RELEASE}`,
   `./src/v099j-runtime-stability.js?v=${RELEASE}`, `./src/app.js?v=${RELEASE}`,
   `./src/v099h-splash-assets.js?v=${RELEASE}`, `./src/v099i-migrations.js?v=${RELEASE}`,
   `./src/v099i-voice-settings.js?v=${RELEASE}`, `./src/v096-web-ocr.js?v=${RELEASE}`,
