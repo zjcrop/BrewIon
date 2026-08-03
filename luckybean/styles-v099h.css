@@ -1,0 +1,33 @@
+/* Lucky Bean 099h: transparent splash artwork and light neutral stage. */
+.splash-screen {
+  background: #f7f6f2 !important;
+}
+.splash-screen[data-splash-variant="red"] {
+  background: #f7f5f0 !important;
+}
+.splash-screen[data-splash-variant="white"] {
+  background: #fbfbf9 !important;
+}
+.splash-screen img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center top !important;
+  background: transparent !important;
+}
+.v095-splash-choice button[data-splash-variant="red"] {
+  background: #f7f5f0 !important;
+  padding: 6px !important;
+}
+.v095-splash-choice button[data-splash-variant="white"] {
+  background: #fbfbf9 !important;
+  padding: 6px !important;
+}
+.v095-splash-choice img {
+  object-fit: contain !important;
+  background: transparent !important;
+}
+.v095-splash-choice button[data-splash-variant="red"] span,
+.v095-splash-choice button[data-splash-variant="white"] span {
+  color: #242424 !important;
+}
