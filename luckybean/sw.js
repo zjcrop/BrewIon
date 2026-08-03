@@ -39,7 +39,8 @@ const CORE = [
   './src/water-profiles.js', './src/preference-model.js', './src/share-codec-core.js', './src/share-codec.js',
   './public/fallback-codebook.json', './public/legacy-flavor-map.json',
   `./public/app-logo.webp?v=${RELEASE}`, `./public/splash-art-red.webp?v=${RELEASE}`,
-  `./public/splash-art-light.webp?v=${RELEASE}`, './public/action-grid.svg'
+  `./public/splash-art-light.webp?v=${RELEASE}`, `./public/settings-mascot.webp?v=${RELEASE}`,
+  './public/action-grid.svg'
 ];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim())));
