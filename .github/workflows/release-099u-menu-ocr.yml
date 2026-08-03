@@ -1,0 +1,74 @@
+name: Deploy 099u menu and OCR handoff
+
+on:
+  push:
+    paths:
+      - .github/workflows/release-099u-menu-ocr.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply changes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          base = Path('luckybean')
+          app = base / 'src/app.js'
+          text = app.read_text(encoding='utf-8')
+          old_menu = 'popup.innerHTML = `<button type="button" data-manage-action="export">导出数据</button><button type="button" data-manage-action="import">导入数据</button><button type="button" data-manage-action="history">诹吉</button>`;'
+          new_menu = 'popup.innerHTML = `<button type="button" data-manage-action="export">导出数据</button><button type="button" data-manage-action="import">导入数据</button>`;'
+          if old_menu in text:
+              text = text.replace(old_menu, new_menu, 1)
+          elif 'data-manage-action="history"' in text:
+              raise SystemExit('Unexpected management menu format')
+          text = text.replace("if(action==='history')openHistory();", '', 1)
+          app.write_text(text, encoding='utf-8')
+
+          capture = base / 'src/v096-package-capture.js'
+          text = capture.read_text(encoding='utf-8')
+          old = '''  setTimeout(() => {
+            const textarea = document.querySelector('#recognitionText');
+            if (!textarea) return;
+            textarea.value = text;
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            document.querySelector('#parseTextBtn')?.focus();
+          }, 0);'''
+          new = '''  requestAnimationFrame(() => {
+            const textarea = document.querySelector('#recognitionText');
+            if (!textarea) return;
+            textarea.value = text;
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            const parseButton = document.querySelector('#parseTextBtn');
+            if (parseButton) parseButton.click();
+          });'''
+          if old not in text:
+              if 'if (parseButton) parseButton.click();' not in text:
+                  raise SystemExit('OCR handoff block not found')
+          else:
+              text = text.replace(old, new, 1)
+          capture.write_text(text, encoding='utf-8')
+
+          for name in ('index.html', 'sw.js'):
+              path = base / name
+              value = path.read_text(encoding='utf-8').replace('099t', '099u')
+              path.write_text(value, encoding='utf-8')
+          PY
+          node --check luckybean/src/app.js
+          node --check luckybean/src/v096-package-capture.js
+      - name: Commit
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add luckybean/src/app.js luckybean/src/v096-package-capture.js luckybean/index.html luckybean/sw.js
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "deploy: remove duplicate history menu and auto-parse OCR"
+          git push
