@@ -1,7 +1,7 @@
-// Release marker: luckybean-v0.9.9-main-099i
-// Compatibility marker: luckybean-v0.9.9-main-099h
-const CACHE_NAME = 'luckybean-v0.9.9-main-099i';
-const RELEASE = '099i';
+// Release marker: luckybean-v0.9.9-main-099j
+// Compatibility marker: luckybean-v0.9.9-main-099i
+const CACHE_NAME = 'luckybean-v0.9.9-main-099j';
+const RELEASE = '099j';
 const CORE = [
   './', `./?v=${RELEASE}`, './index.html', `./index.html?v=${RELEASE}`,
   `./manifest.webmanifest?v=${RELEASE}`,
@@ -21,6 +21,8 @@ const CORE = [
   `./styles-v099g.css?v=${RELEASE}`,
   `./styles-v099h.css?v=${RELEASE}`,
   `./styles-v099i.css?v=${RELEASE}`,
+  `./styles-v099j.css?v=${RELEASE}`,
+  `./src/v099j-runtime-stability.js?v=${RELEASE}`,
   `./src/app.js?v=${RELEASE}`,
   `./src/v099h-splash-assets.js?v=${RELEASE}`,
   `./src/v099i-migrations.js?v=${RELEASE}`,
@@ -55,7 +57,6 @@ const CORE = [
   `./src/v099i-freshness-group.js?v=${RELEASE}`,
   `./src/v099f-ui-upgrade.js?v=${RELEASE}`,
   `./src/v099g-world-map.js?v=${RELEASE}`,
-  `./src/v099f-runtime-hotfix.js?v=${RELEASE}`,
   './src/recognition-candidates.js', './src/sensory-codec-v096.js', './src/privacy-codec-v096.js',
   './src/image-quality.js', './src/recognition-bridge.js', './src/utils.js', './src/brew-model-v09.js',
   './src/brew-trajectory-v096.js', './src/brew-optimizer-v097.js', './src/brew-engine-core.js',
