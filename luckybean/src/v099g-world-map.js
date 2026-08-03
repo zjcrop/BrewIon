@@ -1,5 +1,6 @@
 import { all } from './db.js';
 import { loadCodebook, makeIndex, displayName } from './codebook.js';
+import { normalizeRecommendationScore } from './preference-model.js';
 
 if (!globalThis.__LuckyBeanV099gWorldMapLoaded) {
   globalThis.__LuckyBeanV099gWorldMapLoaded = true;
@@ -8,6 +9,7 @@ if (!globalThis.__LuckyBeanV099gWorldMapLoaded) {
   const MAP_URL = 'https://cdn.jsdelivr.net/npm/jsvectormap@1.7.0/dist/maps/world.js';
   const CSS_URL = 'https://cdn.jsdelivr.net/npm/jsvectormap@1.7.0/dist/jsvectormap.min.css';
   const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const esc = value => String(value ?? '').replace(/[&<>\"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   let loaderPromise = null;
   let activeMap = null;
@@ -23,7 +25,8 @@ if (!globalThis.__LuckyBeanV099gWorldMapLoaded) {
     ['ID', ['印度尼西亚','印尼','Indonesia']], ['VN', ['越南','Vietnam']], ['CN', ['中国','China']], ['IN', ['印度','India']],
     ['TH', ['泰国','Thailand']], ['LA', ['老挝','Laos']], ['MM', ['缅甸','Myanmar']], ['PH', ['菲律宾','Philippines']],
     ['PG', ['巴布亚新几内亚','Papua New Guinea']], ['YE', ['也门','Yemen']], ['SA', ['沙特阿拉伯','Saudi Arabia']],
-    ['AU', ['澳大利亚','Australia']], ['US', ['美国','United States']], ['PR', ['波多黎各','Puerto Rico']], ['CU', ['古巴','Cuba']]
+    ['AU', ['澳大利亚','Australia']], ['US', ['美国','United States']], ['PR', ['波多黎各','Puerto Rico']], ['CU', ['古巴','Cuba']],
+    ['LK', ['斯里兰卡','Sri Lanka']]
   ]);
 
   function loadScript(src, id) {
@@ -84,26 +87,69 @@ if (!globalThis.__LuckyBeanV099gWorldMapLoaded) {
   }
 
   async function buildStats() {
-    const [{ index }, beans, brews] = await Promise.all([codebookContext(), all('beans'), all('brewSessions')]);
+    const [{ index }, beans, brews, sensoryRecords] = await Promise.all([
+      codebookContext(), all('beans'), all('brewSessions'), all('sensoryRecords')
+    ]);
     const beanMap = new Map(beans.map(bean => [bean.id, bean]));
     const stats = new Map();
-    const add = bean => {
-      if (!bean?.countryCode) return;
+    const identify = bean => {
+      if (!bean?.countryCode) return null;
       const name = displayName(index, 'countries', bean.countryCode, bean.countryCode || '未记录国家');
       const iso = resolveIso(bean.countryCode, name);
-      if (!iso) return;
-      const current = stats.get(iso) || { iso, name, count: 0 };
-      current.count += 1;
-      current.name = name || current.name;
-      stats.set(iso, current);
+      return iso ? { iso, name } : null;
     };
-    beans.filter(bean => !bean.archived).forEach(add);
-    brews.forEach(brew => add(beanMap.get(brew.beanId)));
-    return [...stats.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'zh-CN'));
+    const ensure = bean => {
+      const found = identify(bean);
+      if (!found) return null;
+      if (!stats.has(found.iso)) stats.set(found.iso, { ...found, count: 0, score: 0, scoreCount: 0 });
+      const current = stats.get(found.iso);
+      current.name = found.name || current.name;
+      return current;
+    };
+    beans.filter(bean => !bean.archived).forEach(bean => {
+      const item = ensure(bean);
+      if (item) item.count += 1;
+    });
+    brews.forEach(brew => {
+      const item = ensure(beanMap.get(brew.beanId));
+      if (item) item.count += 1;
+    });
+    sensoryRecords.forEach(record => {
+      const item = ensure(beanMap.get(record.beanId));
+      if (!item) return;
+      const score = normalizeRecommendationScore(record);
+      if (!Number.isFinite(score) || score <= 0) return;
+      item.score += score;
+      item.scoreCount += 1;
+    });
+    return [...stats.values()];
   }
 
-  function rankingHtml(stats) {
-    return stats.length ? stats.map((item, index) => `<div><b>${index + 1}</b><span>${esc(item.name)}</span><strong>${item.count}次</strong></div>`).join('') : '<p class="muted">尚无豆卡或冲煮记录</p>';
+  function sortedStats(stats, mode = 'count') {
+    return [...stats].sort((a, b) => {
+      if (mode === 'score') return b.score - a.score || b.count - a.count || a.name.localeCompare(b.name, 'zh-CN');
+      return b.count - a.count || b.score - a.score || a.name.localeCompare(b.name, 'zh-CN');
+    });
+  }
+
+  function rankingHtml(stats, mode = 'count') {
+    const rows = sortedStats(stats, mode);
+    if (!rows.length) return '<p class="muted">尚无豆卡或冲煮记录</p>';
+    return rows.map((item, index) => `<div class="v099i-country-row">
+      <b>${index + 1}</b>
+      <span>${esc(item.name)}</span>
+      <strong><em>${item.count}次</em><small>累计 ${item.score.toFixed(1)}分</small></strong>
+    </div>`).join('');
+  }
+
+  function bindRankingSort(overlay, stats) {
+    const render = mode => {
+      const target = $('[data-v099g-ranking]', overlay);
+      if (target) target.innerHTML = rankingHtml(stats, mode);
+      $$('[data-v099g-rank-sort]', overlay).forEach(button => button.classList.toggle('active', button.dataset.v099gRankSort === mode));
+    };
+    $$('[data-v099g-rank-sort]', overlay).forEach(button => button.addEventListener('click', () => render(button.dataset.v099gRankSort)));
+    render('count');
   }
 
   async function openWorldPage() {
@@ -116,7 +162,7 @@ if (!globalThis.__LuckyBeanV099gWorldMapLoaded) {
       <div class="v099f-map-toolbar"><span>双指缩放 · 单指拖动 · 滚轮缩放</span><button class="button subtle" type="button" data-v099g-reset>复位</button></div>
       <div id="v099gWorldMap" class="v099g-world-map" role="img" aria-label="咖啡世界国家热度地图"><div class="v099g-map-loading">正在加载世界地图…</div></div>
       <div class="v099g-map-legend"><span><i data-level="0"></i>未记录</span><span><i data-level="1"></i>1–2次</span><span><i data-level="2"></i>3–5次</span><span><i data-level="3"></i>6–10次</span><span><i data-level="4"></i>11–19次</span><span><i data-level="5"></i>20次以上</span></div>
-      <div class="v099f-world-ranking"><h3>国家热度</h3><div data-v099g-ranking><p class="muted">正在统计…</p></div></div>
+      <div class="v099f-world-ranking v099i-world-ranking"><div class="v099i-ranking-head"><h3>国家热度</h3><div><button class="button active" type="button" data-v099g-rank-sort="count">按次数</button><button class="button" type="button" data-v099g-rank-sort="score">按累计得分</button></div></div><div class="v099i-country-list" data-v099g-ranking><p class="muted">正在统计…</p></div></div>
     </div></div>`;
 
     const close = () => {
@@ -128,10 +174,12 @@ if (!globalThis.__LuckyBeanV099gWorldMapLoaded) {
 
     try {
       const [MapCtor, stats] = await Promise.all([ensureLibrary(), buildStats()]);
-      if (!$('#v099gWorldMap', overlay)) return;
-      $('[data-v099g-ranking]', overlay).innerHTML = rankingHtml(stats);
+      const mapHost = $('#v099gWorldMap', overlay);
+      if (!mapHost) return;
+      bindRankingSort(overlay, stats);
       const values = Object.fromEntries(stats.map(item => [item.iso, levelFor(item.count)]).filter(([, level]) => level > 0));
       const labels = new Map(stats.map(item => [item.iso, item]));
+      mapHost.innerHTML = '';
       activeMap = new MapCtor({
         selector: '#v099gWorldMap',
         map: 'world',
@@ -147,17 +195,14 @@ if (!globalThis.__LuckyBeanV099gWorldMapLoaded) {
         },
         series: {
           regions: [{
-            attribute: 'fill',
-            values,
+            attribute: 'fill', values,
             scale: ['#e2e2e2', '#bebebe', '#969696', '#676767', '#2d2d2d'],
-            min: 1,
-            max: 5,
-            normalizeFunction: 'polynomial'
+            min: 1, max: 5, normalizeFunction: 'polynomial'
           }]
         },
         onRegionTooltipShow(event, tooltip, code) {
           const item = labels.get(code);
-          if (item) tooltip.text(`${item.name} · ${item.count}次`);
+          if (item) tooltip.text(`${item.name} · ${item.count}次 · 累计${item.score.toFixed(1)}分`);
         }
       });
       $('[data-v099g-reset]', overlay)?.addEventListener('click', () => activeMap?.reset?.());
