@@ -25,3 +25,7 @@ html.v099o-settings-active #settingsContent .settings-category-body {
   max-height: none !important;
   height: auto !important;
 }
+
+#settingsContent > #v095SettingsMascot {
+  display: none !important;
+}
