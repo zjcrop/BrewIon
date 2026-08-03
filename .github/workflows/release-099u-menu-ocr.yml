@@ -1,5 +1,6 @@
 name: Deploy 099u menu and OCR handoff
 
+# Second commit intentionally triggers this workflow after initial registration.
 on:
   push:
     paths:
