@@ -1,70 +1,70 @@
+import './v099e-cloud-sync.js';
+import './v099e-account-bridge.js';
+
 const RADAR_TARGET = '[data-radar-axis], .v095-radar-handle, [data-radar-slider]';
 let pending = null;
-let restoreQueued = false;
+let restoreTimer = 0;
 
-function dialogFor(node) {
-  return node?.closest?.('.v095-professional-dialog') || document.querySelector('.v095-professional-dialog');
+function scrollingNodes(node) {
+  const nodes = [];
+  let current = node;
+  while (current && current !== document.documentElement) {
+    if (current instanceof HTMLElement && (current.scrollTop || current.scrollLeft || current.matches('.v095-wizard-overlay,.v095-professional-dialog'))) nodes.push(current);
+    current = current.parentElement;
+  }
+  for (const selector of ['.v095-wizard-overlay', '.v095-professional-dialog', '#mainContent']) {
+    const found = document.querySelector(selector);
+    if (found && !nodes.includes(found)) nodes.push(found);
+  }
+  return nodes;
 }
 
 function remember(node) {
-  const dialog = dialogFor(node);
-  if (!dialog) return;
   pending = {
-    dialogTop: dialog.scrollTop,
-    dialogLeft: dialog.scrollLeft,
     pageX: window.scrollX,
     pageY: window.scrollY,
-    axis: node?.closest?.('[data-radar-axis]')?.dataset?.radarAxis || ''
+    nodes: scrollingNodes(node).map(item => ({
+      selector: item.id ? `#${CSS.escape(item.id)}` : item.classList.contains('v095-wizard-overlay') ? '.v095-wizard-overlay' : item.classList.contains('v095-professional-dialog') ? '.v095-professional-dialog' : '#mainContent',
+      top: item.scrollTop,
+      left: item.scrollLeft
+    }))
   };
-  queueRestore();
+  restoreRepeatedly();
 }
 
-function restore() {
-  restoreQueued = false;
+function restoreOnce() {
   if (!pending) return;
   const snapshot = pending;
-  const dialog = document.querySelector('.v095-professional-dialog');
-  if (!dialog) return;
-  dialog.scrollTop = snapshot.dialogTop;
-  dialog.scrollLeft = snapshot.dialogLeft;
-  window.scrollTo(snapshot.pageX, snapshot.pageY);
-  if (snapshot.axis) {
-    const target = dialog.querySelector(`[data-radar-axis="${CSS.escape(snapshot.axis)}"]`);
-    try { target?.focus?.({ preventScroll: true }); } catch { /* optional focus */ }
-    dialog.scrollTop = snapshot.dialogTop;
-    window.scrollTo(snapshot.pageX, snapshot.pageY);
+  for (const item of snapshot.nodes) {
+    const node = document.querySelector(item.selector);
+    if (!node) continue;
+    node.scrollTop = item.top;
+    node.scrollLeft = item.left;
   }
-  pending = null;
+  window.scrollTo(snapshot.pageX, snapshot.pageY);
 }
 
-function queueRestore() {
-  if (restoreQueued) return;
-  restoreQueued = true;
-  queueMicrotask(() => requestAnimationFrame(() => requestAnimationFrame(restore)));
+function restoreRepeatedly() {
+  clearTimeout(restoreTimer);
+  const started = performance.now();
+  const tick = () => {
+    restoreOnce();
+    if (pending && performance.now() - started < 700) restoreTimer = setTimeout(tick, 16);
+    else pending = null;
+  };
+  queueMicrotask(() => requestAnimationFrame(tick));
 }
 
-document.addEventListener('pointerdown', event => {
-  const target = event.target.closest?.(RADAR_TARGET);
-  if (target) remember(target);
-}, true);
-
-document.addEventListener('click', event => {
-  const target = event.target.closest?.(RADAR_TARGET);
-  if (!target) return;
-  event.preventDefault();
-  remember(target);
-}, true);
-
-document.addEventListener('input', event => {
-  const target = event.target.closest?.('[data-radar-slider]');
-  if (target) remember(target);
-}, true);
+for (const type of ['pointerdown', 'click', 'input', 'change']) {
+  document.addEventListener(type, event => {
+    const target = event.target.closest?.(RADAR_TARGET);
+    if (target) remember(target);
+  }, true);
+}
 
 new MutationObserver(records => {
   if (!pending) return;
-  if (records.some(record => record.target.closest?.('#v095ProfessionalWizard') || [...record.addedNodes].some(node => node.nodeType === 1 && (node.id === 'v095ProfessionalWizard' || node.querySelector?.('.v095-professional-dialog'))))) {
-    queueRestore();
-  }
+  if (records.some(record => record.target.closest?.('#v095ProfessionalWizard') || [...record.addedNodes].some(node => node.nodeType === 1 && (node.id === 'v095ProfessionalWizard' || node.querySelector?.('.v095-wizard-overlay,.v095-professional-dialog'))))) restoreRepeatedly();
 }).observe(document.documentElement, { childList: true, subtree: true });
 
-globalThis.LuckyBeanV099dRadarScroll = { remember, restore };
+globalThis.LuckyBeanV099dRadarScroll = { remember, restoreOnce };
