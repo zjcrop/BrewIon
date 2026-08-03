@@ -1,0 +1,14 @@
+{
+  "verified": true,
+  "version": "0.9.9",
+  "revision": "099d",
+  "checks": [
+    "sensory-syntax",
+    "radar-scroll-preservation",
+    "ocr-immutable-base-call",
+    "ocr-Chinese-priority-pass",
+    "ocr-orientation-fallback",
+    "Supabase-public-auth",
+    "publication-cache-boundary"
+  ]
+}

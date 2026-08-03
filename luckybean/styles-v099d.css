@@ -1,0 +1,53 @@
+/* Lucky Bean 0.9.9 revision 099d */
+.v099d-auth-dialog {
+  width: min(92vw, 480px);
+}
+
+.v099d-auth-dialog .field {
+  margin-top: 12px;
+}
+
+.v099d-auth-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.v099d-auth-message {
+  display: none;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(181, 38, 38, .12);
+  color: var(--text, #ddd);
+  line-height: 1.55;
+}
+
+.v099d-auth-message.show {
+  display: block;
+}
+
+html[data-theme="light"] .v099d-auth-message {
+  color: #454542;
+  background: rgba(181, 38, 38, .08);
+}
+
+.v095-professional-dialog {
+  overflow-anchor: none;
+  overscroll-behavior: contain;
+}
+
+.v095-radar [data-radar-axis],
+.v095-radar-handle,
+[data-radar-slider] {
+  touch-action: none;
+}
+
+@media (max-width: 520px) {
+  .v099d-auth-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+}

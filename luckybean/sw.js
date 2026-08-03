@@ -1,7 +1,7 @@
-// Release marker: luckybean-v0.9.9-main-099c
-// Compatibility marker: luckybean-v0.9.9-main-099a
-const CACHE_NAME = 'luckybean-v0.9.9-main-099c';
-const RELEASE = '099c';
+// Release marker: luckybean-v0.9.9-main-099d
+// Compatibility marker: luckybean-v0.9.9-main-099c
+const CACHE_NAME = 'luckybean-v0.9.9-main-099d';
+const RELEASE = '099d';
 const CORE = [
   './', `./?v=${RELEASE}`, './index.html', `./index.html?v=${RELEASE}`,
   `./manifest.webmanifest?v=${RELEASE}`,
@@ -17,8 +17,10 @@ const CORE = [
   `./styles-v098-fixes.css?v=${RELEASE}`,
   `./styles-v098-trajectory-v17.css?v=${RELEASE}`,
   `./styles-v099.css?v=${RELEASE}`,
+  `./styles-v099d.css?v=${RELEASE}`,
   `./src/app.js?v=${RELEASE}`,
   `./src/v096-web-ocr.js?v=${RELEASE}`,
+  `./src/v099d-ocr-quality.js?v=${RELEASE}`,
   `./src/v096-package-capture.js?v=${RELEASE}`,
   `./src/v096-direct-camera.js?v=${RELEASE}`,
   `./src/v095-sensory-bootstrap.js?v=${RELEASE}`,
@@ -38,6 +40,8 @@ const CORE = [
   `./src/v098-feature-fixes.js?v=${RELEASE}`,
   `./src/v098-group-menu-guard.js?v=${RELEASE}`,
   `./src/v099-runtime.js?v=${RELEASE}`,
+  `./src/v099d-radar-scroll.js?v=${RELEASE}`,
+  `./src/v099d-supabase-auth.js?v=${RELEASE}`,
   './src/recognition-candidates.js', './src/sensory-codec-v096.js', './src/privacy-codec-v096.js',
   './src/image-quality.js', './src/recognition-bridge.js', './src/utils.js', './src/brew-model-v09.js',
   './src/brew-trajectory-v096.js', './src/brew-optimizer-v097.js', './src/brew-engine-core.js',
@@ -73,44 +77,32 @@ self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
-
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(new Request(request, { cache: 'reload' }))
         .then(response => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
-          }
+          if (response.ok) caches.open(CACHE_NAME).then(cache => cache.put('./index.html', response.clone()));
           return response;
         })
         .catch(() => caches.match('./index.html'))
     );
     return;
   }
-
   if (url.origin === self.location.origin) {
     event.respondWith(
       fetch(new Request(request, { cache: 'reload' }))
         .then(response => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
-          }
+          if (response.ok) caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()));
           return response;
         })
         .catch(() => caches.match(request))
     );
     return;
   }
-
   if (url.hostname === 'cdn.jsdelivr.net') {
-    event.respondWith(
-      caches.match(request).then(cached => cached || fetch(request).then(response => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
-        return response;
-      }))
-    );
+    event.respondWith(caches.match(request).then(cached => cached || fetch(request).then(response => {
+      caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()));
+      return response;
+    })));
   }
 });

@@ -1,5 +1,5 @@
 const EXPECTED_MODE_VERSION = 'professional-v2';
-const BOOTSTRAP_VERSION = 'sensory-bootstrap-20260803c';
+const BOOTSTRAP_VERSION = 'sensory-bootstrap-20260803d';
 let importPromise = null;
 let syncQueued = false;
 let failureTimer = null;
@@ -37,15 +37,11 @@ function reserveModeSlot() {
   const panel = startPanel();
   if (!panel) return null;
   if (expectedPanel(panel)) return panel;
-
   const action = panel.querySelector('.sensory-start-action');
   const nativeButton = panel.querySelector('#startSensoryBtn');
   if (!action || !nativeButton) return null;
-
-  const stalePanels = [...panel.querySelectorAll('.v095-sensory-modes')];
-  stalePanels.forEach(node => node.remove());
+  [...panel.querySelectorAll('.v095-sensory-modes')].forEach(node => node.remove());
   nativeButton.classList.add('v095-native-start');
-
   const reservation = document.createElement('div');
   reservation.className = 'v095-sensory-modes v095-sensory-loading';
   reservation.dataset.modeVersion = 'loading-professional-v2';
@@ -58,8 +54,7 @@ function reserveModeSlot() {
 async function loadProfessionalModes() {
   const panel = reserveModeSlot();
   if (!panel || expectedPanel(panel)) return;
-
-  if (!importPromise) importPromise = import('./v095-sensory-pro.js?v=099c');
+  if (!importPromise) importPromise = import('./v095-sensory-pro.js?v=099d');
   try {
     await importPromise;
   } catch (error) {
@@ -67,10 +62,9 @@ async function loadProfessionalModes() {
     showFailure(`专业品鉴模块加载失败：${error.message}`);
     return;
   }
-
   clearTimeout(failureTimer);
   failureTimer = setTimeout(() => {
-    if (!expectedPanel()) showFailure('三种品鉴模式未能完成挂载，请刷新页面重试。');
+    if (!expectedPanel()) showFailure('三种品鉴模式未能完成挂载，请重新加载。');
   }, 2500);
 }
 
@@ -90,8 +84,7 @@ function verifyFinalPanel() {
   if (!panel) return false;
   const labels = [...panel.querySelectorAll('button > strong')].map(node => node.textContent.trim());
   const expected = ['专业品鉴', '玩家互动品鉴', '札记'];
-  const valid = expected.every((label, index) => labels[index] === label);
-  if (!valid) {
+  if (!expected.every((label, index) => labels[index] === label)) {
     panel.remove();
     importPromise = null;
     loadProfessionalModes();
@@ -105,21 +98,15 @@ function verifyFinalPanel() {
 function sync() {
   ensureSafeSentinel();
   const panel = startPanel();
-  if (!panel) return;
-  if (verifyFinalPanel()) return;
+  if (!panel || verifyFinalPanel()) return;
   loadProfessionalModes();
 }
-
 function queueSync() {
   ensureSafeSentinel();
   if (syncQueued) return;
   syncQueued = true;
-  requestAnimationFrame(() => {
-    syncQueued = false;
-    sync();
-  });
+  requestAnimationFrame(() => { syncQueued = false; sync(); });
 }
-
 new MutationObserver(queueSync).observe(document.documentElement, { childList: true, subtree: true });
 document.addEventListener('DOMContentLoaded', queueSync, { once: true });
 queueSync();

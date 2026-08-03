@@ -1,0 +1,224 @@
+name: Release Lucky Bean 0.9.9 revision 099d
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/release-v099d.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: luckybean-release-099d
+  cancel-in-progress: true
+
+jobs:
+  patch-test-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply 099d integration patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new, label):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'missing marker for {label} in {path}')
+              p.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          # Keep an immutable reference to the base OCR implementation before overriding it.
+          p = Path('src/v099d-ocr-quality.js')
+          text = p.read_text(encoding='utf-8')
+          text = text.replace(
+              "const BASE_PROVIDER = globalThis.LuckyBeanWebOCR;\n",
+              "const BASE_PROVIDER = globalThis.LuckyBeanWebOCR;\nconst BASE_RECOGNIZE = BASE_PROVIDER?.recognizeCoffeeBag?.bind(BASE_PROVIDER);\n",
+              1
+          )
+          text = text.replace(
+              "return BASE_PROVIDER.recognizeCoffeeBag(images, { locale: 'zh-CN', languages });",
+              "return BASE_RECOGNIZE(images, { locale: 'zh-CN', languages });",
+              1
+          )
+          text = text.replace(
+              "if (!BASE_PROVIDER?.recognizeCoffeeBag) throw new Error('基础 OCR 引擎未加载');",
+              "if (!BASE_RECOGNIZE) throw new Error('基础 OCR 引擎未加载');",
+              1
+          )
+          text = text.replace(
+              "if (BASE_PROVIDER?.recognizeCoffeeBag) {\n  BASE_PROVIDER.baseRecognizeCoffeeBag = BASE_PROVIDER.recognizeCoffeeBag.bind(BASE_PROVIDER);",
+              "if (BASE_PROVIDER && BASE_RECOGNIZE) {\n  BASE_PROVIDER.baseRecognizeCoffeeBag = BASE_RECOGNIZE;",
+              1
+          )
+          if 'return BASE_PROVIDER.recognizeCoffeeBag(images' in text:
+              raise SystemExit('recursive OCR call remains')
+          p.write_text(text, encoding='utf-8')
+
+          # Expose a narrow authenticated-identity bridge without exposing application state.
+          app = Path('src/app.js')
+          text = app.read_text(encoding='utf-8')
+          if 'globalThis.LuckyBeanIdentityBridge' not in text:
+              marker = '\nfunction showInfoDialog(title, message) {'
+              bridge = '''
+
+globalThis.LuckyBeanIdentityBridge = Object.freeze({
+  async acceptRemoteIdentity(details = {}) {
+    const email = String(details.email || '').trim().toLowerCase();
+    if (!email) throw new Error('云端账户缺少邮箱');
+    const nextIdentity = {
+      ...state.settings.identity,
+      ...details,
+      mode: 'supabase-email',
+      email,
+      nickname: String(details.nickname || email.split('@')[0] || '云端用户').trim(),
+      verified: Boolean(details.verified),
+      sourceApp: 'luckybean'
+    };
+    Object.assign(nextIdentity, await derivePublicId(nextIdentity));
+    state.settings.identity = nextIdentity;
+    await saveSettings();
+    closeOverlay();
+    enterApp();
+    return { ...nextIdentity };
+  },
+  current() {
+    return { ...state.settings.identity };
+  }
+});
+'''
+              if marker not in text:
+                  raise SystemExit('identity bridge marker missing')
+              text = text.replace(marker, bridge + marker, 1)
+          app.write_text(text, encoding='utf-8')
+
+          # Keep the dynamically imported sensory module on the same cache boundary.
+          bootstrap = Path('src/v095-sensory-bootstrap.js')
+          text = bootstrap.read_text(encoding='utf-8').replace('20260803c', '20260803d').replace('?v=099c', '?v=099d')
+          bootstrap.write_text(text, encoding='utf-8')
+
+          # Revision and resource publication.
+          index = Path('index.html')
+          text = index.read_text(encoding='utf-8').replace('099c', '099d')
+          if 'styles-v099d.css?v=099d' not in text:
+              text = text.replace('<link rel="stylesheet" href="./styles-v099.css?v=099d">', '<link rel="stylesheet" href="./styles-v099.css?v=099d">\n  <link rel="stylesheet" href="./styles-v099d.css?v=099d">', 1)
+          if 'v099d-ocr-quality.js?v=099d' not in text:
+              text = text.replace('<script type="module" src="./src/v096-web-ocr.js?v=099d"></script>', '<script type="module" src="./src/v096-web-ocr.js?v=099d"></script>\n  <script type="module" src="./src/v099d-ocr-quality.js?v=099d"></script>', 1)
+          if 'v099d-radar-scroll.js?v=099d' not in text:
+              text = text.replace('<script type="module" src="./src/v099-runtime.js?v=099d"></script>', '<script type="module" src="./src/v099-runtime.js?v=099d"></script>\n  <script type="module" src="./src/v099d-radar-scroll.js?v=099d"></script>\n  <script type="module" src="./src/v099d-supabase-auth.js?v=099d"></script>', 1)
+          for required in ['styles-v099d.css?v=099d', 'v099d-ocr-quality.js?v=099d', 'v099d-radar-scroll.js?v=099d', 'v099d-supabase-auth.js?v=099d']:
+              if required not in text:
+                  raise SystemExit(f'index resource missing: {required}')
+          index.write_text(text, encoding='utf-8')
+
+          manifest = Path('manifest.webmanifest')
+          manifest.write_text(manifest.read_text(encoding='utf-8').replace('099c', '099d'), encoding='utf-8')
+
+          sw = Path('sw.js')
+          text = sw.read_text(encoding='utf-8').replace('099c', '099d')
+          entries = [
+              ('  `./styles-v099.css?v=${RELEASE}`,', '  `./styles-v099d.css?v=${RELEASE}`,'),
+              ('  `./src/v096-web-ocr.js?v=${RELEASE}`,', '  `./src/v099d-ocr-quality.js?v=${RELEASE}`,'),
+              ('  `./src/v099-runtime.js?v=${RELEASE}`,', '  `./src/v099d-radar-scroll.js?v=${RELEASE}`,\n  `./src/v099d-supabase-auth.js?v=${RELEASE}`,')
+          ]
+          for marker, addition in entries:
+              if addition.split('`')[1] not in text:
+                  if marker not in text:
+                      raise SystemExit(f'service worker marker missing: {marker}')
+                  text = text.replace(marker, marker + '\n' + addition, 1)
+          sw.write_text(text, encoding='utf-8')
+
+          readme = Path('README.md')
+          text = readme.read_text(encoding='utf-8')
+          note = '''### 修订 099d
+
+- 修复雷达轴点击或拖动后品鉴弹窗自动回到顶部的问题；
+- 中文OCR改为中英文混合首轮、中文优先复核、低质量时正负90度方向复核，并增加保守的咖啡术语纠错；
+- 登录与注册复用 Grind-PSD 的 Supabase Auth 项目，账户认证共享，业务记录不写入粒径测量表；
+- 前端仅使用公开 publishable key，不包含 Supabase service-role 管理密钥。
+
+'''
+          if '### 修订 099d' not in text:
+              marker = '## v0.9.9\n\n'
+              if marker not in text:
+                  raise SystemExit('README v0.9.9 marker missing')
+              text = text.replace(marker, marker + note, 1)
+          readme.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Verify JavaScript syntax
+        run: |
+          node --check src/v095-sensory-bootstrap.js
+          node --check src/v099d-radar-scroll.js
+          node --check src/v099d-ocr-quality.js
+          node --check src/v099d-supabase-auth.js
+          node --check src/app.js
+
+      - name: Verify OCR wrapper does not recurse
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          let calls = 0;
+          globalThis.LuckyBeanWebOCR = {
+            async recognizeCoffeeBag(images) {
+              calls += 1;
+              return {
+                engine: 'stub',
+                results: images.map(image => ({ imageId: image.id, value: { blocks: [{ text: '埃塞俄比亚 水洗 瑰夏 海拔 2000m 烘焙日期 2026-08-01', confidence: .92 }] } })),
+                fullText: '埃塞俄比亚 水洗 瑰夏 海拔 2000m 烘焙日期 2026-08-01'
+              };
+            }
+          };
+          globalThis.document = { documentElement: { dataset: {} }, createElement(){ throw new Error('rotation should not run for strong text'); } };
+          globalThis.CustomEvent = class { constructor(type, init){ this.type=type; this.detail=init?.detail; } };
+          globalThis.dispatchEvent = () => {};
+          await import(`./src/v099d-ocr-quality.js?test=${Date.now()}`);
+          const output = await globalThis.LuckyBeanWebOCR.recognizeCoffeeBag([{ id: 'a', blob: {} }]);
+          if (calls !== 1) throw new Error(`expected one immutable base call, got ${calls}`);
+          if (!output.fullText.includes('水洗') || !output.engine.includes('099d')) throw new Error('enhanced OCR output missing');
+          JS
+
+      - name: Run 099d targeted tests
+        run: node --test tests/v099d-release.test.mjs
+
+      - name: Record verified release
+        shell: bash
+        run: |
+          cat > tests/v099d-status.json <<'EOF'
+          {
+            "verified": true,
+            "version": "0.9.9",
+            "revision": "099d",
+            "checks": [
+              "radar-scroll-preservation",
+              "ocr-immutable-base-call",
+              "ocr-Chinese-priority-pass",
+              "ocr-orientation-fallback",
+              "Supabase-public-auth-only",
+              "identity-bridge",
+              "publication-cache-boundary"
+            ]
+          }
+          EOF
+
+      - name: Commit verified 099d release
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/app.js src/v095-sensory-bootstrap.js src/v099d-radar-scroll.js src/v099d-ocr-quality.js src/v099d-supabase-auth.js styles-v099d.css index.html manifest.webmanifest sw.js README.md tests/v099d-release.test.mjs tests/v099d-status.json
+          if git diff --cached --quiet; then
+            echo '099d already applied'
+            exit 0
+          fi
+          git commit -m "release: Lucky Bean v0.9.9 revision 099d"
+          git push origin HEAD:main
