@@ -1,7 +1,7 @@
-// Release marker: luckybean-v0.9.9-main-099l
-// Compatibility marker: luckybean-v0.9.9-main-099k
-const CACHE_NAME = 'luckybean-v0.9.9-main-099l';
-const RELEASE = '099l';
+// Release marker: luckybean-v0.9.9-main-099m
+// Compatibility marker: luckybean-v0.9.9-main-099l
+const CACHE_NAME = 'luckybean-v0.9.9-main-099m';
+const RELEASE = '099m';
 const CORE = [
   './', `./?v=${RELEASE}`, './index.html', `./index.html?v=${RELEASE}`,
   `./manifest.webmanifest?v=${RELEASE}`,
@@ -12,7 +12,8 @@ const CORE = [
   `./styles-v098-fixes.css?v=${RELEASE}`, `./styles-v099.css?v=${RELEASE}`,
   `./styles-v099d.css?v=${RELEASE}`, `./styles-v099f.css?v=${RELEASE}`,
   `./styles-v099g.css?v=${RELEASE}`, `./styles-v099h.css?v=${RELEASE}`,
-  `./styles-v099i.css?v=${RELEASE}`, `./styles-v099j.css?v=${RELEASE}`, `./styles-v099l.css?v=${RELEASE}`,
+  `./styles-v099i.css?v=${RELEASE}`, `./styles-v099j.css?v=${RELEASE}`,
+  `./styles-v099l.css?v=${RELEASE}`, `./styles-v099m.css?v=${RELEASE}`,
   `./src/v099j-runtime-stability.js?v=${RELEASE}`, `./src/app.js?v=${RELEASE}`,
   `./src/v099h-splash-assets.js?v=${RELEASE}`, `./src/v099i-migrations.js?v=${RELEASE}`,
   `./src/v099i-voice-settings.js?v=${RELEASE}`, `./src/v096-web-ocr.js?v=${RELEASE}`,
@@ -25,11 +26,11 @@ const CORE = [
   `./src/v096-integrity-ui.js?v=${RELEASE}`, `./src/v097-ui-fixes.js?v=${RELEASE}`,
   `./src/v097-fab-gesture.js?v=${RELEASE}`, `./src/v099-trajectory-signal-bridge.js?v=${RELEASE}`,
   `./src/v099i-trajectory-space.js?v=${RELEASE}`, `./src/v098-selection-bridge.js?v=${RELEASE}`,
-  `./src/v098-feature-fixes.js?v=${RELEASE}`, `./src/v098-group-menu-guard.js?v=${RELEASE}`,
-  `./src/v099-runtime.js?v=${RELEASE}`, `./src/v099d-radar-scroll.js?v=${RELEASE}`,
-  `./src/v099d-supabase-auth.js?v=${RELEASE}`, `./src/v099g-account-stabilizer.js?v=${RELEASE}`,
-  `./src/v099f-cloud-sync.js?v=${RELEASE}`, `./src/v099f-cloud-codec.js?v=${RELEASE}`,
-  `./src/v099i-freshness-group.js?v=${RELEASE}`, `./src/v099f-ui-upgrade.js?v=${RELEASE}`,
+  `./src/v098-feature-fixes.js?v=${RELEASE}`, `./src/v099-runtime.js?v=${RELEASE}`,
+  `./src/v099d-radar-scroll.js?v=${RELEASE}`, `./src/v099d-supabase-auth.js?v=${RELEASE}`,
+  `./src/v099g-account-stabilizer.js?v=${RELEASE}`, `./src/v099f-cloud-sync.js?v=${RELEASE}`,
+  `./src/v099f-cloud-codec.js?v=${RELEASE}`, `./src/v099i-freshness-group.js?v=${RELEASE}`,
+  `./src/v099m-group-controller.js?v=${RELEASE}`, `./src/v099f-ui-upgrade.js?v=${RELEASE}`,
   `./src/v099g-world-map.js?v=${RELEASE}`, `./src/v099l-ui-fixes.js?v=${RELEASE}`,
   './src/recognition-candidates.js', './src/sensory-codec-v096.js', './src/privacy-codec-v096.js',
   './src/image-quality.js', './src/recognition-bridge.js', './src/utils.js', './src/brew-model-v09.js',
