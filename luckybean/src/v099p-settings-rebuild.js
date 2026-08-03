@@ -3,7 +3,7 @@ import { getSetting, setSetting } from './db.js';
 if (!globalThis.__LuckyBeanV099pSettingsRebuildLoaded) {
   globalThis.__LuckyBeanV099pSettingsRebuildLoaded = true;
 
-  const RELEASE = '099p';
+  const RELEASE = '099q';
   const UI_KEY = 'luckybean.ui.v095';
   const LEGACY_UI_KEY = 'luckybean.ui.v094';
   const VOICE_KEY = 'luckybean.voice.v099i';
@@ -135,6 +135,7 @@ if (!globalThis.__LuckyBeanV099pSettingsRebuildLoaded) {
   }
 
   function normalizeSections(container) {
+    document.querySelectorAll('[data-v099e-cloud-panel], .v099e-cloud-panel, [data-v099e-account-actions]').forEach(node => node.remove());
     $('#settingsContent > #v095SettingsMascot')?.remove();
     const original = findOriginalSections(container);
     if (!original.account || !original.gear || !original.data || !original.about) return null;
