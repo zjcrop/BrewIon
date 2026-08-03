@@ -46,6 +46,7 @@ const CORE = [
   `./src/v099f-cloud-sync.js?v=${RELEASE}`,
   `./src/v099f-cloud-codec.js?v=${RELEASE}`,
   `./src/v099f-ui-upgrade.js?v=${RELEASE}`,
+  `./src/v099f-runtime-hotfix.js?v=${RELEASE}`,
   './src/recognition-candidates.js', './src/sensory-codec-v096.js', './src/privacy-codec-v096.js',
   './src/image-quality.js', './src/recognition-bridge.js', './src/utils.js', './src/brew-model-v09.js',
   './src/brew-trajectory-v096.js', './src/brew-optimizer-v097.js', './src/brew-engine-core.js',
