@@ -10,8 +10,9 @@ if (!globalThis.__LuckyBeanV099gAccountStabilizerLoaded) {
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const esc = value => String(value ?? '').replace(/[&<>\"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
-  let mountQueued = false;
+  let mountFrame = 0;
   let observedRoot = null;
+  let rootObserver = null;
 
   function authSession() {
     try {
@@ -103,19 +104,19 @@ if (!globalThis.__LuckyBeanV099gAccountStabilizerLoaded) {
       const buttons = $$('button', panel);
       buttons.forEach(button => { button.disabled = true; });
       try {
-        status.textContent = type === 'upload' ? '正在编码、分包、压缩、加密并上传…' : '正在下载、校验、解密并合并…';
+        if (status) status.textContent = type === 'upload' ? '正在编码、分包、压缩、加密并上传…' : '正在下载、校验、解密并合并…';
         const api = cloudApi();
         const result = type === 'upload' ? await api.upload({ interactive: true }) : await api.download({ interactive: true });
         if (type === 'upload') {
-          status.textContent = `同步完成：${result.changed || 0}个变更分包，上传密文${result.uploadedBytes || 0} B`;
+          if (status) status.textContent = `同步完成：${result.changed || 0}个变更分包，上传密文${result.uploadedBytes || 0} B`;
           toast('云端增量同步完成', 'status-good');
         } else {
-          status.textContent = `恢复完成：${result.packets || 0}个分包`;
+          if (status) status.textContent = `恢复完成：${result.packets || 0}个分包`;
           toast('云端数据已合并到本地', 'status-good');
           setTimeout(() => location.reload(), 700);
         }
       } catch (error) {
-        status.textContent = error.message;
+        if (status) status.textContent = error.message;
         toast(error.message, 'status-bad');
       } finally {
         const active = authSession();
@@ -148,21 +149,24 @@ if (!globalThis.__LuckyBeanV099gAccountStabilizerLoaded) {
   }
 
   function mountNow() {
-    mountQueued = false;
+    mountFrame = 0;
     const root = $('#settingsContent');
     if (!root) return;
-    if (observedRoot !== root) observedRoot = root;
     const account = findAccount(root);
     if (!account) return;
+
     const summary = account.querySelector('summary span');
-    if (summary) summary.textContent = '账号';
+    if (summary && summary.textContent.trim() !== '账号') summary.textContent = '账号';
+
     const body = $('.settings-category-body', account);
     if (!body) return;
 
-    $$('.v099e-cloud-panel,[data-v099e-cloud-panel]', root).forEach(node => node.remove());
+    const legacyPanels = $$('.v099e-cloud-panel,[data-v099e-cloud-panel]', root);
+    if (legacyPanels.length) legacyPanels.forEach(node => node.remove());
+
     const panels = $$('[data-v099f-account-sync]', body);
     let panel = panels.find(node => node.hasAttribute('data-v099g-account-sync')) || null;
-    panels.filter(node => node !== panel).forEach(node => node.remove());
+    if (panels.length > 1) panels.filter(node => node !== panel).forEach(node => node.remove());
     if (!panel) {
       body.insertAdjacentHTML('beforeend', panelHtml());
       panel = $('[data-v099g-account-sync]', body);
@@ -172,18 +176,34 @@ if (!globalThis.__LuckyBeanV099gAccountStabilizerLoaded) {
   }
 
   function queueMount() {
-    if (mountQueued) return;
-    mountQueued = true;
-    queueMicrotask(mountNow);
+    if (mountFrame) return;
+    mountFrame = requestAnimationFrame(mountNow);
   }
 
-  const observer = new MutationObserver(records => {
-    if (records.every(record => record.target.closest?.('[data-v099g-account-sync]'))) return;
+  function observeSettingsRoot() {
+    const root = $('#settingsContent');
+    if (!root || root === observedRoot) return;
+    rootObserver?.disconnect();
+    observedRoot = root;
+    rootObserver = new MutationObserver(records => {
+      if (records.some(record => record.target === root && record.type === 'childList')) queueMount();
+    });
+    rootObserver.observe(root, { childList: true });
+  }
+
+  document.addEventListener('click', event => {
+    if (!event.target.closest?.('[data-page-target="settings"]')) return;
+    setTimeout(() => {
+      observeSettingsRoot();
+      queueMount();
+    }, 0);
+  }, true);
+
+  addEventListener('pageshow', () => {
+    observeSettingsRoot();
     queueMount();
   });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
-  document.addEventListener('click', event => {
-    if (event.target.closest?.('[data-page-target="settings"]')) queueMount();
-  }, true);
-  mountNow();
+
+  observeSettingsRoot();
+  queueMount();
 }
