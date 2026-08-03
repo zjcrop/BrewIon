@@ -1,20 +1,9 @@
-/* Lucky Bean 099m: event-driven top-level settings accordion and data-module placement. */
-if (!globalThis.__LuckyBeanV099mUiFixesLoaded) {
-  globalThis.__LuckyBeanV099mUiFixesLoaded = true;
+/* Lucky Bean 099n: data-module placement only. Settings folding is owned by v099n-settings-controller. */
+if (!globalThis.__LuckyBeanV099nDataModulePlacementLoaded) {
+  globalThis.__LuckyBeanV099nDataModulePlacementLoaded = true;
 
   const $ = (selector, root = document) => root.querySelector(selector);
-  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   let syncTimers = [];
-
-  function topLevelCategories() {
-    return $$('#settingsContent > .settings-categories > details.settings-category');
-  }
-
-  function closeOtherCategories(current) {
-    for (const item of topLevelCategories()) {
-      if (item !== current && item.open) item.open = false;
-    }
-  }
 
   function dataCategoryBody() {
     return $('#settingsContent > .settings-categories > details.settings-category.data-category > .settings-category-body');
@@ -43,38 +32,22 @@ if (!globalThis.__LuckyBeanV099mUiFixesLoaded) {
     if (title && title.textContent !== '风味喜好数字侧写') title.textContent = '风味喜好数字侧写';
   }
 
-  function syncSettingsOnce() {
-    placeDataModules();
-  }
-
-  function scheduleSettingsSync() {
+  function schedulePlacement() {
     syncTimers.forEach(clearTimeout);
-    syncTimers = [0, 70, 180].map(delay => setTimeout(syncSettingsOnce, delay));
+    syncTimers = [0, 70, 180].map(delay => setTimeout(placeDataModules, delay));
   }
 
+  document.addEventListener('luckybean:settings-mounted', schedulePlacement);
   document.addEventListener('click', event => {
-    const summary = event.target.closest?.('#settingsContent > .settings-categories > details.settings-category > summary');
-    if (summary) {
-      // The browser performs the clicked detail's own open/close toggle.
-      // This handler only closes the other top-level categories once per click.
-      closeOtherCategories(summary.parentElement);
-      return;
-    }
-
-    if (event.target.closest?.('[data-page-target="settings"]')) {
-      scheduleSettingsSync();
-      return;
-    }
-
+    if (event.target.closest?.('[data-page-target="settings"]')) schedulePlacement();
     if (event.target.closest?.('[data-v099f-preference]')) {
       [0, 80, 220].forEach(delay => setTimeout(renamePreferenceTitle, delay));
     }
   }, true);
-
   window.addEventListener('pageshow', () => {
-    if ($('#pageSettings.active')) scheduleSettingsSync();
+    if ($('#pageSettings.active')) schedulePlacement();
   });
 
-  if ($('#pageSettings.active')) scheduleSettingsSync();
-  globalThis.LuckyBeanV099mUiFixes = { closeOtherCategories, placeDataModules };
+  if ($('#pageSettings.active')) schedulePlacement();
+  globalThis.LuckyBeanV099nDataModules = { place: placeDataModules };
 }
