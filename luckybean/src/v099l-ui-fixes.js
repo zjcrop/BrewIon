@@ -55,6 +55,8 @@ if (!globalThis.__LuckyBeanV099mUiFixesLoaded) {
   document.addEventListener('click', event => {
     const summary = event.target.closest?.('#settingsContent > .settings-categories > details.settings-category > summary');
     if (summary) {
+      // The browser performs the clicked detail's own open/close toggle.
+      // This handler only closes the other top-level categories once per click.
       closeOtherCategories(summary.parentElement);
       return;
     }
