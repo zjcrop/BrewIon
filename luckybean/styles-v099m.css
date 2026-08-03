@@ -1,0 +1,31 @@
+/* Lucky Bean 099m */
+
+html body #splashScreen.splash-screen[data-splash-variant="red"] {
+  background-color: #993333 !important;
+  background-image: none !important;
+}
+
+html body #splashScreen.splash-screen[data-splash-variant="white"] {
+  background-color: #f3efe5 !important;
+  background-image: none !important;
+}
+
+#v095AppearanceSettings .v095-splash-choice [data-splash-choice="red"] {
+  background: #993333 !important;
+}
+
+#v095AppearanceSettings .v095-splash-choice [data-splash-choice="white"] {
+  background: #f3efe5 !important;
+}
+
+#v095AppearanceSettings .v095-splash-choice [data-splash-choice] img {
+  background: transparent !important;
+}
+
+.v099m-group-menu {
+  contain: layout paint;
+}
+
+.v099m-group-menu button {
+  white-space: nowrap;
+}
