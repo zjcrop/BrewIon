@@ -1,7 +1,7 @@
-// Release marker: luckybean-v0.9.9-main-099q
+// Release marker: luckybean-v0.9.9-main-099r
 // Compatibility marker: luckybean-v0.9.9-main-099o
-const CACHE_NAME = 'luckybean-v0.9.9-main-099q';
-const RELEASE = '099q';
+const CACHE_NAME = 'luckybean-v0.9.9-main-099r';
+const RELEASE = '099r';
 const CORE = [
   './', `./?v=${RELEASE}`, './index.html', `./index.html?v=${RELEASE}`,
   `./manifest.webmanifest?v=${RELEASE}`,

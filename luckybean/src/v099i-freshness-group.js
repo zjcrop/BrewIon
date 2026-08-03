@@ -153,7 +153,7 @@ if (!globalThis.__LuckyBeanV099mFreshnessGroupLoaded) {
       container.innerHTML = `<section data-v099m-freshness-root class="active-group-panel auto-motion">
         <div class="active-group-title"><span>${activeStage}</span><small>${items.length}只 · 烘焙日期由新到旧</small></div>
         <div class="bean-grid compact-grid bean-grid-animated auto-motion">${items.map(bean => beanCardHtml(bean, index, sensoryRecords)).join('') || '<p class="muted">该阶段没有豆卡</p>'}</div>
-        <div class="group-collapse-zone"><button class="group-collapse" type="button" data-v099m-stage-back>收</button></div>
+        <div class="group-collapse-zone" data-v099m-stage-back><button class="group-collapse" type="button" data-v099m-stage-back>收</button></div>
       </section>`;
     } finally {
       rendering = false;
