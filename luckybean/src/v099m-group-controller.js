@@ -62,6 +62,8 @@ if (!globalThis.__LuckyBeanV099mGroupControllerLoaded) {
         const value = native.dataset.groupMethod;
         popup.remove();
 
+        // Return native choices to the main application so its in-memory state,
+        // IndexedDB settings and bean rendering remain the single source of truth.
         nativePassThrough = true;
         anchor.click();
         nativePassThrough = false;
