@@ -432,8 +432,7 @@ function professionalSummary() {
   lines.push(`暗缺陷/${wizard.defects.minor.length ? wizard.defects.minor.join('、') : '-'}`);
   lines.push(`瑕疵扣分/${score.defectDeduction.toFixed(1)}`);
   lines.push(`应用映射建议分/${score.mapped100.toFixed(1)}`);
-  return lines.join('
-');
+  return lines.join('\n');
 }
 
 function nativePreferences() {

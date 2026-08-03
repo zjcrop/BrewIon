@@ -1,5 +1,5 @@
 const EXPECTED_MODE_VERSION = 'professional-v2';
-const BOOTSTRAP_VERSION = 'sensory-bootstrap-20260802b';
+const BOOTSTRAP_VERSION = 'sensory-bootstrap-20260803c';
 let importPromise = null;
 let syncQueued = false;
 let failureTimer = null;
@@ -59,10 +59,11 @@ async function loadProfessionalModes() {
   const panel = reserveModeSlot();
   if (!panel || expectedPanel(panel)) return;
 
-  if (!importPromise) importPromise = import('./v095-sensory-pro.js?v=095f');
+  if (!importPromise) importPromise = import('./v095-sensory-pro.js?v=099c');
   try {
     await importPromise;
   } catch (error) {
+    importPromise = null;
     showFailure(`专业品鉴模块加载失败：${error.message}`);
     return;
   }
@@ -81,7 +82,7 @@ function showFailure(message) {
   slot.classList.remove('v095-sensory-loading');
   slot.classList.add('v095-sensory-load-failed');
   slot.innerHTML = `<strong>品鉴模式加载失败</strong><small>${message}</small><button type="button" class="button" data-retry-sensory>重新加载</button>`;
-  slot.querySelector('[data-retry-sensory]')?.addEventListener('click', () => location.reload());
+  slot.querySelector('[data-retry-sensory]')?.addEventListener('click', () => { importPromise = null; slot.remove(); queueSync(); });
 }
 
 function verifyFinalPanel() {

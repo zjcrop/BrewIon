@@ -1,0 +1,12 @@
+{
+  "verified": true,
+  "version": "0.9.9",
+  "revision": "099c",
+  "checks": [
+    "sensory-module-syntax",
+    "sensory-module-dynamic-import",
+    "escaped-summary-newline",
+    "bootstrap-cache-revision",
+    "service-worker-sensory-cache"
+  ]
+}

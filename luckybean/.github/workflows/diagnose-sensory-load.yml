@@ -1,0 +1,65 @@
+name: Diagnose sensory module load
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/diagnose-sensory-load.yml
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Run syntax and import diagnostics
+        shell: bash
+        run: |
+          set +e
+          mkdir -p tests
+          node --check src/v095-sensory-pro.js > /tmp/syntax.log 2>&1
+          SYNTAX=$?
+          node --input-type=module > /tmp/import.log 2>&1 <<'JS'
+          globalThis.document = {
+            querySelector(){ return null; },
+            querySelectorAll(){ return []; },
+            addEventListener(){},
+            documentElement: {}
+          };
+          globalThis.MutationObserver = class {
+            constructor(){}
+            observe(){}
+            disconnect(){}
+          };
+          globalThis.requestAnimationFrame = callback => callback();
+          await import(`./src/v095-sensory-pro.js?diagnostic=${Date.now()}`);
+          console.log('dynamic import ok');
+          JS
+          IMPORT=$?
+          python3 - <<PY
+          import json
+          from pathlib import Path
+          payload = {
+            'syntax_ok': ${SYNTAX} == 0,
+            'import_ok': ${IMPORT} == 0,
+            'syntax_output': Path('/tmp/syntax.log').read_text(errors='replace')[-4000:],
+            'import_output': Path('/tmp/import.log').read_text(errors='replace')[-4000:]
+          }
+          Path('tests/sensory-load-diagnostic.json').write_text(json.dumps(payload, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PY
+
+      - name: Commit diagnostic result
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/sensory-load-diagnostic.json
+          git commit -m "chore: record sensory module load diagnostic [skip ci]" || exit 0
+          git push origin HEAD:main

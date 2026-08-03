@@ -1,7 +1,7 @@
-// Release marker: luckybean-v0.9.9-main-099b
+// Release marker: luckybean-v0.9.9-main-099c
 // Compatibility marker: luckybean-v0.9.9-main-099a
-const CACHE_NAME = 'luckybean-v0.9.9-main-099b';
-const RELEASE = '099b';
+const CACHE_NAME = 'luckybean-v0.9.9-main-099c';
+const RELEASE = '099c';
 const CORE = [
   './', `./?v=${RELEASE}`, './index.html', `./index.html?v=${RELEASE}`,
   `./manifest.webmanifest?v=${RELEASE}`,
@@ -22,6 +22,7 @@ const CORE = [
   `./src/v096-package-capture.js?v=${RELEASE}`,
   `./src/v096-direct-camera.js?v=${RELEASE}`,
   `./src/v095-sensory-bootstrap.js?v=${RELEASE}`,
+  `./src/v095-sensory-pro.js?v=${RELEASE}`,
   `./src/v095-ui.js?v=${RELEASE}`,
   `./src/theme-bridge.js?v=${RELEASE}`,
   `./src/v095-layout-gear.js?v=${RELEASE}`,
