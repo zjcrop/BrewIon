@@ -1,7 +1,7 @@
-// Release marker: luckybean-v0.9.9-main-099g
-// Compatibility marker: luckybean-v0.9.9-main-099f
-const CACHE_NAME = 'luckybean-v0.9.9-main-099g';
-const RELEASE = '099g';
+// Release marker: luckybean-v0.9.9-main-099h
+// Compatibility marker: luckybean-v0.9.9-main-099g
+const CACHE_NAME = 'luckybean-v0.9.9-main-099h';
+const RELEASE = '099h';
 const CORE = [
   './', `./?v=${RELEASE}`, './index.html', `./index.html?v=${RELEASE}`,
   `./manifest.webmanifest?v=${RELEASE}`,
@@ -20,7 +20,9 @@ const CORE = [
   `./styles-v099d.css?v=${RELEASE}`,
   `./styles-v099f.css?v=${RELEASE}`,
   `./styles-v099g.css?v=${RELEASE}`,
+  `./styles-v099h.css?v=${RELEASE}`,
   `./src/app.js?v=${RELEASE}`,
+  `./src/v099h-splash-assets.js?v=${RELEASE}`,
   `./src/v096-web-ocr.js?v=${RELEASE}`,
   `./src/v099g-paddle-ocr.js?v=${RELEASE}`,
   `./src/v099d-ocr-quality.js?v=${RELEASE}`,
@@ -58,8 +60,10 @@ const CORE = [
   './src/qr.js', './src/qr-core.js', './src/water-profiles.js', './src/preference-model.js',
   './src/share-codec-core.js', './src/share-codec.js',
   './public/fallback-codebook.json', './public/legacy-flavor-map.json',
-  `./public/app-logo.webp?v=${RELEASE}`, `./public/splash-red.jpg?v=${RELEASE}`,
-  './public/splash-white.jpg', './public/settings-mascot.png', './public/action-grid.svg'
+  `./public/app-logo.webp?v=${RELEASE}`,
+  `./public/splash-art-red.webp?v=${RELEASE}`,
+  `./public/splash-art-light.webp?v=${RELEASE}`,
+  './public/settings-mascot.png', './public/action-grid.svg'
 ];
 
 self.addEventListener('install', event => {
@@ -82,6 +86,12 @@ self.addEventListener('message', event => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
+function legacySplashUrl(url) {
+  if (url.pathname.endsWith('/public/splash-red.jpg')) return new URL(`./public/splash-art-red.webp?v=${RELEASE}`, self.registration.scope);
+  if (url.pathname.endsWith('/public/splash-white.jpg')) return new URL(`./public/splash-art-light.webp?v=${RELEASE}`, self.registration.scope);
+  return null;
+}
+
 self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
@@ -98,6 +108,11 @@ self.addEventListener('fetch', event => {
     return;
   }
   if (url.origin === self.location.origin) {
+    const replacement = legacySplashUrl(url);
+    if (replacement) {
+      event.respondWith(caches.match(replacement.href).then(cached => cached || fetch(replacement.href)));
+      return;
+    }
     event.respondWith(
       fetch(new Request(request, { cache: 'reload' }))
         .then(response => {
