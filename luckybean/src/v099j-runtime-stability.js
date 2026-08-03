@@ -1,61 +1,6 @@
-/* Runtime stability: coalesce document-wide observers, enforce one settings section, repair FAB position. */
-if (!globalThis.__LuckyBeanV099jRuntimeStabilityLoaded) {
-  globalThis.__LuckyBeanV099jRuntimeStabilityLoaded = true;
-
-  const NativeMutationObserver = globalThis.MutationObserver;
-  if (NativeMutationObserver && !globalThis.__LuckyBeanMutationObserverCoalesced) {
-    globalThis.__LuckyBeanMutationObserverCoalesced = true;
-    class CoalescedMutationObserver {
-      constructor(callback) {
-        this.callback = callback;
-        this.globalScope = false;
-        this.records = [];
-        this.timer = 0;
-        this.native = new NativeMutationObserver((records) => {
-          if (!this.globalScope) {
-            callback(records, this);
-            return;
-          }
-          this.records.push(...records.slice(0, 300));
-          if (this.timer) return;
-          this.timer = window.setTimeout(() => {
-            this.timer = 0;
-            const batch = this.records.splice(0, 600);
-            if (!batch.length || document.hidden) return;
-            callback(batch, this);
-          }, 72);
-        });
-      }
-      observe(target, options = {}) {
-        this.globalScope = Boolean(options.subtree && (target === document.documentElement || target === document.body));
-        this.native.observe(target, options);
-      }
-      disconnect() {
-        clearTimeout(this.timer);
-        this.timer = 0;
-        this.records.length = 0;
-        this.native.disconnect();
-      }
-      takeRecords() { return this.native.takeRecords(); }
-    }
-    globalThis.MutationObserver = CoalescedMutationObserver;
-  }
-
-  const closeOtherSettings = current => {
-    if (!current?.open) return;
-    document.querySelectorAll('#settingsContent details[open]').forEach(item => {
-      if (item !== current) item.open = false;
-    });
-  };
-  document.addEventListener('toggle', event => {
-    const current = event.target?.closest?.('#settingsContent details');
-    if (current) closeOtherSettings(current);
-  }, true);
-  document.addEventListener('click', event => {
-    const summary = event.target.closest?.('#settingsContent details > summary');
-    if (!summary) return;
-    requestAnimationFrame(() => closeOtherSettings(summary.parentElement));
-  }, true);
+/* Lucky Bean 099k runtime stability: repair FAB position without altering browser observers or settings toggles. */
+if (!globalThis.__LuckyBeanV099kRuntimeStabilityLoaded) {
+  globalThis.__LuckyBeanV099kRuntimeStabilityLoaded = true;
 
   function defaultFab(node) {
     node.classList.add('v099j-anchor-reset');
@@ -96,5 +41,9 @@ if (!globalThis.__LuckyBeanV099jRuntimeStabilityLoaded) {
   addEventListener('resize', () => setTimeout(repairFab, 60), { passive: true });
   addEventListener('orientationchange', () => setTimeout(repairFab, 180), { passive: true });
   addEventListener('pageshow', () => setTimeout(repairFab, 120));
-  globalThis.LuckyBeanRuntimeStabilityV099j = { repairFab, resetFab: () => repairFab({ forceDefault: true }) };
+
+  globalThis.LuckyBeanRuntimeStabilityV099k = {
+    repairFab,
+    resetFab: () => repairFab({ forceDefault: true })
+  };
 }
