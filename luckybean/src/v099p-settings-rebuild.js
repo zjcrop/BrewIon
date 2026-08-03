@@ -412,7 +412,16 @@ function patchSettingsScrollIntoView() {
     if (!root || !container || !$('#pageSettings.active')) return;
     if (!preserveOpen) openKey = '';
     const scrollY = window.scrollY;
-    const sections = normalizeSections(container);
+    const keys = new Set(topLevel(container).map(categoryKey));
+    const ready = ['appearance', 'account', 'gear', 'voice', 'data', 'about'].every(key => keys.has(key));
+    const sections = ready ? {
+      appearance: container.querySelector(':scope > [data-settings-key="appearance"]'),
+      account: container.querySelector(':scope > [data-settings-key="account"]'),
+      gear: container.querySelector(':scope > [data-settings-key="gear"]'),
+      voice: container.querySelector(':scope > [data-settings-key="voice"]'),
+      data: container.querySelector(':scope > [data-settings-key="data"]'),
+      about: container.querySelector(':scope > [data-settings-key="about"]')
+    } : normalizeSections(container);
     if (!sections) return;
     bindAccordion(container);
     restoreOpen(container);
