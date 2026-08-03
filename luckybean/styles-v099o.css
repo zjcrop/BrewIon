@@ -1,5 +1,3 @@
-@import url("./styles-v099p.css?v=099p");
-
 /* Lucky Bean 099o: settings scrolling must remain user-controlled. */
 html.v099o-settings-active,
 html.v099o-settings-active body,
@@ -20,7 +18,6 @@ html.v099o-settings-active #settingsContent .settings-category-body {
   overflow-anchor: none !important;
 }
 
-/* Never create a second scrolling surface inside the normal settings page. */
 #pageSettings.active,
 #pageSettings.active #settingsContent,
 #pageSettings.active .settings-categories {
