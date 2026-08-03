@@ -1,3 +1,5 @@
+import './v099o-dom-stability.js';
+
 /* Lucky Bean 099k runtime stability: repair FAB position without altering browser observers or settings toggles. */
 if (!globalThis.__LuckyBeanV099kRuntimeStabilityLoaded) {
   globalThis.__LuckyBeanV099kRuntimeStabilityLoaded = true;
