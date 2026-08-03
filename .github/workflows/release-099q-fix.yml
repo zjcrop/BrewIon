@@ -1,0 +1,62 @@
+name: Deploy 099q account injector fix
+
+on:
+  push:
+    paths:
+      - .github/workflows/release-099q-fix.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch deployed release files
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          base = Path('luckybean')
+          index = base / 'index.html'
+          text = index.read_text(encoding='utf-8')
+          text = text.replace('content="099p"', 'content="099q"')
+          text = text.replace('data-release-revision="099p"', 'data-release-revision="099q"')
+          text = text.replace('?v=099p', '?v=099q')
+          index.write_text(text, encoding='utf-8')
+
+          sw = base / 'sw.js'
+          text = sw.read_text(encoding='utf-8')
+          text = text.replace('main-099p', 'main-099q')
+          text = text.replace("const RELEASE = '099p';", "const RELEASE = '099q';")
+          sw.write_text(text, encoding='utf-8')
+
+          controller = base / 'src/v099p-settings-rebuild.js'
+          text = controller.read_text(encoding='utf-8')
+          text = text.replace("const RELEASE = '099p';", "const RELEASE = '099q';", 1)
+          marker = "  function normalizeSections(container) {\n"
+          cleanup = "  function normalizeSections(container) {\n    document.querySelectorAll('[data-v099e-cloud-panel], .v099e-cloud-panel, [data-v099e-account-actions]').forEach(node => node.remove());\n"
+          if cleanup not in text:
+              text = text.replace(marker, cleanup, 1)
+          controller.write_text(text, encoding='utf-8')
+
+          css = base / 'styles-v099o.css'
+          text = css.read_text(encoding='utf-8').replace('styles-v099p.css?v=099p', 'styles-v099p.css?v=099q')
+          css.write_text(text, encoding='utf-8')
+          PY
+          node --check luckybean/src/v099d-radar-scroll.js
+          node --check luckybean/src/v099e-cloud-sync.js
+          node --check luckybean/src/v099e-account-bridge.js
+          node --check luckybean/src/v099p-settings-rebuild.js
+      - name: Commit deployed release
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add luckybean/index.html luckybean/sw.js luckybean/src/v099p-settings-rebuild.js luckybean/styles-v099o.css
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "deploy: 099q remove duplicate account injector"
+          git push
