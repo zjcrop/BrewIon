@@ -1,7 +1,7 @@
-// Release marker: luckybean-v0.9.9-main-099t
-// Compatibility marker: luckybean-v0.9.9-main-099o
-const CACHE_NAME = 'luckybean-v0.9.9-main-099t';
-const RELEASE = '099t';
+// Release marker: luckybean-v0.9.9-main-099u
+// Compatibility marker: luckybean-v0.9.9-main-099t
+const CACHE_NAME = 'luckybean-v0.9.9-main-099u';
+const RELEASE = '099u';
 const CORE = [
   './', `./?v=${RELEASE}`, './index.html', `./index.html?v=${RELEASE}`,
   `./manifest.webmanifest?v=${RELEASE}`,
@@ -16,6 +16,7 @@ const CORE = [
   `./styles-v099l.css?v=${RELEASE}`, `./styles-v099m.css?v=${RELEASE}`,
   `./styles-v099o.css?v=${RELEASE}`, `./styles-v099p.css?v=${RELEASE}`,
   `./src/v099j-runtime-stability.js?v=${RELEASE}`, `./src/v099o-dom-stability.js?v=${RELEASE}`,
+  `./src/v099u-menu-ocr-flow.js?v=${RELEASE}`,
   `./src/app.js?v=${RELEASE}`, `./src/v099h-splash-assets.js?v=${RELEASE}`,
   `./src/v099i-migrations.js?v=${RELEASE}`, `./src/v096-web-ocr.js?v=${RELEASE}`,
   `./src/v099g-paddle-ocr.js?v=${RELEASE}`, `./src/v099d-ocr-quality.js?v=${RELEASE}`,
