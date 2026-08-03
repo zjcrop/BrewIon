@@ -1,5 +1,5 @@
-if (!globalThis.__LuckyBeanV099iVoiceSettingsLoaded && 'speechSynthesis' in globalThis) {
-  globalThis.__LuckyBeanV099iVoiceSettingsLoaded = true;
+if (!globalThis.__LuckyBeanV099oVoiceSettingsLoaded && 'speechSynthesis' in globalThis) {
+  globalThis.__LuckyBeanV099oVoiceSettingsLoaded = true;
 
   const STORAGE_KEY = 'luckybean.voice.v099i';
   const synth = globalThis.speechSynthesis;
@@ -133,10 +133,11 @@ if (!globalThis.__LuckyBeanV099iVoiceSettingsLoaded && 'speechSynthesis' in glob
 
   synth.addEventListener?.('voiceschanged', refreshVoices);
   refreshVoices();
-  new MutationObserver(records => {
-    if (records.some(record => record.target?.id === 'settingsContent' || [...record.addedNodes].some(node => node.nodeType === 1 && (node.id === 'settingsContent' || node.querySelector?.('#settingsContent'))))) queueMount();
-  }).observe(document.documentElement, { childList: true, subtree: true });
-  document.addEventListener('click', event => { if (event.target.closest?.('[data-page-target="settings"]')) setTimeout(queueMount, 40); });
+  document.addEventListener('luckybean:settings-mounted', queueMount);
+  document.addEventListener('click', event => {
+    if (event.target.closest?.('[data-page-target="settings"]')) setTimeout(queueMount, 0);
+  }, true);
+  window.addEventListener('pageshow', queueMount);
   queueMount();
   globalThis.LuckyBeanVoiceSettings = { applyVoice, refreshVoices };
 }
