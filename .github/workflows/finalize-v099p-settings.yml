@@ -1,0 +1,117 @@
+name: Finalize deployed 099p settings controller
+
+on:
+  push:
+    paths:
+      - .github/workflows/finalize-v099p-settings.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply final settings stability corrections
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('luckybean/src/v099p-settings-rebuild.js')
+          text = path.read_text(encoding='utf-8')
+          if 'function patchSettingsWindowScroll()' in text and 'v099pVoiceBound' in text and 'delays = [0, 80]' in text:
+              print('Controller is already finalized.')
+              raise SystemExit(0)
+
+          text = text.replace(
+              '  function normalizeSections(container) {\n',
+              "  function normalizeSections(container) {\n    $('#settingsContent > #v095SettingsMascot')?.remove();\n",
+              1
+          )
+
+          voice_block = r'''  function populateVoiceSelect(section) {
+            const select = $('[data-v099p-voice]', section);
+            if (!select) return;
+            const config = voiceConfig();
+            select.innerHTML = `<option value="">按声音倾向自动选择</option>${chineseVoices().map(voice => {
+              const key = voice.voiceURI || `${voice.name}|${voice.lang}`;
+              return `<option value="${esc(key)}">${esc(voice.name)} · ${esc(voice.lang || '')}${voice.localService ? ' · 本地' : ''}</option>`;
+            }).join('')}`;
+            if ([...select.options].some(option => option.value === config.voiceURI)) select.value = config.voiceURI;
+          }
+
+          function bindVoice(section) {
+            if (!('speechSynthesis' in globalThis)) {
+              section.querySelector('.settings-category-body').innerHTML = '<p class="muted">当前浏览器不支持语音播报。</p>';
+              return;
+            }
+            const config = voiceConfig();
+            const mode = $('[data-v099p-voice-mode]', section);
+            const select = $('[data-v099p-voice]', section);
+            const rate = $('[data-v099p-rate]', section);
+            if (mode) mode.value = config.mode;
+            populateVoiceSelect(section);
+            if (section.dataset.v099pVoiceBound === '1') return;
+            section.dataset.v099pVoiceBound = '1';
+            rate?.addEventListener('input', () => { $('[data-v099p-rate-output]', section).textContent = Number(rate.value).toFixed(2); });
+            $('[data-v099p-voice-preview]', section)?.addEventListener('click', () => {
+              speechSynthesis.cancel();
+              const draft = { mode: mode.value, voiceURI: select.value, rate: Number(rate.value) };
+              const utterance = applyVoice(new SpeechSynthesisUtterance('富贵盒子语音播报试听。下一段，请按计划注水。'), draft);
+              utterance.lang = 'zh-CN';
+              (nativeSpeak || speechSynthesis.speak.bind(speechSynthesis))(utterance);
+            });
+            $('[data-v099p-voice-save]', section)?.addEventListener('click', () => {
+              saveVoice({ mode: mode.value, voiceURI: select.value, rate: Number(rate.value) });
+              section.open = false;
+              openKey = '';
+              toast('语音播报设置已保存', 'status-good');
+            });
+          }
+
+          async function hydrateCloud'''
+          text, count = re.subn(
+              r'  function bindVoice\(section\) \{.*?\n  \}\n\n  async function hydrateCloud',
+              voice_block,
+              text,
+              count=1,
+              flags=re.S
+          )
+          assert count == 1, 'voice block replacement failed'
+
+          text = text.replace('if (section) bindVoice(section);', 'if (section) populateVoiceSelect(section);', 1)
+
+          scroll_patch = r'''  function patchSettingsWindowScroll() {
+            const native = window.scrollTo.bind(window);
+            if (window.__luckyBean099pScrollPatched) return;
+            window.scrollTo = function patchedScrollTo(arg1, arg2) {
+              if ($('#pageSettings.active') && typeof arg1 === 'object' && arg1) {
+                return native({ ...arg1, behavior: 'auto' });
+              }
+              return native(arg1, arg2);
+            };
+            window.__luckyBean099pScrollPatched = true;
+          }
+
+          function patchSettingsScrollIntoView()'''
+          text = text.replace('  function patchSettingsScrollIntoView()', scroll_patch, 1)
+          text = text.replace('delays = [0, 70, 180]', 'delays = [0, 80]', 1)
+          text = text.replace('delays: [80, 220, 500]', 'delays: [100, 260]', 1)
+          text = text.replace('  patchSettingsScrollIntoView();\n  installVoicePatch();', '  patchSettingsWindowScroll();\n  patchSettingsScrollIntoView();\n  installVoicePatch();', 1)
+
+          path.write_text(text, encoding='utf-8')
+          PY
+          node --check luckybean/src/v099p-settings-rebuild.js
+      - name: Commit correction
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add luckybean/src/v099p-settings-rebuild.js
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "deploy: finalize 099p settings lifecycle"
+          git push
