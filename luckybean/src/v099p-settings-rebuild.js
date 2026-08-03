@@ -3,7 +3,7 @@ import { getSetting, setSetting } from './db.js';
 if (!globalThis.__LuckyBeanV099pSettingsRebuildLoaded) {
   globalThis.__LuckyBeanV099pSettingsRebuildLoaded = true;
 
-  const RELEASE = '099q';
+  const RELEASE = '099s';
   const UI_KEY = 'luckybean.ui.v095';
   const LEGACY_UI_KEY = 'luckybean.ui.v094';
   const VOICE_KEY = 'luckybean.voice.v099i';
@@ -109,7 +109,7 @@ if (!globalThis.__LuckyBeanV099pSettingsRebuildLoaded) {
     section.className = 'settings-category v099p-settings-section';
     section.id = 'v099iVoiceSettings';
     section.dataset.settingsKey = 'voice';
-    section.innerHTML = `<summary><span>语音播报</span><small>声音、语速与试听</small></summary>
+    section.innerHTML = `<summary><span>语音</span><small>声音、语速与试听</small></summary>
       <div class="settings-category-body v099p-settings-body v099p-voice-body">
         <div class="grid-2">
           <label class="field"><span>声音倾向</span><select class="control" data-v099p-voice-mode><option value="auto">自动</option><option value="female">偏女声</option><option value="male">偏男声</option></select></label>
