@@ -1,0 +1,483 @@
+/* Lucky Bean 0.9.9 revision 099f: sync v2, recognition ergonomics, analytics and map. */
+
+/* Recognition text editor: bottom half sheet on mobile, with a genuinely usable text area. */
+.overlay[data-overlay="text-recognition"] {
+  align-items: end !important;
+  justify-items: stretch !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+.overlay[data-overlay="text-recognition"] > .dialog {
+  width: min(100%, 760px) !important;
+  height: max(50dvh, 360px) !important;
+  max-height: 58dvh !important;
+  margin: 0 auto !important;
+  padding: 18px max(16px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)) !important;
+  overflow: auto !important;
+  border-radius: 18px 18px 0 0 !important;
+}
+.overlay[data-overlay="text-recognition"] #recognitionText {
+  min-height: 24dvh !important;
+  resize: vertical;
+  line-height: 1.55;
+}
+html.v099f-auto-parsing .overlay[data-overlay="text-recognition"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Package capture and camera dialogs should sit near the visual centre rather than the top edge. */
+.bag-capture-overlay,
+.overlay[data-overlay="camera"],
+.v099f-centered-capture {
+  align-items: center !important;
+  justify-items: center !important;
+  padding-top: max(14px, env(safe-area-inset-top)) !important;
+  padding-bottom: max(14px, env(safe-area-inset-bottom)) !important;
+}
+.bag-capture-dialog,
+.overlay[data-overlay="camera"] > .dialog {
+  width: min(96vw, 800px) !important;
+  max-height: 90dvh !important;
+  margin: auto !important;
+  overflow: auto !important;
+}
+.bag-recognition-result {
+  min-height: 50dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+#bagOcrText {
+  min-height: calc(50dvh - 115px) !important;
+  max-height: 58dvh;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+/* Full bean form must start at the top and remain scrollable through the first fields. */
+.overlay.full[data-overlay="bean-form"] {
+  display: block !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  padding: max(10px, env(safe-area-inset-top)) 10px max(24px, env(safe-area-inset-bottom)) !important;
+  scroll-padding-top: max(12px, env(safe-area-inset-top));
+}
+.overlay.full[data-overlay="bean-form"] > .dialog {
+  width: min(100%, 820px) !important;
+  max-height: none !important;
+  min-height: min-content;
+  margin: 0 auto !important;
+  overflow: visible !important;
+}
+#beanForm {
+  padding-top: 2px;
+}
+#beanForm .form-grid {
+  align-content: start;
+}
+.form-field.required.v099f-required-missing {
+  border: 1px solid #d19a35;
+  box-shadow: 0 0 0 2px rgba(209, 154, 53, .22);
+  padding: 8px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel, #111) 88%, #d19a35 12%);
+}
+.form-field.required.v099f-required-missing label > span:first-child::after {
+  content: " · 待补充";
+  color: #d19a35;
+  font-size: .78em;
+  font-weight: 700;
+}
+.form-field.required.v099f-required-missing .control {
+  border-color: #d19a35 !important;
+}
+
+/* Four-quadrant floating actions: eliminate drag-time square/tap backgrounds. */
+.fab-wrap.action-grid,
+.fab-wrap.action-grid:active,
+.fab-wrap.action-grid:focus,
+.fab-wrap.action-grid.dragging,
+.fab-wrap.action-grid[style] {
+  background-color: transparent !important;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  border-radius: 50% !important;
+  overflow: visible !important;
+  -webkit-tap-highlight-color: transparent !important;
+  isolation: isolate;
+}
+.fab-wrap.action-grid .fab,
+.fab-wrap.action-grid .fab:active,
+.fab-wrap.action-grid .fab:focus {
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  border-color: transparent !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+.v097-fab-drag-handle,
+.v097-fab-drag-handle:active {
+  border-radius: 999px !important;
+  outline: 0 !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Defect choices use the same visual grammar as the flavour tag buttons. */
+.v095-defect-tags {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.v095-defect-tags .button,
+.v095-defect-tags [data-defect-tag] {
+  width: auto !important;
+  min-width: 76px;
+  padding: 9px 13px !important;
+  border: 1px solid currentColor !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--text, #f4f2eb) !important;
+  opacity: .72;
+  font-weight: 650;
+}
+.v095-defect-tags .button.selected,
+.v095-defect-tags [data-defect-tag].selected {
+  opacity: 1;
+  color: var(--seal, #b89251) !important;
+  border-color: var(--seal, #b89251) !important;
+  background: color-mix(in srgb, var(--seal, #b89251) 16%, transparent) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--seal, #b89251) 22%, transparent);
+}
+
+/* Bean-library modules. */
+.v099f-bean-modules {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 10px 0 16px;
+}
+.v099f-bean-modules button {
+  min-width: 0;
+  padding: 11px 8px;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+.v099f-freshness-note {
+  margin: 4px 0 12px;
+  color: var(--muted);
+  font-size: .8rem;
+  text-align: center;
+}
+.v099f-stage-card span {
+  font-weight: 750;
+}
+
+/* Account/sync panel is embedded inside the existing account accordion. */
+.v099f-account-sync {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+}
+.v099f-account-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+.v099f-account-status strong {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.v099f-account-actions,
+.v099f-sync-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.v099f-storage-config {
+  display: grid;
+  gap: 13px;
+}
+.v099f-sync-mode {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.v099f-sync-mode label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, currentColor 32%, transparent);
+}
+[data-v099f-sync-status] {
+  display: block;
+  min-height: 1.4em;
+  overflow-wrap: anywhere;
+}
+
+/* Preference analytics. */
+.v099f-analysis-overlay,
+.v099f-world-overlay {
+  display: block !important;
+  overflow-y: auto !important;
+  padding: max(10px, env(safe-area-inset-top)) 10px max(28px, env(safe-area-inset-bottom)) !important;
+}
+.v099f-analysis-dialog,
+.v099f-world-dialog {
+  width: min(100%, 920px) !important;
+  max-height: none !important;
+  margin: 0 auto;
+  overflow: visible !important;
+}
+.v099f-analysis-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0;
+}
+.v099f-analysis-summary > div {
+  display: grid;
+  gap: 4px;
+  padding: 12px 8px;
+  border: 1px solid color-mix(in srgb, currentColor 24%, transparent);
+  text-align: center;
+}
+.v099f-analysis-summary span {
+  font-size: .72rem;
+  color: var(--muted);
+}
+.v099f-analysis-summary strong {
+  font-size: 1.2rem;
+}
+.v099f-mode-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.v099f-mode-summary span {
+  padding: 5px 9px;
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-radius: 999px;
+  font-size: .78rem;
+}
+.v099f-top-tags {
+  margin: 18px 0;
+}
+.v099f-top-tags > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+.v099f-top-tags > div > span {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: 7px;
+  align-items: center;
+  padding: 8px 9px;
+  border-bottom: 1px dashed color-mix(in srgb, currentColor 24%, transparent);
+}
+.v099f-top-tags b {
+  color: var(--seal, #b89251);
+}
+.v099f-top-tags.negative b,
+.v099f-top-tags.negative strong {
+  color: #bf765f;
+}
+.v099f-dimension-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  margin: 22px 0 14px;
+}
+.v099f-dimension-tabs button {
+  min-width: 0;
+  padding: 9px 3px;
+  border: 1px solid color-mix(in srgb, currentColor 32%, transparent);
+  background: transparent;
+  color: inherit;
+  font-size: .82rem;
+}
+.v099f-dimension-tabs button.active {
+  border-color: var(--seal, #b89251);
+  color: var(--seal, #b89251);
+  box-shadow: inset 0 -2px 0 var(--seal, #b89251);
+}
+.v099f-pie-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, .9fr) minmax(260px, 1.1fr);
+  gap: 20px;
+  align-items: center;
+}
+.v099f-pie {
+  width: min(100%, 360px);
+  margin: auto;
+  overflow: visible;
+}
+.v099f-pie-slice path,
+.v099f-pie-slice circle {
+  stroke: var(--panel, #101111);
+  stroke-width: 1.5;
+}
+.v099f-pie-hole {
+  fill: var(--panel, #101111);
+}
+.v099f-pie text {
+  fill: currentColor;
+  font-size: 10px;
+}
+.v099f-pie text:first-of-type {
+  font-size: 18px;
+  font-weight: 800;
+}
+.v099f-pie-legend {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.v099f-pie-legend li {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+.v099f-pie-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.v099f-pie-legend small {
+  color: var(--muted);
+}
+.slice-0 path, .slice-0 circle, i.slice-0 { fill: #a77437; background: #a77437; }
+.slice-1 path, .slice-1 circle, i.slice-1 { fill: #b66b58; background: #b66b58; }
+.slice-2 path, .slice-2 circle, i.slice-2 { fill: #637d72; background: #637d72; }
+.slice-3 path, .slice-3 circle, i.slice-3 { fill: #72719a; background: #72719a; }
+.slice-4 path, .slice-4 circle, i.slice-4 { fill: #9a806a; background: #9a806a; }
+.slice-5 path, .slice-5 circle, i.slice-5 { fill: #768a9b; background: #768a9b; }
+.slice-6 path, .slice-6 circle, i.slice-6 { fill: #8a9865; background: #8a9865; }
+.slice-7 path, .slice-7 circle, i.slice-7 { fill: #8c6f82; background: #8c6f82; }
+.v099f-empty-chart {
+  padding: 52px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* Coffee world map. */
+.v099f-map-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0;
+  color: var(--muted);
+  font-size: .8rem;
+}
+.v099f-map-viewport {
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, currentColor 28%, transparent);
+  background: var(--bg, #080909);
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+.v099f-map-viewport:active {
+  cursor: grabbing;
+}
+.v099f-map-viewport svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+#v099fMapLayer {
+  transform-origin: 0 0;
+  transition: transform 40ms linear;
+}
+.v099f-map-viewport .map-bg {
+  fill: var(--bg, #080909);
+}
+.v099f-continent-lines path {
+  fill: color-mix(in srgb, var(--panel, #151616) 88%, currentColor 12%);
+  stroke: color-mix(in srgb, currentColor 25%, transparent);
+  stroke-width: 1;
+}
+.v099f-country-marker circle {
+  stroke: color-mix(in srgb, currentColor 45%, transparent);
+  stroke-width: 1;
+  fill: var(--bg, #080909);
+}
+.v099f-country-marker.visited circle {
+  fill: color-mix(in srgb, currentColor calc(var(--intensity) * 100%), var(--bg, #080909));
+}
+.v099f-country-marker.max circle {
+  fill: #fff;
+  stroke: #fff;
+}
+html[data-theme="light"] .v099f-country-marker.max circle {
+  fill: #000;
+  stroke: #000;
+}
+.v099f-country-marker text {
+  fill: currentColor;
+  font-size: 9px;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: var(--bg, #080909);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.v099f-country-marker text.count {
+  font-size: 8px;
+  font-weight: 800;
+  stroke-width: 2px;
+}
+.v099f-country-marker.max text.count {
+  fill: #000;
+  stroke: transparent;
+}
+html[data-theme="light"] .v099f-country-marker.max text.count {
+  fill: #fff;
+}
+.v099f-world-ranking {
+  margin-top: 18px;
+}
+.v099f-world-ranking > div {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 8px 4px;
+  border-bottom: 1px dashed color-mix(in srgb, currentColor 22%, transparent);
+}
+.v099f-world-ranking b {
+  color: var(--seal, #b89251);
+}
+
+@media (max-width: 680px) {
+  .bag-capture-dialog { max-height: 86dvh !important; }
+  .bag-recognition-result { min-height: 50dvh; }
+  #bagOcrText { min-height: 34dvh !important; }
+  .v099f-analysis-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .v099f-top-tags > div { grid-template-columns: 1fr; }
+  .v099f-pie-layout { grid-template-columns: 1fr; }
+  .v099f-dimension-tabs { gap: 3px; }
+  .v099f-dimension-tabs button { font-size: .72rem; padding-inline: 1px; }
+  .v099f-account-actions,
+  .v099f-sync-actions { grid-template-columns: 1fr; }
+  .v099f-sync-mode { grid-template-columns: 1fr 1fr; }
+  .v099f-world-dialog { padding-inline: 10px !important; }
+  .v099f-map-viewport { aspect-ratio: 1.55 / 1; }
+}
