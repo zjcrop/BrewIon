@@ -1,0 +1,41 @@
+/* Lucky Bean 099p: replacement splash artwork uses the full page width. */
+html body #splashScreen.splash-screen {
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+html body #splashScreen.splash-screen[data-splash-variant="red"] {
+  background-color: #993333 !important;
+  background-image: none !important;
+}
+
+html body #splashScreen.splash-screen[data-splash-variant="white"] {
+  background-color: #f3efe5 !important;
+  background-image: none !important;
+}
+
+html body #splashScreen.splash-screen > #splashImage,
+html body #splashScreen.splash-screen > img {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  align-self: flex-start !important;
+  object-fit: contain !important;
+  object-position: center top !important;
+  background: transparent !important;
+  transform: none !important;
+}
+
+html body #splashScreen.splash-screen > span {
+  position: absolute !important;
+  left: 50% !important;
+  bottom: max(22px, env(safe-area-inset-bottom, 0px)) !important;
+  transform: translateX(-50%) !important;
+  z-index: 2 !important;
+}
