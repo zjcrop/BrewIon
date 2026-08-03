@@ -1,5 +1,5 @@
-const SUPABASE_URL = 'https://phwqpxmnrogddrajwpqm.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_owicJe5BeJ-4e1ckFwGBjA_luAdvDCO';
+const SUPABASE_URL = 'https://vaxwncdcuvbpvdbbketb.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_MsB0RFoxxf5zJbbT9PPBjQ_WP7GBMMn';
 const SESSION_KEY = 'luckybean.supabase.session.v099d';
 const SOURCE_APP = 'luckybean';
 let busy = false;
@@ -75,7 +75,7 @@ function render(mode = 'login', notice = '', values = {}) {
   if (!host) return;
   const register = mode === 'register';
   host.innerHTML = `<div class="overlay" data-overlay="supabase-auth"><div class="dialog v099d-auth-dialog">
-    <div class="dialog-header"><div><h2>${register ? '注册富贵盒子' : '登录富贵盒子'}</h2><p>账户认证复用 Grind-PSD 的 Supabase 项目；两款应用的业务记录保持隔离。</p></div><button class="close-button" type="button" data-auth-close>×</button></div>
+    <div class="dialog-header"><div><h2>${register ? '注册富贵盒子' : '登录富贵盒子'}</h2><p>账户认证使用 Lucky Bean 独立 Supabase 项目；业务记录与 Grind-PSD 完全隔离。</p></div><button class="close-button" type="button" data-auth-close>×</button></div>
     ${register ? `<label class="field"><span>昵称</span><input id="v099dAuthNickname" class="control" maxlength="24" autocomplete="nickname" value="${esc(values.nickname || '')}"></label>` : ''}
     <label class="field"><span>邮箱</span><input id="v099dAuthEmail" class="control" type="email" autocomplete="email" value="${esc(values.email || '')}" placeholder="name@example.com"></label>
     <label class="field"><span>密码</span><input id="v099dAuthPassword" class="control" type="password" minlength="8" autocomplete="${register ? 'new-password' : 'current-password'}" placeholder="至少8位"></label>
