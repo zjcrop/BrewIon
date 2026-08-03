@@ -1,7 +1,7 @@
-// Release marker: luckybean-v0.9.9-main-099s
+// Release marker: luckybean-v0.9.9-main-099t
 // Compatibility marker: luckybean-v0.9.9-main-099o
-const CACHE_NAME = 'luckybean-v0.9.9-main-099s';
-const RELEASE = '099s';
+const CACHE_NAME = 'luckybean-v0.9.9-main-099t';
+const RELEASE = '099t';
 const CORE = [
   './', `./?v=${RELEASE}`, './index.html', `./index.html?v=${RELEASE}`,
   `./manifest.webmanifest?v=${RELEASE}`,
@@ -29,7 +29,7 @@ const CORE = [
   `./src/v098-selection-bridge.js?v=${RELEASE}`, `./src/v098-feature-fixes.js?v=${RELEASE}`,
   `./src/v099-runtime.js?v=${RELEASE}`, `./src/v099d-radar-scroll.js?v=${RELEASE}`,
   `./src/v099d-supabase-auth.js?v=${RELEASE}`, `./src/v099f-cloud-sync.js?v=${RELEASE}`,
-  `./src/v099f-cloud-codec.js?v=${RELEASE}`, `./src/v099i-freshness-group.js?v=${RELEASE}`,
+  `./src/v099f-cloud-codec.js?v=${RELEASE}`, `./src/v099t-bean-groups.js?v=${RELEASE}`,
   `./src/v099m-group-controller.js?v=${RELEASE}`, `./src/v099f-ui-upgrade.js?v=${RELEASE}`,
   `./src/v099g-world-map.js?v=${RELEASE}`, `./src/v099p-settings-rebuild.js?v=${RELEASE}`,
   './src/recognition-candidates.js', './src/sensory-codec-v096.js', './src/privacy-codec-v096.js',

@@ -165,12 +165,8 @@ async function renderCustomGroups() {
 }
 
 function queueGroups() {
-  if (groupQueued) return;
-  groupQueued = true;
-  setTimeout(() => {
-    groupQueued = false;
-    renderCustomGroups().catch(console.error);
-  }, 20);
+  // 099t owns custom grouping. Do not recompute groups from the global DOM observer.
+  return;
 }
 
 function enhanceGroupMenu() {

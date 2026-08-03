@@ -27,7 +27,7 @@ if (!globalThis.__LuckyBeanV099mGroupControllerLoaded) {
     return {
       native: appSettings?.groupMethod || 'country',
       freshness: ratioMode === 'freshness-ratio',
-      remaining: ratioMode !== 'freshness-ratio' && legacyMode === 'remaining-50'
+      remaining: ratioMode === 'remaining-50' || (ratioMode !== 'freshness-ratio' && legacyMode === 'remaining-50')
     };
   }
 
