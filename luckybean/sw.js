@@ -1,7 +1,7 @@
-// Release marker: luckybean-v0.9.9-main-099o
-// Compatibility marker: luckybean-v0.9.9-main-099n
-const CACHE_NAME = 'luckybean-v0.9.9-main-099o';
-const RELEASE = '099o';
+// Release marker: luckybean-v0.9.9-main-099p
+// Compatibility marker: luckybean-v0.9.9-main-099o
+const CACHE_NAME = 'luckybean-v0.9.9-main-099p';
+const RELEASE = '099p';
 const CORE = [
   './', `./?v=${RELEASE}`, './index.html', `./index.html?v=${RELEASE}`,
   `./manifest.webmanifest?v=${RELEASE}`,
@@ -14,26 +14,24 @@ const CORE = [
   `./styles-v099g.css?v=${RELEASE}`, `./styles-v099h.css?v=${RELEASE}`,
   `./styles-v099i.css?v=${RELEASE}`, `./styles-v099j.css?v=${RELEASE}`,
   `./styles-v099l.css?v=${RELEASE}`, `./styles-v099m.css?v=${RELEASE}`,
-  `./styles-v099o.css?v=${RELEASE}`,
+  `./styles-v099o.css?v=${RELEASE}`, `./styles-v099p.css?v=${RELEASE}`,
   `./src/v099j-runtime-stability.js?v=${RELEASE}`, `./src/v099o-dom-stability.js?v=${RELEASE}`,
   `./src/app.js?v=${RELEASE}`, `./src/v099h-splash-assets.js?v=${RELEASE}`,
-  `./src/v099i-migrations.js?v=${RELEASE}`, `./src/v099i-voice-settings.js?v=${RELEASE}`,
-  `./src/v096-web-ocr.js?v=${RELEASE}`, `./src/v099g-paddle-ocr.js?v=${RELEASE}`,
-  `./src/v099d-ocr-quality.js?v=${RELEASE}`, `./src/v096-package-capture.js?v=${RELEASE}`,
-  `./src/v096-direct-camera.js?v=${RELEASE}`, `./src/v095-sensory-bootstrap.js?v=${RELEASE}`,
-  `./src/v095-sensory-pro.js?v=${RELEASE}`, `./src/v095-ui.js?v=${RELEASE}`,
-  `./src/theme-bridge.js?v=${RELEASE}`, `./src/v095-layout-gear.js?v=${RELEASE}`,
+  `./src/v099i-migrations.js?v=${RELEASE}`, `./src/v096-web-ocr.js?v=${RELEASE}`,
+  `./src/v099g-paddle-ocr.js?v=${RELEASE}`, `./src/v099d-ocr-quality.js?v=${RELEASE}`,
+  `./src/v096-package-capture.js?v=${RELEASE}`, `./src/v096-direct-camera.js?v=${RELEASE}`,
+  `./src/v095-sensory-bootstrap.js?v=${RELEASE}`, `./src/v095-sensory-pro.js?v=${RELEASE}`,
+  `./src/v095-ui.js?v=${RELEASE}`, `./src/theme-bridge.js?v=${RELEASE}`,
   `./src/v095-sensory-flow-guard.js?v=${RELEASE}`, `./src/v095-postbrew-sensory.js?v=${RELEASE}`,
   `./src/v095-qr-ui.js?v=${RELEASE}`, `./src/v096-integrity-ui.js?v=${RELEASE}`,
   `./src/v097-ui-fixes.js?v=${RELEASE}`, `./src/v097-fab-gesture.js?v=${RELEASE}`,
   `./src/v099-trajectory-signal-bridge.js?v=${RELEASE}`, `./src/v099i-trajectory-space.js?v=${RELEASE}`,
   `./src/v098-selection-bridge.js?v=${RELEASE}`, `./src/v098-feature-fixes.js?v=${RELEASE}`,
   `./src/v099-runtime.js?v=${RELEASE}`, `./src/v099d-radar-scroll.js?v=${RELEASE}`,
-  `./src/v099d-supabase-auth.js?v=${RELEASE}`, `./src/v099g-account-stabilizer.js?v=${RELEASE}`,
-  `./src/v099f-cloud-sync.js?v=${RELEASE}`, `./src/v099f-cloud-codec.js?v=${RELEASE}`,
-  `./src/v099i-freshness-group.js?v=${RELEASE}`, `./src/v099m-group-controller.js?v=${RELEASE}`,
-  `./src/v099f-ui-upgrade.js?v=${RELEASE}`, `./src/v099g-world-map.js?v=${RELEASE}`,
-  `./src/v099l-ui-fixes.js?v=${RELEASE}`, `./src/v099n-settings-controller.js?v=${RELEASE}`,
+  `./src/v099d-supabase-auth.js?v=${RELEASE}`, `./src/v099f-cloud-sync.js?v=${RELEASE}`,
+  `./src/v099f-cloud-codec.js?v=${RELEASE}`, `./src/v099i-freshness-group.js?v=${RELEASE}`,
+  `./src/v099m-group-controller.js?v=${RELEASE}`, `./src/v099f-ui-upgrade.js?v=${RELEASE}`,
+  `./src/v099g-world-map.js?v=${RELEASE}`, `./src/v099p-settings-rebuild.js?v=${RELEASE}`,
   './src/recognition-candidates.js', './src/sensory-codec-v096.js', './src/privacy-codec-v096.js',
   './src/image-quality.js', './src/recognition-bridge.js', './src/utils.js', './src/brew-model-v09.js',
   './src/brew-trajectory-v096.js', './src/brew-optimizer-v097.js', './src/brew-engine-core.js', './src/brew-engine.js',
@@ -41,7 +39,7 @@ const CORE = [
   './src/water-profiles.js', './src/preference-model.js', './src/share-codec-core.js', './src/share-codec.js',
   './public/fallback-codebook.json', './public/legacy-flavor-map.json',
   `./public/app-logo.webp?v=${RELEASE}`, `./public/splash-art-red.webp?v=${RELEASE}`,
-  `./public/splash-art-light.webp?v=${RELEASE}`, './public/settings-mascot.png', './public/action-grid.svg'
+  `./public/splash-art-light.webp?v=${RELEASE}`, './public/action-grid.svg'
 ];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim())));
