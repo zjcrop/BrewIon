@@ -1,7 +1,7 @@
-// Release marker: luckybean-v0.9.9-main-099e
+// Release marker: luckybean-v0.9.9-main-099f
 // Compatibility marker: luckybean-v0.9.9-main-099d
-const CACHE_NAME = 'luckybean-v0.9.9-main-099e';
-const RELEASE = '099e';
+const CACHE_NAME = 'luckybean-v0.9.9-main-099f';
+const RELEASE = '099f';
 const CORE = [
   './', `./?v=${RELEASE}`, './index.html', `./index.html?v=${RELEASE}`,
   `./manifest.webmanifest?v=${RELEASE}`,
@@ -18,7 +18,7 @@ const CORE = [
   `./styles-v098-trajectory-v17.css?v=${RELEASE}`,
   `./styles-v099.css?v=${RELEASE}`,
   `./styles-v099d.css?v=${RELEASE}`,
-  `./styles-v099e.css?v=${RELEASE}`,
+  `./styles-v099f.css?v=${RELEASE}`,
   `./src/app.js?v=${RELEASE}`,
   `./src/v096-web-ocr.js?v=${RELEASE}`,
   `./src/v099d-ocr-quality.js?v=${RELEASE}`,
@@ -43,8 +43,9 @@ const CORE = [
   `./src/v099-runtime.js?v=${RELEASE}`,
   `./src/v099d-radar-scroll.js?v=${RELEASE}`,
   `./src/v099d-supabase-auth.js?v=${RELEASE}`,
-  `./src/v099e-cloud-sync.js?v=${RELEASE}`,
-  `./src/v099e-account-bridge.js?v=${RELEASE}`,
+  `./src/v099f-cloud-sync.js?v=${RELEASE}`,
+  `./src/v099f-cloud-codec.js?v=${RELEASE}`,
+  `./src/v099f-ui-upgrade.js?v=${RELEASE}`,
   './src/recognition-candidates.js', './src/sensory-codec-v096.js', './src/privacy-codec-v096.js',
   './src/image-quality.js', './src/recognition-bridge.js', './src/utils.js', './src/brew-model-v09.js',
   './src/brew-trajectory-v096.js', './src/brew-optimizer-v097.js', './src/brew-engine-core.js',
