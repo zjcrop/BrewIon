@@ -1,0 +1,110 @@
+/* Lucky Bean revision 099g: stable account panel, original four-quadrant shape, PP-OCR and vector world map. */
+
+/* Restore the original rounded-square four-quadrant artwork. The 099f circular clipping caused the visual regression. */
+.fab-wrap.action-grid,
+.fab-wrap.action-grid:active,
+.fab-wrap.action-grid:focus,
+.fab-wrap.action-grid.dragging,
+.fab-wrap.action-grid[style] {
+  border-radius: 0 !important;
+  clip-path: none !important;
+  overflow: visible !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+.fab-wrap.action-grid .fab {
+  border-radius: 0 !important;
+}
+.v097-fab-drag-handle {
+  border-radius: 999px !important;
+}
+
+/* Keep account insertion dimensionally stable while async settings are read. */
+.v099g-account-sync {
+  min-height: 330px;
+  contain: layout paint;
+  content-visibility: visible;
+  transition: none !important;
+  animation: none !important;
+}
+.v099g-account-sync * {
+  transition-property: color, border-color, background-color !important;
+}
+
+/* jsVectorMap presentation: recognizable country polygons, white land, light blue-gray ocean. */
+.v099g-world-map {
+  position: relative;
+  width: 100%;
+  min-height: clamp(360px, 58vw, 560px);
+  overflow: hidden;
+  border: 1px solid #9aabb6;
+  background: #dce7ef;
+}
+.v099g-world-map .jvm-container {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  background: #dce7ef !important;
+}
+.v099g-world-map .jvm-region {
+  vector-effect: non-scaling-stroke;
+}
+.v099g-world-map .jvm-zoom-btn {
+  border-radius: 4px;
+  background: rgba(43, 58, 68, .84);
+  color: #fff;
+}
+.v099g-map-loading,
+.v099g-map-error {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 10px;
+  padding: 28px;
+  text-align: center;
+  color: #334753;
+}
+.v099g-map-error p {
+  max-width: 540px;
+  margin: 0 auto;
+}
+.v099g-map-legend {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+  margin: 10px 0 16px;
+  color: var(--muted);
+  font-size: .72rem;
+}
+.v099g-map-legend span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.v099g-map-legend i {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 13px;
+  border: 1px solid #8a9aa4;
+}
+.v099g-map-legend i[data-level="0"] { background: #fff; }
+.v099g-map-legend i[data-level="1"] { background: #e2e2e2; }
+.v099g-map-legend i[data-level="2"] { background: #bebebe; }
+.v099g-map-legend i[data-level="3"] { background: #969696; }
+.v099g-map-legend i[data-level="4"] { background: #676767; }
+.v099g-map-legend i[data-level="5"] { background: #2d2d2d; }
+.jvm-tooltip {
+  z-index: 10000 !important;
+  border-radius: 6px !important;
+  background: rgba(28, 35, 40, .94) !important;
+  color: #fff !important;
+  font-size: .78rem !important;
+}
+
+@media (max-width: 680px) {
+  .v099g-account-sync { min-height: 510px; }
+  .v099g-world-map { min-height: 390px; }
+  .v099g-map-legend { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
