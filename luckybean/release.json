@@ -1,0 +1,19 @@
+{
+  "name": "富贵盒子",
+  "channel": "alpha",
+  "version": "1.0.0-alpha",
+  "source_repository": "zjcrop/luckybean",
+  "source_sha": "112c5b7f77ed8fbf788b80868ce58f42b3d73057",
+  "web_url": "https://zjcrop.github.io/BrewIon/luckybean/",
+  "apk_url": "https://zjcrop.github.io/BrewIon/luckybean/downloads/LuckyBean-v1.0.0-alpha-Android.apk",
+  "github_release_url": "https://github.com/zjcrop/luckybean/releases/tag/v1.0.0-alpha",
+  "apk_sha256": "5cea321974f8c67a1d55fb4b921d05d386cb1c039cf34e4071babb31f92b55dc",
+  "apk_bytes": 590982,
+  "android_application_id": "com.luckybean.app",
+  "android_version_code": 100001,
+  "android_version_name": "1.0.0-alpha",
+  "android_min_sdk": 26,
+  "android_target_sdk": 35,
+  "signing": "alpha-test-signing",
+  "published_at": "2026-08-03T17:21:20Z"
+}

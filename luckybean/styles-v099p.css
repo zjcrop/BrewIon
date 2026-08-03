@@ -35,6 +35,7 @@ html body #splashScreen.splash-screen > span {
   transform: translateX(-50%) !important;
   z-index: 2 !important;
 }
+
 html.v099p-settings-active,
 html.v099p-settings-active body,
 html.v099p-settings-active .app-shell,

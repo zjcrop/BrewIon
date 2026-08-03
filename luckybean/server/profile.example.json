@@ -1,9 +1,0 @@
-{
-  "schemaVersion": 1,
-  "version": "2026.07.27",
-  "engineVersion": "private-profile-engine-1",
-  "temperature": { "baseC": 94, "roastSlope": 1.2 },
-  "bloom": { "multiple": 2.8, "minG": 30, "maxG": 55, "durationSec": 35, "method": "中心湿润并轻摇" },
-  "pourover": { "weights": [0.32, 0.28, 0.22, 0.18], "flowGPerSec": 4.2, "method": "平底滤杯大水流注水", "tailMethod": "快速注完并减少浸泡" },
-  "explanation": ["使用较细研磨和大水流提高均匀性", "尾段减少无控制浸泡以压低杂味"]
-}

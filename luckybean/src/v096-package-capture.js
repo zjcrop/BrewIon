@@ -213,13 +213,13 @@ function handoffToExistingParser() {
   document.body.append(trigger);
   trigger.click();
   trigger.remove();
-  setTimeout(() => {
+  requestAnimationFrame(() => {
     const textarea = document.querySelector('#recognitionText');
     if (!textarea) return;
     textarea.value = text;
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
-    document.querySelector('#parseTextBtn')?.focus();
-  }, 0);
+    document.querySelector('#parseTextBtn')?.click();
+  });
 }
 
 function bindOverlay() {

@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.9.9';
+export const APP_VERSION = '1.0.0-alpha';
 export const SCHEMA_VERSION = 6;
 
 export const $ = (selector, root = document) => root.querySelector(selector);

@@ -115,7 +115,7 @@ async function submit(mode) {
   if (submitButton) { submitButton.disabled = true; submitButton.textContent = '处理中…'; }
   try {
     if (mode === 'register') {
-      const redirect = `${location.origin}${location.pathname}?v=099d`;
+      const redirect = `${location.origin}${location.pathname}?v=1.0.0-alpha`;
       const payload = await request(`/auth/v1/signup?redirect_to=${encodeURIComponent(redirect)}`, {
         body: { email: input.email, password: input.password, data: { nickname: input.nickname || input.email.split('@')[0], source_app: SOURCE_APP } }
       });

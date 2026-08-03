@@ -1,1 +1,0 @@
-{"qr": {"source": "codebook-text-qr", "countryCode": "CT-ET", "varietyCode": "VR-001", "processCode": "PROC-WASHED"}, "ocr": {"engine": "tesseract.js-6.0.1-cn-mixed", "text": "【正面主体】\n埃秦俄比亚 咖啡豆 ETHIOPIA 2026 埃春俄比亚 咖啡豆"}}

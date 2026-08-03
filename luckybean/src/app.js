@@ -609,7 +609,7 @@ function openGroupMenu() {
 function openManageMenu() {
   closePopups();
   const popup = document.createElement('div'); popup.className = 'popup-menu';
-  popup.innerHTML = `<button type="button" data-manage-action="export">导出数据</button><button type="button" data-manage-action="import">导入数据</button><button type="button" data-manage-action="history">诹吉</button>`;
+  popup.innerHTML = `<button type="button" data-manage-action="export">导出数据</button><button type="button" data-manage-action="import">导入数据</button>`;
   document.body.append(popup); positionPopup($('#manageBtn'), popup);
 }
 
@@ -1644,7 +1644,7 @@ function bindGlobalEvents() {
   $('#groupBtn').addEventListener('click',openGroupMenu); $('#manageBtn').addEventListener('click',openManageMenu);
   $('#fabSearchBtn').addEventListener('click',openSearchDialog); $('#fabRecommendBtn').addEventListener('click',openRecommendMenu); $('#fabHistoryBtn').addEventListener('click',openHistory); $('#fabAddBtn').addEventListener('click',openAddMenu);
   document.addEventListener('click',event=>{
-    const manage=event.target.closest('[data-manage-action]');if(manage){const action=manage.dataset.manageAction;closePopups();if(action==='export')exportData();if(action==='import')$('#importInput').click();if(action==='history')openHistory();return;}
+    const manage=event.target.closest('[data-manage-action]');if(manage){const action=manage.dataset.manageAction;closePopups();if(action==='export')exportData();if(action==='import')$('#importInput').click();return;}
     const add=event.target.closest('[data-add-mode]');if(add){const mode=add.dataset.addMode;closePopups();if(mode==='photo')$('#qrImageInput').click();if(mode==='qr')openCameraDialog();if(mode==='text')openTextRecognition();return;}
     const recommend=event.target.closest('[data-recommend-mode]');if(recommend){recommendBean(recommend.dataset.recommendMode);return;}
     if(!event.target.closest('.popup-menu,.recommend-menu,#groupBtn,#manageBtn,#fabRecommendBtn,#fabAddBtn'))closePopups();

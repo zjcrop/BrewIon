@@ -26,6 +26,7 @@ html.v099o-settings-active #settingsContent .settings-category-body {
   height: auto !important;
 }
 
+/* v095-ui may attempt one legacy direct-child mascot insertion before 099p mounts. */
 #settingsContent > #v095SettingsMascot {
   display: none !important;
 }
