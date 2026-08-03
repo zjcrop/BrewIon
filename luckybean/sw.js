@@ -1,7 +1,7 @@
-// Release marker: luckybean-v0.9.9-main-099f
-// Compatibility marker: luckybean-v0.9.9-main-099d
-const CACHE_NAME = 'luckybean-v0.9.9-main-099f';
-const RELEASE = '099f';
+// Release marker: luckybean-v0.9.9-main-099g
+// Compatibility marker: luckybean-v0.9.9-main-099f
+const CACHE_NAME = 'luckybean-v0.9.9-main-099g';
+const RELEASE = '099g';
 const CORE = [
   './', `./?v=${RELEASE}`, './index.html', `./index.html?v=${RELEASE}`,
   `./manifest.webmanifest?v=${RELEASE}`,
@@ -19,8 +19,10 @@ const CORE = [
   `./styles-v099.css?v=${RELEASE}`,
   `./styles-v099d.css?v=${RELEASE}`,
   `./styles-v099f.css?v=${RELEASE}`,
+  `./styles-v099g.css?v=${RELEASE}`,
   `./src/app.js?v=${RELEASE}`,
   `./src/v096-web-ocr.js?v=${RELEASE}`,
+  `./src/v099g-paddle-ocr.js?v=${RELEASE}`,
   `./src/v099d-ocr-quality.js?v=${RELEASE}`,
   `./src/v096-package-capture.js?v=${RELEASE}`,
   `./src/v096-direct-camera.js?v=${RELEASE}`,
@@ -43,9 +45,11 @@ const CORE = [
   `./src/v099-runtime.js?v=${RELEASE}`,
   `./src/v099d-radar-scroll.js?v=${RELEASE}`,
   `./src/v099d-supabase-auth.js?v=${RELEASE}`,
+  `./src/v099g-account-stabilizer.js?v=${RELEASE}`,
   `./src/v099f-cloud-sync.js?v=${RELEASE}`,
   `./src/v099f-cloud-codec.js?v=${RELEASE}`,
   `./src/v099f-ui-upgrade.js?v=${RELEASE}`,
+  `./src/v099g-world-map.js?v=${RELEASE}`,
   `./src/v099f-runtime-hotfix.js?v=${RELEASE}`,
   './src/recognition-candidates.js', './src/sensory-codec-v096.js', './src/privacy-codec-v096.js',
   './src/image-quality.js', './src/recognition-bridge.js', './src/utils.js', './src/brew-model-v09.js',
