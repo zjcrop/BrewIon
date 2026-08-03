@@ -1,0 +1,48 @@
+name: Deploy 099s voice label
+
+on:
+  push:
+    paths:
+      - .github/workflows/release-099s-voice-label.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rename voice menu and bump revision
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          controller = Path('luckybean/src/v099p-settings-rebuild.js')
+          text = controller.read_text(encoding='utf-8')
+          text = text.replace("const RELEASE = '099q';", "const RELEASE = '099s';")
+          text = text.replace('<summary><span>语音播报</span><small>声音、语速与试听</small></summary>', '<summary><span>语音</span><small>声音、语速与试听</small></summary>')
+          controller.write_text(text, encoding='utf-8')
+
+          index = Path('luckybean/index.html')
+          text = index.read_text(encoding='utf-8').replace('099r', '099s')
+          index.write_text(text, encoding='utf-8')
+
+          sw = Path('luckybean/sw.js')
+          text = sw.read_text(encoding='utf-8')
+          text = text.replace('luckybean-v0.9.9-main-099r', 'luckybean-v0.9.9-main-099s')
+          text = text.replace("const RELEASE = '099r';", "const RELEASE = '099s';")
+          sw.write_text(text, encoding='utf-8')
+          PY
+          node --check luckybean/src/v099p-settings-rebuild.js
+      - name: Commit
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add luckybean/src/v099p-settings-rebuild.js luckybean/index.html luckybean/sw.js
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "deploy: rename voice settings menu"
+          git push
