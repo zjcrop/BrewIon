@@ -1,0 +1,70 @@
+/* Lucky Bean 099j: splash layout, stable settings/fab, V17 composite trajectory. */
+.splash-screen[data-splash-variant="red"] { background: #993333 !important; }
+.splash-screen[data-splash-variant="white"] { background: #fbfbf9 !important; }
+.splash-screen img {
+  width: calc(100% - 50px) !important;
+  height: auto !important;
+  max-height: calc(100% - 30px) !important;
+  margin: 30px 0 0 auto !important;
+  object-fit: contain !important;
+  object-position: right top !important;
+  align-self: flex-start !important;
+  background: transparent !important;
+}
+#fabWrap.action-grid { contain: layout paint; }
+#fabWrap.action-grid.v099j-anchor-reset {
+  left: auto !important;
+  top: auto !important;
+  right: max(14px, calc((100vw - 880px) / 2 + 14px)) !important;
+  bottom: calc(68px + var(--safe-bottom)) !important;
+  transform: none !important;
+}
+.trajectory-shell:has(.trajectory-chart.detailed[data-v099j-trajectory-model="v17-composite-v2"]),
+.trajectory-chart.detailed[data-v099j-trajectory-model="v17-composite-v2"] {
+  background: #071018 !important;
+  color: #edf5ff !important;
+}
+.trajectory-chart.detailed[data-v099j-trajectory-model="v17-composite-v2"] {
+  width: 100%;
+  height: auto;
+  min-height: 300px;
+  display: block;
+  overflow: visible;
+  border-radius: 10px;
+}
+.trajectory-chart.detailed[data-v099j-trajectory-model="v17-composite-v2"] text {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+.v099j-grid { stroke: rgba(255,255,255,.11); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.v099j-phase-line { stroke: rgba(255,255,255,.16); stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+.v099j-temp-band { fill: rgba(255,164,74,.12); }
+.v099j-flow-band { fill: rgba(126,219,255,.10); }
+.v099j-temp-line { fill:none; stroke:#ffa44a; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
+.v099j-flow-line { fill:none; stroke:#7edbff; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
+.v099j-water-line { fill:none; stroke:#b8ffd9; stroke-width:1.4; stroke-dasharray:3 5; stroke-linecap:round; vector-effect:non-scaling-stroke; }
+.v099j-extraction-line { fill:none; stroke:#fff; stroke-width:3.2; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 0 2px rgba(255,255,255,.32)); vector-effect:non-scaling-stroke; }
+.v099j-window rect { stroke-width:1.2; vector-effect:non-scaling-stroke; }
+.v099j-window text { fill:#eef5ff; font-size:8px; font-weight:700; paint-order:stroke; stroke:rgba(0,0,0,.58); stroke-width:2px; }
+.v099j-window.positive rect { fill:rgba(139,240,197,.10); stroke:rgba(139,240,197,.70); }
+.v099j-window.acid rect { fill:rgba(255,214,102,.11); stroke:rgba(255,214,102,.72); }
+.v099j-window.fruit rect { fill:rgba(255,128,190,.10); stroke:rgba(255,128,190,.70); }
+.v099j-window.sweet rect { fill:rgba(255,184,108,.09); stroke:rgba(255,184,108,.66); }
+.v099j-window.risk rect { fill:rgba(195,86,82,.08); stroke:rgba(232,112,100,.78); stroke-dasharray:4 3; }
+.v099j-window.miss { opacity:.42; }
+.v099j-window.hit { opacity:.96; }
+.v099j-phase-label { font-size:9px; font-weight:800; }
+.v099j-axis-label,.v099j-time-tick { fill:rgba(225,232,238,.64); font-size:8px; }
+.v099j-fit-title { fill:#f1f6ff; font-size:13px; font-weight:900; }
+.v099j-fit-label { fill:#d9e7f5; font-size:11px; }
+.v099j-fit-value { fill:#aebdca; font-size:10px; }
+.trajectory-legend .v099j-legend::before { content:""; display:inline-block; width:22px; margin-right:6px; vertical-align:middle; border-top:2px solid currentColor; }
+.trajectory-legend .v099j-legend.extraction::before { border-top-color:#fff; border-top-width:3px; }
+.trajectory-legend .v099j-legend.temperature::before { border-top-color:#ffa44a; }
+.trajectory-legend .v099j-legend.flow::before { border-top-color:#7edbff; }
+.trajectory-legend .v099j-legend.water::before { border-top-color:#b8ffd9; border-top-style:dashed; }
+.trajectory-legend .v099j-legend.risk::before { border-top-color:#e87064; border-top-style:dashed; }
+@media (max-width:680px) {
+  .splash-screen img { width: calc(100% - 50px) !important; margin-top:30px !important; }
+  .trajectory-chart.detailed[data-v099j-trajectory-model="v17-composite-v2"] { min-height:250px; }
+  .v099j-window text { font-size:7px; }
+}
