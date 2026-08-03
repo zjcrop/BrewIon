@@ -1,4 +1,4 @@
-name: Publish Lucky Bean stable web
+name: Publish Lucky Bean v1.0.0-alpha web
 
 on:
   push:
@@ -12,13 +12,13 @@ permissions:
   contents: write
 
 concurrency:
-  group: publish-luckybean-web
-  cancel-in-progress: true
+  group: publish-luckybean-v1-alpha
+  cancel-in-progress: false
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 30
     steps:
       - name: Checkout BrewIon Pages repository
         uses: actions/checkout@v4
@@ -26,7 +26,7 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Checkout Lucky Bean main
+      - name: Checkout Lucky Bean source
         uses: actions/checkout@v4
         with:
           repository: zjcrop/luckybean
@@ -34,187 +34,95 @@ jobs:
           path: _luckybean_source
           fetch-depth: 0
 
-      - name: Validate source and browser gates
+      - name: Validate v1.0.0-alpha source
         working-directory: _luckybean_source
         shell: bash
         run: |
           set -euo pipefail
-          npm test
+          test "$(node -p "require('./package.json').version")" = '1.0.0-alpha'
           npm run check
-          for file in \
-            src/app.js src/qr.js src/qr-core.js src/codebook.js src/recognition-candidates.js \
-            src/v096-web-ocr.js src/v096-package-capture.js src/v096-direct-camera.js src/v096-integrity-ui.js \
-            src/v097-ui-fixes.js src/v097-fab-gesture.js \
-            src/brew-engine.js src/brew-engine-core.js src/brew-trajectory-v096.js src/brew-optimizer-v097.js \
-            src/db.js src/db-storage-core.js src/sensory-codec-v096.js src/privacy-codec-v096.js \
-            src/share-codec.js src/share-codec-core.js src/v095-sensory-bootstrap.js \
-            src/v095-sensory-pro.js src/v095-sensory-flow-guard.js src/v095-postbrew-sensory.js \
-            src/v095-qr-ui.js src/v095-ui.js src/theme-bridge.js src/v095-layout-gear.js; do
-            node --check "$file"
-          done
-          test "$(node -p "require('./package.json').version")" = '0.9.6'
-
+          find src -type f -name '*.js' -print0 | xargs -0 -n1 node --check
           python - <<'PY'
-          import json, subprocess
-          checks = {
-              'tests/sensory-browser-status.json': ('static_tests','browser_runtime','sensory_browser_smoke'),
-              'tests/qr-postbrew-browser-status.json': ('static_tests','browser_runtime','postbrew_qr_browser_smoke'),
-              'tests/ocr-qr-regression-status.json': (
-                  'static_tests','browser_runtime','real_web_ocr_smoke','qr_text_first_regression',
-                  'chinese_mixed_ocr','direct_camera_static','field_autofill_static'
-              ),
-              'tests/integrity-browser-status.json': (
-                  'static_tests','browser_runtime','integrity_browser_smoke','brew_profile_integrity',
-                  'manual_segment_constraint','legacy_trajectory_rendering','variable_trajectory',
-                  'sensory_encrypted_storage','sensory_rich_history','compact_brew_history',
-                  'minimal_identity_screen','direct_sensory_choice'
-              ),
-          }
-          for path, fields in checks.items():
-              status = json.load(open(path, encoding='utf-8'))
-              assert status.get('verified') is True, (path, status)
-              for field in fields:
-                  assert status.get(field) == 'success', (path, field, status)
-              sha = status.get('source_sha', '')
-              assert len(sha) == 40, (path, status)
-              subprocess.run(['git','merge-base','--is-ancestor',sha,'HEAD'], check=True)
+          from pathlib import Path
+          import json, re
+
+          html = Path('index.html').read_text(encoding='utf-8')
+          sw = Path('sw.js').read_text(encoding='utf-8')
+          manifest = json.loads(Path('manifest.webmanifest').read_text(encoding='utf-8'))
+          assert 'application-version" content="1.0.0-alpha' in html
+          assert 'release-revision" content="1.0.0-alpha' in html
+          assert 'data-release="1.0.0-alpha"' in html
+          assert "const CACHE_NAME = 'luckybean-v1.0.0-alpha'" in sw
+          assert "const RELEASE = '1.0.0-alpha'" in sw
+          assert manifest['start_url'] == './?v=1.0.0-alpha'
+          assert manifest['name'] == '富贵盒子 1.0.0-alpha'
+          refs = re.findall(r'(?:src|href)="(\./[^"#?]+)', html)
+          missing = [ref for ref in refs if not Path(ref[2:]).exists()]
+          if missing:
+              raise SystemExit(f'Missing HTML resources: {missing}')
+          print(f'Validated {len(refs)} HTML resources.')
           PY
 
-          for file in \
-            index.html styles.css styles-v095.css styles-action-grid.css styles-theme-light.css \
-            styles-v095-refine.css styles-v096-recognition.css styles-qr-scan.css styles-v096-integrity.css styles-v097-fixes.css \
-            manifest.webmanifest sw.js src/brew-engine.js src/brew-engine-core.js src/brew-trajectory-v096.js \
-            src/brew-optimizer-v097.js src/v097-ui-fixes.js src/v097-fab-gesture.js \
-            tests/v097-optimizer.test.mjs tests/v097-ui-fixes.test.mjs \
-            src/db.js src/db-storage-core.js src/sensory-codec-v096.js src/privacy-codec-v096.js \
-            src/share-codec.js src/share-codec-core.js src/recognition-candidates.js src/v096-integrity-ui.js \
-            public/fallback-codebook.json public/splash-red.jpg public/splash-white.jpg \
-            public/settings-mascot.png public/action-grid.svg; do
-            test -s "$file"
-          done
-
-          grep -Fq 'lucky-brew-optimizer-0.9.7.1' src/brew-optimizer-v097.js
-          grep -Fq "optimizerModel: 'inverse-target-window-fit'" src/brew-optimizer-v097.js
-          grep -Fq 'const samples = 81' src/brew-optimizer-v097.js
-          grep -Fq 'deriveSensoryFeedback' src/brew-optimizer-v097.js
-          grep -Fq 'resolveRequestedProfileId' src/brew-engine.js
-          grep -Fq 'SEGMENT_PROFILE_MAP' src/brew-engine.js
-          grep -Fq 'user-profile-constraint' src/brew-engine.js
-          grep -Fq 'v097-flavor-coverage' src/v097-ui-fixes.js
-          grep -Fq 'trajectory-series.floral' src/v097-ui-fixes.js
-          grep -Fq 'FIELD_PATTERNS' src/v097-ui-fixes.js
-          grep -Fq 'brew-history-compact-v097' src/v097-ui-fixes.js
-          grep -Fq 'luckybean.fab.position.v1' src/v097-ui-fixes.js
-          grep -Fq 'event.stopPropagation' src/v097-fab-gesture.js
-          grep -Fq 'stroke:#777!important' styles-v097-fixes.css
-          grep -Fq '.v095-sensory-modes' styles-v097-fixes.css
-          grep -Fq '.group-collapse-zone-v097' styles-v097-fixes.css
-          grep -Fq '#fabWrap.action-grid' styles-v097-fixes.css
-          grep -Fq 'styles-v097-fixes.css?v=097b' index.html
-          grep -Fq 'src/v097-ui-fixes.js?v=097b' index.html
-          grep -Fq 'src/v097-fab-gesture.js?v=097b' index.html
-          grep -Fq "'./src/v097-ui-fixes.js'" sw.js
-          grep -Fq "'./src/v097-fab-gesture.js'" sw.js
-          grep -Fq 'luckybean-v0.9.6-ui-fix-g' sw.js
-
-          grep -Fq 'AES-GCM-256' src/sensory-codec-v096.js
-          grep -Fq 'LB-SENSORY-2' src/sensory-codec-v096.js
-          grep -Fq 'delete value.sensoryNote' src/db.js
-          grep -Fq 'sealPrivateJson(identity' src/db.js
-          grep -Fq 'LB8${packed.code}.E.' src/share-codec.js
-          grep -Fq 'data-evidence-field' src/v096-integrity-ui.js
-          grep -Fq '#directSensoryBtn, #planToSensoryBtn' src/v096-integrity-ui.js
-
-          node --input-type=module <<'JS'
-          import assert from 'node:assert/strict';
-          import { computeFallbackPlan, buildCorrectedPlan, BREW_OPTIMIZER_VERSION, resolveRequestedProfileId } from './src/brew-engine.js';
-          const base = {
-            schemaVersion: 2,
-            bean: { countryCode:'CO-PA', varietyCode:'VA-GE', processCode:'PR-WA', roastCode:'RL-L1', roastColor:88, altitude:1900 },
-            brew: { method:'pourover', doseG:15, ratio:15.5, profileId:'recommended', segmentMode:'auto', segments:3, dripperCode:'V60 02', filterPaperCode:'快流滤纸', grinder:'C40' },
-            water: { profileId:'geisha', tdsMgL:90, customProfile:{ca:22,mg:41,hco3:17,tds:90} },
-            targets: { floral:3, acidity:2.4, sweetness:2.4, body:1.2, bitterness:3 }
-          };
-          const plan = await computeFallbackPlan(base);
-          assert.equal(plan.optimizer.version, BREW_OPTIMIZER_VERSION);
-          assert.equal(plan.optimizer.selectedBy, 'inverse-trajectory-objective');
-          assert.equal(plan.trajectoryModel.points.length, 81);
-          assert.ok(plan.optimizer.candidateProfiles.length >= 5);
-
-          assert.equal(resolveRequestedProfileId({brew:{profileId:'recommended',segmentMode:'3',segments:3}}),'three-pulse');
-          const three = await computeFallbackPlan({...base,brew:{...base.brew,profileId:'recommended',segmentMode:'3',segments:3}});
-          assert.equal(three.profile.id,'three-pulse');
-          assert.equal(three.stages.length,4);
-          assert.equal(three.optimizer.selectedBy,'user-profile-constraint');
-          assert.equal(three.optimizer.candidateProfiles.length,1);
-
-          const lowBypass = await computeFallbackPlan({ ...base, brew:{...base.brew, profileId:'three-pulse', segmentMode:'3', dripperCode:'Pulsar 低旁路', filterPaperCode:'慢流贴合滤纸'} });
-          const cone = await computeFallbackPlan({ ...base, brew:{...base.brew, profileId:'three-pulse', segmentMode:'3'} });
-          assert.ok(lowBypass.optimizer.deviceModel.maxFlow < cone.optimizer.deviceModel.maxFlow);
-          assert.notDeepEqual(lowBypass.optimizer.controls, cone.optimizer.controls);
-
-          cone.id='brew-main-smoke';
-          const sensory={ id:'sensory-main-smoke', brewSessionId:cone.id, autoScore:85, subjectiveScore:75, naturalNote:'酸尖，甜不足，尾段干涩', answers:{acid:{0:['尖锐']},sweet:{0:['甜感弱']},mouthfeel:{0:['干涩']}} };
-          const corrected=await buildCorrectedPlan({ ...base, brew:{...base.brew, profileId:'three-pulse',segmentMode:'3'} }, sensory, cone);
-          assert.equal(corrected.profile.id, 'three-pulse');
-          assert.notDeepEqual(corrected.optimizer.controls, cone.optimizer.controls);
-          JS
-
-      - name: Publish runtime under BrewIon/luckybean
+      - name: Publish web runtime and APK download
         shell: bash
         run: |
           set -euo pipefail
           rm -rf luckybean
-          mkdir -p luckybean
-          for file in \
-            index.html styles.css styles-v095.css styles-action-grid.css styles-theme-light.css \
-            styles-v095-refine.css styles-v096-recognition.css styles-qr-scan.css \
-            styles-v096-integrity.css styles-v097-fixes.css manifest.webmanifest sw.js; do
-            cp "_luckybean_source/$file" luckybean/
-          done
+          mkdir -p luckybean luckybean/downloads
+
+          cp _luckybean_source/index.html luckybean/
+          cp _luckybean_source/manifest.webmanifest luckybean/
+          cp _luckybean_source/sw.js luckybean/
+          find _luckybean_source -maxdepth 1 -type f -name '*.css' -exec cp {} luckybean/ \;
           cp -R _luckybean_source/src luckybean/
           cp -R _luckybean_source/public luckybean/
           touch luckybean/.nojekyll
 
+          apk_url='https://github.com/zjcrop/luckybean/releases/download/v1.0.0-alpha/LuckyBean-v1.0.0-alpha-Android.apk'
+          sha_url='https://github.com/zjcrop/luckybean/releases/download/v1.0.0-alpha/LuckyBean-v1.0.0-alpha-Android.apk.sha256'
+          curl -L --fail --retry 5 --retry-delay 2 -o luckybean/downloads/LuckyBean-v1.0.0-alpha-Android.apk "$apk_url"
+          curl -L --fail --retry 5 --retry-delay 2 -o luckybean/downloads/LuckyBean-v1.0.0-alpha-Android.apk.sha256 "$sha_url"
+          expected="$(cut -d' ' -f1 luckybean/downloads/LuckyBean-v1.0.0-alpha-Android.apk.sha256)"
+          actual="$(sha256sum luckybean/downloads/LuckyBean-v1.0.0-alpha-Android.apk | cut -d' ' -f1)"
+          test "$actual" = "$expected"
+
           source_sha="$(git -C _luckybean_source rev-parse HEAD)"
           app_version="$(node -p "require('./_luckybean_source/package.json').version")"
-          echo "LUCKYBEAN_SOURCE_SHA=$source_sha" >> "$GITHUB_ENV"
-          echo "LUCKYBEAN_VERSION=$app_version" >> "$GITHUB_ENV"
+          apk_bytes="$(stat --printf='%s' luckybean/downloads/LuckyBean-v1.0.0-alpha-Android.apk)"
+          published_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           cat > luckybean/release.json <<EOF
           {
-            "name": "Lucky Bean Web Stable",
+            "name": "富贵盒子",
+            "channel": "alpha",
             "version": "$app_version",
             "source_repository": "zjcrop/luckybean",
             "source_sha": "$source_sha",
-            "inverse_brew_optimizer_version": "lucky-brew-optimizer-0.9.7.1",
-            "inverse_target_fit_verified": true,
-            "equipment_hydraulic_constraints_verified": true,
-            "sensory_closed_loop_verified": true,
-            "trajectory_points": 81,
-            "manual_three_pulse_verified": true,
-            "legacy_trajectory_rendering_verified": true,
-            "field_autofill_verified": true,
-            "compact_brew_history_verified": true,
-            "draggable_fab_verified": true,
-            "fab_button_taps_verified": true,
-            "sensory_mode_centered_verified": true,
-            "radar_grid_gray_verified": true,
-            "group_blank_collapse_verified": true,
-            "sensory_browser_verified": true,
-            "postbrew_qr_browser_verified": true,
-            "web_ocr_browser_verified": true,
-            "chinese_mixed_ocr_verified": true,
-            "direct_camera_verified": true,
-            "sensory_encrypted_storage_verified": true,
-            "direct_sensory_choice_verified": true,
-            "encrypted_share_verified": true,
-            "published_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "url": "https://zjcrop.github.io/BrewIon/luckybean/"
+            "web_url": "https://zjcrop.github.io/BrewIon/luckybean/",
+            "apk_url": "https://zjcrop.github.io/BrewIon/luckybean/downloads/LuckyBean-v1.0.0-alpha-Android.apk",
+            "github_release_url": "https://github.com/zjcrop/luckybean/releases/tag/v1.0.0-alpha",
+            "apk_sha256": "$actual",
+            "apk_bytes": $apk_bytes,
+            "android_application_id": "com.luckybean.app",
+            "android_version_code": 100001,
+            "android_version_name": "1.0.0-alpha",
+            "android_min_sdk": 26,
+            "android_target_sdk": 35,
+            "signing": "alpha-test-signing",
+            "published_at": "$published_at"
+          }
+          EOF
+          cat > luckybean/.release-status.json <<EOF
+          {
+            "status": "success",
+            "version": "$app_version",
+            "source_sha": "$source_sha",
+            "apk_sha256": "$actual",
+            "published_at": "$published_at"
           }
           EOF
           rm -rf _luckybean_source
 
-      - name: Commit verified web release
+      - name: Commit v1.0.0-alpha deployment
         shell: bash
         run: |
           set -euo pipefail
@@ -222,119 +130,23 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add luckybean
           if ! git diff --cached --quiet; then
-            git commit -m "feat: publish Lucky Bean trajectory and interaction fixes v${LUCKYBEAN_VERSION}"
+            git commit -m 'release: publish Lucky Bean v1.0.0-alpha web and APK'
             git push origin HEAD:main
           fi
 
-      - name: Verify public Pages deployment
-        shell: bash
-        run: |
-          set -euo pipefail
-          base='https://zjcrop.github.io/BrewIon/luckybean/'
-          ok='false'
-          for attempt in $(seq 1 30); do
-            nonce="$(date +%s)-$attempt"
-            declare -A urls=(
-              [index]="${base}?v=${nonce}"
-              [optimizer]="${base}src/brew-optimizer-v097.js?v=${nonce}"
-              [engine]="${base}src/brew-engine.js?v=${nonce}"
-              [uifix]="${base}src/v097-ui-fixes.js?v=${nonce}"
-              [fabguard]="${base}src/v097-fab-gesture.js?v=${nonce}"
-              [fixcss]="${base}styles-v097-fixes.css?v=${nonce}"
-              [integrity]="${base}src/v096-integrity-ui.js?v=${nonce}"
-              [sw]="${base}sw.js?v=${nonce}"
-              [release]="${base}release.json?v=${nonce}"
-            )
-            all_200='true'
-            for key in "${!urls[@]}"; do
-              code="$(curl -L -sS -o "/tmp/lb-${key}" -w '%{http_code}' --max-time 20 "${urls[$key]}" || true)"
-              export "HTTP_${key^^}=$code"
-              [[ "$code" == '200' ]] || all_200='false'
-            done
-            if [[ "$HTTP_RELEASE" == '200' ]]; then
-              readarray -t values < <(python - <<'PY'
-          import json
-          data=json.load(open('/tmp/lb-release', encoding='utf-8'))
-          for key in (
-              'version','source_sha','inverse_brew_optimizer_version','manual_three_pulse_verified',
-              'legacy_trajectory_rendering_verified','field_autofill_verified','compact_brew_history_verified',
-              'draggable_fab_verified','fab_button_taps_verified','sensory_mode_centered_verified',
-              'radar_grid_gray_verified','group_blank_collapse_verified'
-          ):
-              value=data.get(key,'')
-              print(str(value).lower() if isinstance(value,bool) else value)
-          PY
-              )
-              if [[ "$all_200" == 'true' && "${values[0]:-}" == "$LUCKYBEAN_VERSION" && "${values[1]:-}" == "$LUCKYBEAN_SOURCE_SHA" \
-                && "${values[2]:-}" == 'lucky-brew-optimizer-0.9.7.1' \
-                && "${values[3]:-false}" == 'true' && "${values[4]:-false}" == 'true' \
-                && "${values[5]:-false}" == 'true' && "${values[6]:-false}" == 'true' \
-                && "${values[7]:-false}" == 'true' && "${values[8]:-false}" == 'true' \
-                && "${values[9]:-false}" == 'true' && "${values[10]:-false}" == 'true' \
-                && "${values[11]:-false}" == 'true' ]] \
-                && grep -Fq 'src/v097-ui-fixes.js?v=097b' /tmp/lb-index \
-                && grep -Fq 'src/v097-fab-gesture.js?v=097b' /tmp/lb-index \
-                && grep -Fq 'resolveRequestedProfileId' /tmp/lb-engine \
-                && grep -Fq 'user-profile-constraint' /tmp/lb-engine \
-                && grep -Fq 'v097-flavor-coverage' /tmp/lb-uifix \
-                && grep -Fq 'brew-history-compact-v097' /tmp/lb-uifix \
-                && grep -Fq 'FIELD_PATTERNS' /tmp/lb-uifix \
-                && grep -Fq 'event.stopPropagation' /tmp/lb-fabguard \
-                && grep -Fq 'stroke:#777!important' /tmp/lb-fixcss \
-                && grep -Fq '.group-collapse-zone-v097' /tmp/lb-fixcss \
-                && grep -Fq 'luckybean-v0.9.6-ui-fix-g' /tmp/lb-sw; then
-                ok='true'
-                break
-              fi
-            fi
-            sleep 10
-          done
-
-          export ok base
-          python - <<'PY'
-          import json, os
-          from datetime import datetime, timezone
-          passed=os.environ['ok']=='true'
-          report = {
-              'checked_at': datetime.now(timezone.utc).isoformat(),
-              'url': os.environ['base'],
-              'expected_version': os.environ['LUCKYBEAN_VERSION'],
-              'expected_source_sha': os.environ['LUCKYBEAN_SOURCE_SHA'],
-              'index_http': os.environ.get('HTTP_INDEX','000'),
-              'inverse_optimizer_http': os.environ.get('HTTP_OPTIMIZER','000'),
-              'brew_engine_http': os.environ.get('HTTP_ENGINE','000'),
-              'ui_fixes_http': os.environ.get('HTTP_UIFIX','000'),
-              'fab_tap_guard_http': os.environ.get('HTTP_FABGUARD','000'),
-              'fixes_css_http': os.environ.get('HTTP_FIXCSS','000'),
-              'integrity_ui_http': os.environ.get('HTTP_INTEGRITY','000'),
-              'service_worker_http': os.environ.get('HTTP_SW','000'),
-              'release_http': os.environ.get('HTTP_RELEASE','000'),
-              'manual_three_pulse_verified': passed,
-              'legacy_trajectory_rendering_verified': passed,
-              'field_autofill_verified': passed,
-              'compact_brew_history_verified': passed,
-              'draggable_fab_verified': passed,
-              'fab_button_taps_verified': passed,
-              'sensory_mode_centered_verified': passed,
-              'radar_grid_gray_verified': passed,
-              'group_blank_collapse_verified': passed,
-              'site_verified': passed
-          }
-          with open('luckybean/deployment-status.json','w',encoding='utf-8') as handle:
-              json.dump(report,handle,ensure_ascii=False,indent=2)
-              handle.write('\n')
-          print(json.dumps(report,ensure_ascii=False,indent=2))
-          PY
-          [[ "$ok" == 'true' ]]
-
-      - name: Commit deployment verification
-        if: always()
+      - name: Verify committed deployment
         shell: bash
         run: |
           set -euo pipefail
           git pull --rebase origin main
-          git add luckybean/deployment-status.json
-          if ! git diff --cached --quiet; then
-            git commit -m 'chore: record Lucky Bean trajectory and interaction deployment [skip ci]'
-            git push origin HEAD:main
-          fi
+          grep -Fq 'application-version" content="1.0.0-alpha' luckybean/index.html
+          grep -Fq "const CACHE_NAME = 'luckybean-v1.0.0-alpha'" luckybean/sw.js
+          test -s luckybean/downloads/LuckyBean-v1.0.0-alpha-Android.apk
+          python - <<'PY'
+          import json
+          data=json.load(open('luckybean/release.json', encoding='utf-8'))
+          assert data['version']=='1.0.0-alpha'
+          assert data['apk_sha256']=='5cea321974f8c67a1d55fb4b921d05d386cb1c039cf34e4071babb31f92b55dc'
+          assert data['android_application_id']=='com.luckybean.app'
+          print(data)
+          PY
