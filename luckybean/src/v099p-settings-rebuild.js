@@ -135,6 +135,7 @@ if (!globalThis.__LuckyBeanV099pSettingsRebuildLoaded) {
   }
 
   function normalizeSections(container) {
+    $('#settingsContent > #v095SettingsMascot')?.remove();
     const original = findOriginalSections(container);
     if (!original.account || !original.gear || !original.data || !original.about) return null;
 
@@ -256,40 +257,47 @@ if (!globalThis.__LuckyBeanV099pSettingsRebuildLoaded) {
     return utterance;
   }
 
-  function bindVoice(section) {
-    if (!('speechSynthesis' in globalThis)) {
-      section.querySelector('.settings-category-body').innerHTML = '<p class="muted">当前浏览器不支持语音播报。</p>';
-      return;
-    }
-    const config = voiceConfig();
-    const mode = $('[data-v099p-voice-mode]', section);
-    const select = $('[data-v099p-voice]', section);
-    const rate = $('[data-v099p-rate]', section);
-    if (mode) mode.value = config.mode;
-    if (select) {
-      select.innerHTML = `<option value="">按声音倾向自动选择</option>${chineseVoices().map(voice => {
-        const key = voice.voiceURI || `${voice.name}|${voice.lang}`;
-        return `<option value="${esc(key)}">${esc(voice.name)} · ${esc(voice.lang || '')}${voice.localService ? ' · 本地' : ''}</option>`;
-      }).join('')}`;
-      if ([...select.options].some(option => option.value === config.voiceURI)) select.value = config.voiceURI;
-    }
-    rate?.addEventListener('input', () => { $('[data-v099p-rate-output]', section).textContent = Number(rate.value).toFixed(2); });
-    $('[data-v099p-voice-preview]', section)?.addEventListener('click', () => {
-      speechSynthesis.cancel();
-      const draft = { mode: mode.value, voiceURI: select.value, rate: Number(rate.value) };
-      const utterance = applyVoice(new SpeechSynthesisUtterance('富贵盒子语音播报试听。下一段，请按计划注水。'), draft);
-      utterance.lang = 'zh-CN';
-      (nativeSpeak || speechSynthesis.speak.bind(speechSynthesis))(utterance);
-    });
-    $('[data-v099p-voice-save]', section)?.addEventListener('click', () => {
-      saveVoice({ mode: mode.value, voiceURI: select.value, rate: Number(rate.value) });
-      section.open = false;
-      openKey = '';
-      toast('语音播报设置已保存', 'status-good');
-    });
-  }
+  function populateVoiceSelect(section) {
+  const select = $('[data-v099p-voice]', section);
+  if (!select) return;
+  const config = voiceConfig();
+  select.innerHTML = `<option value="">按声音倾向自动选择</option>${chineseVoices().map(voice => {
+    const key = voice.voiceURI || `${voice.name}|${voice.lang}`;
+    return `<option value="${esc(key)}">${esc(voice.name)} · ${esc(voice.lang || '')}${voice.localService ? ' · 本地' : ''}</option>`;
+  }).join('')}`;
+  if ([...select.options].some(option => option.value === config.voiceURI)) select.value = config.voiceURI;
+}
 
-  async function hydrateCloud(section) {
+function bindVoice(section) {
+  if (!('speechSynthesis' in globalThis)) {
+    section.querySelector('.settings-category-body').innerHTML = '<p class="muted">当前浏览器不支持语音播报。</p>';
+    return;
+  }
+  const config = voiceConfig();
+  const mode = $('[data-v099p-voice-mode]', section);
+  const select = $('[data-v099p-voice]', section);
+  const rate = $('[data-v099p-rate]', section);
+  if (mode) mode.value = config.mode;
+  populateVoiceSelect(section);
+  if (section.dataset.v099pVoiceBound === '1') return;
+  section.dataset.v099pVoiceBound = '1';
+  rate?.addEventListener('input', () => { $('[data-v099p-rate-output]', section).textContent = Number(rate.value).toFixed(2); });
+  $('[data-v099p-voice-preview]', section)?.addEventListener('click', () => {
+    speechSynthesis.cancel();
+    const draft = { mode: mode.value, voiceURI: select.value, rate: Number(rate.value) };
+    const utterance = applyVoice(new SpeechSynthesisUtterance('富贵盒子语音播报试听。下一段，请按计划注水。'), draft);
+    utterance.lang = 'zh-CN';
+    (nativeSpeak || speechSynthesis.speak.bind(speechSynthesis))(utterance);
+  });
+  $('[data-v099p-voice-save]', section)?.addEventListener('click', () => {
+    saveVoice({ mode: mode.value, voiceURI: select.value, rate: Number(rate.value) });
+    section.open = false;
+    openKey = '';
+    toast('语音播报设置已保存', 'status-good');
+  });
+}
+
+async function hydrateCloud(section) {
     const panel = $('[data-v099p-cloud-panel]', section);
     if (!panel || panel.dataset.hydrated === '1') return;
     panel.dataset.hydrated = '1';
@@ -370,11 +378,23 @@ if (!globalThis.__LuckyBeanV099pSettingsRebuildLoaded) {
     speechSynthesis.addEventListener?.('voiceschanged', () => {
       voices = speechSynthesis.getVoices().filter(Boolean);
       const section = $('#v099iVoiceSettings');
-      if (section) bindVoice(section);
+      if (section) populateVoiceSelect(section);
     });
   }
 
-  function patchSettingsScrollIntoView() {
+  function patchSettingsWindowScroll() {
+  const native = window.scrollTo.bind(window);
+  if (window.__luckyBean099pScrollPatched) return;
+  window.scrollTo = function patchedScrollTo(arg1, arg2) {
+    if ($('#pageSettings.active') && typeof arg1 === 'object' && arg1) {
+      return native({ ...arg1, behavior: 'auto' });
+    }
+    return native(arg1, arg2);
+  };
+  window.__luckyBean099pScrollPatched = true;
+}
+
+function patchSettingsScrollIntoView() {
     const native = Element.prototype.scrollIntoView;
     if (native.__luckyBean099pPatched) return;
     function patched(options) {
@@ -404,7 +424,7 @@ if (!globalThis.__LuckyBeanV099pSettingsRebuildLoaded) {
     requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: 'auto' }));
   }
 
-  function scheduleMount({ preserveOpen = false, delays = [0, 70, 180] } = {}) {
+  function scheduleMount({ preserveOpen = false, delays = [0, 80] } = {}) {
     delays.forEach(delay => setTimeout(() => mount({ preserveOpen }), delay));
   }
 
@@ -417,7 +437,7 @@ if (!globalThis.__LuckyBeanV099pSettingsRebuildLoaded) {
       return;
     }
     if (event.target.closest?.('#saveIdentityBtn,#saveFilterBtn,#deleteDripperBtn,#saveDripperBtn,#deleteFilterBtn,#saveGearTextBtn,#updateCodebookBtn')) {
-      scheduleMount({ preserveOpen: true, delays: [80, 220, 500] });
+      scheduleMount({ preserveOpen: true, delays: [100, 260] });
     }
   }, true);
 
@@ -426,6 +446,7 @@ if (!globalThis.__LuckyBeanV099pSettingsRebuildLoaded) {
     if ($('#pageSettings.active')) scheduleMount({ preserveOpen: false });
   });
 
+  patchSettingsWindowScroll();
   patchSettingsScrollIntoView();
   installVoicePatch();
   if ($('#pageSettings.active')) scheduleMount({ preserveOpen: false });
