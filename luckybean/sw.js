@@ -23,6 +23,7 @@ const CORE = [
   `./styles-v099i.css?v=${RELEASE}`,
   `./src/app.js?v=${RELEASE}`,
   `./src/v099h-splash-assets.js?v=${RELEASE}`,
+  `./src/v099i-migrations.js?v=${RELEASE}`,
   `./src/v099i-voice-settings.js?v=${RELEASE}`,
   `./src/v096-web-ocr.js?v=${RELEASE}`,
   `./src/v099g-paddle-ocr.js?v=${RELEASE}`,
