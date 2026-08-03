@@ -1,0 +1,182 @@
+/* Lucky Bean 099i: map ranking, freshness-ratio grouping, state-space trajectory and voice settings. */
+
+/* Coffee world: remove stale loading layer and keep one country per row. */
+.v099g-world-map:has(.jvm-container) > .v099g-map-loading { display: none !important; }
+.v099i-world-ranking { margin-top: 18px; }
+.v099i-world-ranking > .v099i-ranking-head {
+  display: flex !important;
+  grid-template-columns: none !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 0 0 10px !important;
+  border: 0 !important;
+}
+.v099i-ranking-head h3 { margin: 0; }
+.v099i-ranking-head > div { display: flex; gap: 14px; }
+.v099i-ranking-head .button.active { color: var(--text); border-bottom: 1px dashed var(--active); }
+.v099i-world-ranking > .v099i-country-list {
+  display: block !important;
+  grid-template-columns: none !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+.v099i-country-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) minmax(118px, auto);
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  padding: 10px 4px;
+  border-bottom: 1px dashed color-mix(in srgb, currentColor 22%, transparent);
+}
+.v099i-country-row > b {
+  color: var(--seal, #b89251);
+  text-align: center;
+}
+.v099i-country-row > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 650;
+}
+.v099i-country-row > strong {
+  display: grid;
+  justify-items: end;
+  gap: 1px;
+  white-space: nowrap;
+}
+.v099i-country-row em { font-style: normal; }
+.v099i-country-row small { color: var(--muted); font-size: .72rem; font-weight: 500; }
+
+.v099i-freshness-note { line-height: 1.65; }
+
+/* Three-dimensional state-space trajectory projection. */
+.trajectory-chart.detailed[data-v099i-trajectory-model="state-space-projection-v1"] {
+  width: 100%;
+  height: auto;
+  min-height: 220px;
+  overflow: visible;
+  background: color-mix(in srgb, var(--bg, #080909) 94%, #6e8290 6%);
+}
+.trajectory-chart.detailed[data-v099i-trajectory-model="state-space-projection-v1"] :where(text) {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+.v099i-axis {
+  stroke: rgba(190, 200, 205, .42);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  vector-effect: non-scaling-stroke;
+}
+.v099i-axis.temp { stroke: rgba(255, 164, 74, .58); }
+.v099i-axis.water { stroke: rgba(126, 219, 255, .58); }
+.v099i-axis-label,
+.v099i-time-tick {
+  fill: rgba(210, 214, 214, .72);
+  font-size: 9px;
+}
+.v099i-axis-label.temp { fill: rgba(255, 164, 74, .88); }
+.v099i-axis-label.water { fill: rgba(126, 219, 255, .88); }
+.v099i-time-tick { font-size: 8px; }
+.v099i-golden-corridor ellipse {
+  fill: rgba(211, 171, 81, .08);
+  stroke: rgba(211, 171, 81, .72);
+  stroke-width: 1.4;
+  stroke-dasharray: 8 5;
+  vector-effect: non-scaling-stroke;
+}
+.v099i-golden-corridor text {
+  fill: rgba(225, 192, 112, .88);
+  font-size: 9px;
+  font-weight: 700;
+}
+.v099i-region ellipse {
+  stroke-width: 1.1;
+  vector-effect: non-scaling-stroke;
+}
+.v099i-region text {
+  fill: rgba(246, 246, 242, .92);
+  font-size: 8px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: rgba(0,0,0,.58);
+  stroke-width: 2px;
+  stroke-linejoin: round;
+}
+.v099i-region.miss { opacity: .30; }
+.v099i-region.hit { opacity: .88; }
+.v099i-region.positive ellipse { stroke: rgba(141, 230, 188, .70); fill: rgba(141, 230, 188, .11); }
+.v099i-region.acidity ellipse { stroke: rgba(255, 216, 103, .76); fill: rgba(255, 216, 103, .12); }
+.v099i-region.fruit ellipse { stroke: rgba(255, 135, 190, .74); fill: rgba(255, 135, 190, .11); }
+.v099i-region.sweet ellipse { stroke: rgba(255, 184, 108, .72); fill: rgba(255, 184, 108, .10); }
+.v099i-region.body ellipse { stroke: rgba(194, 153, 103, .72); fill: rgba(194, 153, 103, .10); }
+.v099i-region.risk ellipse {
+  fill: rgba(189, 91, 77, .08);
+  stroke: rgba(224, 112, 92, .78);
+  stroke-dasharray: 5 4;
+}
+.v099i-region.risk.hit { opacity: .95; }
+.v099i-trajectory-segment {
+  stroke: rgba(255,255,255,.96);
+  stroke-linecap: round;
+  fill: none;
+  filter: drop-shadow(0 0 2px rgba(255,255,255,.24));
+  vector-effect: non-scaling-stroke;
+}
+.v099i-trajectory-segment.soak { stroke: rgba(255,255,255,.78); }
+.v099i-trajectory-segment.drain { stroke: rgba(255,255,255,.68); }
+.v099i-stage-mark circle { fill: #fff; stroke: rgba(0,0,0,.45); stroke-width: .8; }
+.v099i-stage-mark text {
+  fill: rgba(245,245,240,.76);
+  font-size: 7.5px;
+  paint-order: stroke;
+  stroke: rgba(0,0,0,.58);
+  stroke-width: 2px;
+}
+.trajectory-legend .v099i-legend::before {
+  content: "";
+  display: inline-block;
+  width: 20px;
+  height: 0;
+  margin-right: 6px;
+  vertical-align: middle;
+  border-top: 2px solid currentColor;
+}
+.trajectory-legend .v099i-legend.drain::before { border-top-style: dashed; }
+.trajectory-legend .v099i-legend.positive::before { border-top-color: rgba(141,230,188,.78); }
+.trajectory-legend .v099i-legend.risk::before { border-top-color: rgba(224,112,92,.78); border-top-style: dashed; }
+.trajectory-legend .v099i-legend.golden::before { border-top-color: rgba(211,171,81,.78); border-top-style: dashed; }
+
+html[data-theme="light"] .trajectory-chart.detailed[data-v099i-trajectory-model="state-space-projection-v1"] {
+  background: #eef1f2;
+}
+html[data-theme="light"] .v099i-axis-label,
+html[data-theme="light"] .v099i-time-tick { fill: rgba(40,44,46,.72); }
+html[data-theme="light"] .v099i-region text,
+html[data-theme="light"] .v099i-stage-mark text {
+  fill: rgba(25,25,24,.92);
+  stroke: rgba(255,255,255,.72);
+}
+html[data-theme="light"] .v099i-trajectory-segment {
+  stroke: rgba(35,35,34,.94);
+  filter: none;
+}
+html[data-theme="light"] .v099i-trajectory-segment.soak { stroke: rgba(35,35,34,.76); }
+html[data-theme="light"] .v099i-trajectory-segment.drain { stroke: rgba(35,35,34,.64); }
+html[data-theme="light"] .v099i-stage-mark circle { fill: #222; stroke: #fff; }
+
+/* Speech controls. */
+.v099i-voice-body { display: grid; gap: 16px; }
+.v099i-voice-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.v099i-voice-body input[type="range"] { padding: 0; }
+
+@media (max-width: 680px) {
+  .v099i-ranking-head { align-items: flex-start !important; }
+  .v099i-ranking-head > div { gap: 9px; }
+  .v099i-country-row { grid-template-columns: 28px minmax(0, 1fr) minmax(104px, auto); gap: 7px; }
+  .v099i-country-row { padding-block: 9px; }
+  .trajectory-chart.detailed[data-v099i-trajectory-model="state-space-projection-v1"] { min-height: 190px; }
+  .v099i-axis-label, .v099i-time-tick { font-size: 7.5px; }
+  .v099i-region text { font-size: 7px; }
+  .v099i-golden-corridor text { font-size: 8px; }
+}
