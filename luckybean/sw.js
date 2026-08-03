@@ -1,7 +1,7 @@
-// Release marker: luckybean-v0.9.9-main-099h
-// Compatibility marker: luckybean-v0.9.9-main-099g
-const CACHE_NAME = 'luckybean-v0.9.9-main-099h';
-const RELEASE = '099h';
+// Release marker: luckybean-v0.9.9-main-099i
+// Compatibility marker: luckybean-v0.9.9-main-099h
+const CACHE_NAME = 'luckybean-v0.9.9-main-099i';
+const RELEASE = '099i';
 const CORE = [
   './', `./?v=${RELEASE}`, './index.html', `./index.html?v=${RELEASE}`,
   `./manifest.webmanifest?v=${RELEASE}`,
@@ -15,14 +15,15 @@ const CORE = [
   `./styles-v096-integrity.css?v=${RELEASE}`,
   `./styles-v097-fixes.css?v=${RELEASE}`,
   `./styles-v098-fixes.css?v=${RELEASE}`,
-  `./styles-v098-trajectory-v17.css?v=${RELEASE}`,
   `./styles-v099.css?v=${RELEASE}`,
   `./styles-v099d.css?v=${RELEASE}`,
   `./styles-v099f.css?v=${RELEASE}`,
   `./styles-v099g.css?v=${RELEASE}`,
   `./styles-v099h.css?v=${RELEASE}`,
+  `./styles-v099i.css?v=${RELEASE}`,
   `./src/app.js?v=${RELEASE}`,
   `./src/v099h-splash-assets.js?v=${RELEASE}`,
+  `./src/v099i-voice-settings.js?v=${RELEASE}`,
   `./src/v096-web-ocr.js?v=${RELEASE}`,
   `./src/v099g-paddle-ocr.js?v=${RELEASE}`,
   `./src/v099d-ocr-quality.js?v=${RELEASE}`,
@@ -40,7 +41,7 @@ const CORE = [
   `./src/v097-ui-fixes.js?v=${RELEASE}`,
   `./src/v097-fab-gesture.js?v=${RELEASE}`,
   `./src/v099-trajectory-signal-bridge.js?v=${RELEASE}`,
-  `./src/v098-trajectory-v17.js?v=${RELEASE}`,
+  `./src/v099i-trajectory-space.js?v=${RELEASE}`,
   `./src/v098-selection-bridge.js?v=${RELEASE}`,
   `./src/v098-feature-fixes.js?v=${RELEASE}`,
   `./src/v098-group-menu-guard.js?v=${RELEASE}`,
@@ -50,6 +51,7 @@ const CORE = [
   `./src/v099g-account-stabilizer.js?v=${RELEASE}`,
   `./src/v099f-cloud-sync.js?v=${RELEASE}`,
   `./src/v099f-cloud-codec.js?v=${RELEASE}`,
+  `./src/v099i-freshness-group.js?v=${RELEASE}`,
   `./src/v099f-ui-upgrade.js?v=${RELEASE}`,
   `./src/v099g-world-map.js?v=${RELEASE}`,
   `./src/v099f-runtime-hotfix.js?v=${RELEASE}`,
