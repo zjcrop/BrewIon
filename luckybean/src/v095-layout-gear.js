@@ -1,6 +1,10 @@
-const GEAR_MARK = 'luckybean-v095-gear';
-let observerQueued = false;
+const GEAR_MARK = 'luckybean-v095-gear-event-driven';
+let syncQueued = false;
 let grinderRecords = [];
+let observedSettingsRoot = null;
+let settingsObserver = null;
+let observedOverlayRoot = null;
+let overlayObserver = null;
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -26,8 +30,8 @@ function repairRecommendationMenu() {
   if (!option) return;
   const label = $('.recommend-label', option);
   const dot = $('.recommend-dot', option);
-  if (label) label.textContent = '余量';
-  if (dot) {
+  if (label && label.textContent !== '余量') label.textContent = '余量';
+  if (dot && dot.dataset.v095Grey !== '1') {
     dot.style.background = '#8b8b87';
     dot.dataset.v095Grey = '1';
   }
@@ -40,26 +44,19 @@ function removeManageHistory() {
 
 function normalizeDripperSection() {
   const details = $('.gear-drippers');
-  if (!details || details.dataset.v095Normalized) return;
-  details.dataset.v095Normalized = '1';
-  details.open = true;
+  if (!details) return;
   details.classList.add('v095-gear-section', 'v095-dripper-section');
   const summary = $(':scope > summary', details);
   const addButton = $('#addDripperBtn', details);
-  if (summary) {
-    summary.classList.add('v095-gear-heading');
-    summary.innerHTML = '<span><strong>滤杯</strong><small>名称、类型和价格</small></span>';
-    if (addButton) {
-      addButton.textContent = '添';
-      addButton.classList.add('v095-gear-add');
-      summary.append(addButton);
-      addButton.addEventListener('click', event => event.stopPropagation());
-    }
-    summary.addEventListener('click', event => {
-      if (event.target.closest('#addDripperBtn')) return;
-      event.preventDefault();
-      details.open = true;
-    });
+  if (!summary || summary.dataset.v095Normalized === '1') return;
+  summary.dataset.v095Normalized = '1';
+  summary.classList.add('v095-gear-heading');
+  summary.innerHTML = '<span><strong>滤杯</strong><small>名称、类型和价格</small></span>';
+  if (addButton) {
+    addButton.textContent = '添';
+    addButton.classList.add('v095-gear-add');
+    summary.append(addButton);
+    addButton.addEventListener('click', event => event.stopPropagation());
   }
 }
 
@@ -70,7 +67,7 @@ function normalizeFilterSection() {
   const header = $('.panel-title', section);
   if (header) header.classList.add('v095-gear-heading');
   const title = $('h3', header);
-  if (title) title.textContent = '滤纸';
+  if (title && title.textContent !== '滤纸') title.textContent = '滤纸';
 }
 
 function parseGrinders(raw) {
@@ -110,7 +107,7 @@ function persistGrinders() {
   input.value = serializeGrinders(grinderRecords);
   input.dispatchEvent(new Event('input', { bubbles: true }));
   save.click();
-  renderGrinderSection();
+  renderGrinderSection(true);
 }
 
 function grinderRangeText(item) {
@@ -118,7 +115,7 @@ function grinderRangeText(item) {
   return `${item.rangeStart || '—'}–${item.rangeEnd || '—'}${item.unit || ''}`;
 }
 
-function renderGrinderSection() {
+function renderGrinderSection(force = false) {
   const manager = $('.gear-manager');
   const input = $('#gearGrinders');
   const save = $('#saveGearTextBtn');
@@ -126,6 +123,7 @@ function renderGrinderSection() {
   input.closest('.field')?.classList.add('v095-legacy-grinder-field');
   save.classList.add('v095-legacy-grinder-save');
   grinderRecords = parseGrinders(input.value);
+  const renderKey = serializeGrinders(grinderRecords);
 
   let section = $('#v095GrinderSection');
   if (!section) {
@@ -134,6 +132,8 @@ function renderGrinderSection() {
     section.className = 'gear-subpage v095-gear-section v095-grinder-section';
     manager.append(section);
   }
+  if (!force && section.dataset.renderKey === renderKey) return;
+  section.dataset.renderKey = renderKey;
   section.innerHTML = `<div class="panel-title v095-gear-heading"><div><h3>磨豆机</h3><p>型号与手冲常用刻度范围</p></div><button id="addGrinderBtn" class="button v095-gear-add" type="button">添</button></div>
     <div class="gear-list">${grinderRecords.length ? grinderRecords.map(item => `<button class="gear-item" type="button" data-grinder-item="${esc(item.id)}"><span><strong>${esc([item.brand, item.name].filter(Boolean).join(' '))}</strong><small>手冲常用刻度范围：${esc(grinderRangeText(item))}</small></span><b>设</b></button>`).join('') : '<p class="muted small">尚未添加磨豆机。</p>'}</div>`;
   $('#addGrinderBtn', section)?.addEventListener('click', () => openGrinderEditor());
@@ -206,8 +206,7 @@ function normalizeDripperEditor() {
   if (!dialog || dialog.dataset.v095Normalized) return;
   dialog.dataset.v095Normalized = '1';
   dialog.classList.add('v095-equipment-editor', 'v095-dripper-editor');
-  const header = $('.dialog-header', dialog);
-  header?.classList.add('v095-equipment-editor-header');
+  $('.dialog-header', dialog)?.classList.add('v095-equipment-editor-header');
 }
 
 function normalizeFilterEditor() {
@@ -215,8 +214,7 @@ function normalizeFilterEditor() {
   if (!dialog || dialog.dataset.v095Normalized) return;
   dialog.dataset.v095Normalized = '1';
   dialog.classList.add('v095-equipment-editor', 'v095-filter-editor');
-  const header = $('.dialog-header', dialog);
-  header?.classList.add('v095-equipment-editor-header');
+  $('.dialog-header', dialog)?.classList.add('v095-equipment-editor-header');
 }
 
 function syncLayoutAndGear() {
@@ -232,14 +230,54 @@ function syncLayoutAndGear() {
 }
 
 function queueSync() {
-  if (observerQueued) return;
-  observerQueued = true;
+  if (syncQueued) return;
+  syncQueued = true;
   requestAnimationFrame(() => {
-    observerQueued = false;
+    syncQueued = false;
     syncLayoutAndGear();
   });
 }
 
-document.addEventListener('DOMContentLoaded', syncLayoutAndGear, { once: true });
-new MutationObserver(queueSync).observe(document.documentElement, { childList: true, subtree: true });
+function connectLocalObservers() {
+  const settingsRoot = $('#settingsContent');
+  if (settingsRoot && settingsRoot !== observedSettingsRoot) {
+    settingsObserver?.disconnect();
+    observedSettingsRoot = settingsRoot;
+    settingsObserver = new MutationObserver(records => {
+      if (records.some(record => record.target === settingsRoot && record.type === 'childList')) queueSync();
+    });
+    settingsObserver.observe(settingsRoot, { childList: true });
+  }
+
+  const overlayRoot = $('#overlayRoot');
+  if (overlayRoot && overlayRoot !== observedOverlayRoot) {
+    overlayObserver?.disconnect();
+    observedOverlayRoot = overlayRoot;
+    overlayObserver = new MutationObserver(records => {
+      if (records.some(record => record.type === 'childList')) queueSync();
+    });
+    overlayObserver.observe(overlayRoot, { childList: true, subtree: true });
+  }
+}
+
+function scheduleAfterInteraction(event) {
+  if (!event.target.closest?.('[data-page-target="settings"],#fabRecommendBtn,#manageBtn,#addDripperBtn,#addFilterBtn,[data-dripper-item],[data-filter-item]')) return;
+  setTimeout(() => {
+    connectLocalObservers();
+    queueSync();
+  }, 0);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  connectLocalObservers();
+  queueSync();
+}, { once: true });
+document.addEventListener('luckybean:settings-mounted', queueSync);
+document.addEventListener('click', scheduleAfterInteraction, true);
+window.addEventListener('pageshow', () => {
+  connectLocalObservers();
+  queueSync();
+});
+
+connectLocalObservers();
 queueSync();
