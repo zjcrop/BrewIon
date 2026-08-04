@@ -17,7 +17,7 @@ jobs:
   import-web-assets:
     runs-on: ubuntu-latest
     env:
-      ARTIFACT_URL: 'https://sdmntprwestus3.oaiusercontent.com/files/00000000-de44-81fd-b687-14a1df74529a/raw?se=2026-08-04T05:14:50Z&sp=r&sv=2026-02-06&sr=b&scid=a5d2e5dd-0ce9-5fd5-9d33-1e7efd743c25&skoid=456594af-533f-44ef-9bdc-35ea2f9daee5&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-03T23:00:17Z&ske=2026-08-04T23:00:17Z&sks=b&skv=2026-02-06&sig=mxKJ%2BYXSBJJMlmnrHMj%2B1dSLKhZ0zwHm3Ks7xhD8LvY%3D'
+      ARTIFACT_URL: 'https://sdmntprwestus3.oaiusercontent.com/files/00000000-c59c-81fd-baa5-704d3b6cd8ab/raw?se=2026-08-04T05:18:30Z&sp=r&sv=2026-02-06&sr=b&scid=99c742a9-4bbb-51c7-ba36-5f7d33dbda90&skoid=456594af-533f-44ef-9bdc-35ea2f9daee5&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-03T22:57:48Z&ske=2026-08-04T22:57:48Z&sks=b&skv=2026-02-06&sig=sYBdP02f7YyArKuuTjDegvIuqTB733YiJ/uLCbnnMAo%3D'
     steps:
       - uses: actions/checkout@v4
         with:
