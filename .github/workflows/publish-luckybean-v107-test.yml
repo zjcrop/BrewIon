@@ -1,0 +1,76 @@
+name: Publish LuckyBean v1.0.7 Web Test
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: publish-luckybean-v107-web-test
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    if: github.event_name == 'workflow_dispatch' || github.event.issue.title == 'LB-V107-WEB-PUBLISH-20260804'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report publish start
+        if: github.event_name == 'issues'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `LuckyBean Web publish started: ${context.runId}`
+            });
+
+      - name: Checkout BrewIon Pages source
+        uses: actions/checkout@v4
+        with:
+          repository: zjcrop/BrewIon
+          ref: main
+          path: site
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Checkout LuckyBean isolated preview
+        uses: actions/checkout@v4
+        with:
+          repository: zjcrop/luckybean
+          ref: test-v107-web
+          path: preview
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Publish isolated test directory
+        run: |
+          rm -rf site/luckybean-test-v107
+          mkdir -p site/luckybean-test-v107
+          cp -R preview/. site/luckybean-test-v107/
+          rm -rf site/luckybean-test-v107/.git
+          printf 'LuckyBean 1.0.7 consolidated test\nSource: zjcrop/luckybean@test-v107-web\nBuild run: 30927083338\n' > site/luckybean-test-v107/BUILD-INFO.txt
+          cd site
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add luckybean-test-v107
+          git diff --cached --check
+          git commit -m 'test(web): publish LuckyBean 1.0.7 preview'
+          git push origin HEAD:main
+
+      - name: Report test URL
+        if: github.event_name == 'issues'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: 'LuckyBean Web test published: https://zjcrop.github.io/BrewIon/luckybean-test-v107/'
+            });
