@@ -1,0 +1,3 @@
+LuckyBean 1.0.7 consolidated test
+Source: zjcrop/luckybean@test-v107-web
+Build run: 30927083338

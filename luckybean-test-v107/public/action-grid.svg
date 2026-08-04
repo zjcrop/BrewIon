@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="四格快捷操作背景">
+  <defs>
+    <radialGradient id="g"><stop stop-color="#3f3d37"/><stop offset="1" stop-color="#101110"/></radialGradient>
+    <filter id="s"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-opacity=".45"/></filter>
+  </defs>
+  <g filter="url(#s)">
+    <rect x="8" y="8" width="384" height="384" rx="86" fill="url(#g)" stroke="#b79761" stroke-width="5"/>
+    <path d="M200 18V382M18 200H382" stroke="#b79761" stroke-width="3" opacity=".85"/>
+    <circle cx="200" cy="200" r="16" fill="#b79761"/>
+  </g>
+</svg>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#080909">
+  <meta name="application-version" content="1.0.7-consolidated-test">
+  <meta name="release-revision" content="1.0.7-consolidated-test">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; worker-src 'self' blob: https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://raw.githubusercontent.com https:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <title>富贵盒子 1.0.7-consolidated-test</title>
+  <link rel="manifest" href="./manifest.webmanifest?v=1.0.7-consolidated-test">
+  <link rel="icon" href="./public/app-logo.webp?v=1.0.7-consolidated-test" type="image/webp">
+  <link rel="apple-touch-icon" href="./public/app-logo.webp?v=1.0.7-consolidated-test">
+  <link rel="stylesheet" href="./styles.css?v=1.0.7-consolidated-test">
+</head>
+<body data-release="1.0.7-consolidated-test" data-release-revision="1.0.7-consolidated-test">
+  <section id="splashScreen" class="splash-screen" data-splash-variant="red" role="button" tabindex="0" aria-label="点击进入富贵盒子">
+    <img id="splashImage" src="./public/splash-art-red.webp?v=1.0.7-consolidated-test" alt="富贵盒子红色启动画面">
+    <span>点击进入</span>
+  </section>
+  <section id="loginScreen" class="login-screen" aria-label="登录与本地使用">
+    <div class="login-card"><input id="loginNickname" type="hidden" value="本地用户"><div class="login-actions" aria-label="身份入口"><button id="emailIdentityBtn" class="button primary" type="button">登录</button><button id="wechatIdentityBtn" class="button" type="button">注册</button><button id="guestBtn" class="button" type="button">本地使用</button><button id="testBtn" class="button subtle" type="button">测试</button></div></div>
+  </section>
+  <div id="appShell" class="app-shell hidden">
+    <main id="mainContent" class="main-content">
+      <section id="pageBeans" class="page active" data-page="beans" aria-labelledby="titleBeans"><div class="page-heading centered-page-heading beans-page-heading"><div class="page-seal-slot"><h1 id="titleBeans" class="page-seal">豆藏</h1></div><div class="top-controls"><button class="small-control" id="groupBtn" type="button">分组</button><button class="small-control" id="manageBtn" type="button">管理</button><button class="theme-toggle" id="themeToggleBtn" type="button" aria-label="切换到白色模式"></button></div></div><div id="activeFilterBar" class="active-filter-bar hidden"></div><div id="beanGroups" class="bean-groups" aria-live="polite"></div></section>
+      <section id="pageBrew" class="page" data-page="brew" aria-labelledby="titleBrew"><div class="page-heading centered-page-heading brew-page-heading"><div class="page-seal-slot"><h1 id="titleBrew" class="page-seal">小酌</h1></div><div id="brewHeadingBean" class="brew-heading-bean"></div></div><div id="brewContent"></div></section>
+      <section id="pageSensory" class="page" data-page="sensory" aria-labelledby="titleSensory"><div class="page-heading centered-page-heading"><div><h1 id="titleSensory" class="page-seal">品鉴</h1></div></div><div id="sensoryContent"></div></section>
+      <section id="pageSettings" class="page" data-page="settings" aria-labelledby="titleSettings"><div class="page-heading centered-page-heading"><div><h1 id="titleSettings" class="page-seal">器设</h1></div></div><div id="settingsContent"></div></section>
+    </main>
+    <div id="fabWrap" class="fab-wrap action-grid" aria-label="豆藏快捷操作"><button id="fabSearchBtn" class="fab text-fab" type="button" aria-label="搜索豆卡">搜索</button><button id="fabAddBtn" class="fab text-fab" type="button" aria-label="新增豆卡">添丁</button><button id="fabHistoryBtn" class="fab text-fab" type="button" aria-label="追溯往昔记录">溯旧</button><button id="fabRecommendBtn" class="fab text-fab" type="button" aria-label="选择推荐豆卡">选择</button></div>
+    <nav id="bottomNav" class="bottom-nav" aria-label="主页面"><button class="nav-button active" type="button" data-page-target="beans" aria-label="豆藏：咖啡豆管理" aria-current="page"><span>藏</span></button><button class="nav-button" type="button" data-page-target="brew" aria-label="小酌：冲煮制作"><span>酌</span></button><button class="nav-button" type="button" data-page-target="sensory" aria-label="品鉴：感官评价"><span>鉴</span></button><button class="nav-button" type="button" data-page-target="settings" aria-label="器设：设备与系统设置"><span>器</span></button></nav>
+  </div>
+  <div id="v099fBeanModules" hidden aria-hidden="true"></div>
+  <input id="qrImageInput" type="file" accept="image/*" capture="environment" class="hidden"><input id="importInput" type="file" accept="application/json" class="hidden"><div id="overlayRoot"></div><div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./src/v099j-runtime-stability.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/app.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v099h-splash-assets.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v099i-migrations.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v096-web-ocr.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v099g-paddle-ocr.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v099d-ocr-quality.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v096-package-capture.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v096-direct-camera.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v095-ui.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/theme-bridge.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v095-postbrew-sensory.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v095-qr-ui.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v096-integrity-ui.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v097-ui-fixes.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v097-fab-gesture.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v099-trajectory-signal-bridge.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v099i-trajectory-space.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v098-selection-bridge.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v098-feature-fixes.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v099-runtime.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v099d-radar-scroll.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v099d-supabase-auth.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v099f-cloud-sync.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v099t-bean-groups.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v099m-group-controller.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v099f-ui-upgrade.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v099g-world-map.js?v=1.0.7-consolidated-test"></script>
+  <script type="module" src="./src/v099p-settings-rebuild.js?v=1.0.7-consolidated-test"></script>
+</body>
+</html>
