@@ -1,0 +1,114 @@
+{
+  "_format": "brewion-coffee-label-lexicon",
+  "_schemaVersion": 1,
+  "version": "1.0.0",
+  "updatedAt": "2026-08-04",
+  "language": ["zh-CN", "en"],
+  "description": "咖啡豆零售包装、烘焙标签与OCR字段解析扩展词典。该文件不改变coffee_qr_codebook_v6.json既有行号索引，只为OCR/文本拆分提供字段标签、值同义词、日期格式和数字约束。",
+  "integration": {
+    "targetCodebook": "coffee_qr_codebook_v6.json",
+    "mountKey": "labelLexicon",
+    "mergeRule": "字段数组去重合并；本文件只增加识别别名，不改变二维码索引表顺序。",
+    "remotePath": "coffee-qr-codebook/coffee_label_lexicon_v1.json"
+  },
+  "fields": {
+    "country": {"nameZh":"产地国","nameEn":"Country of Origin","aliases":["产地国","原产国","原产地国家","原产地","国家","产地","来源国","origin","country of origin","origin country","country","grown in","product of"]},
+    "region": {"nameZh":"产区","nameEn":"Region","aliases":["产区","种植区","咖啡产区","地区","区域","省","州","县","region","growing region","coffee region","origin region","zone","district","province","department","terroir"]},
+    "producer": {"nameZh":"生产者","nameEn":"Producer","aliases":["生产者","生产人","农户","种植者","庄园主","producer","produced by","farmer","grower","smallholder","coffee producer"]},
+    "farm": {"nameZh":"庄园／农场","nameEn":"Farm / Estate","aliases":["庄园","农场","种植园","庄园名称","农场名称","farm","estate","coffee estate","finca","hacienda","fazenda","plantation"]},
+    "cooperative": {"nameZh":"合作社","nameEn":"Cooperative","aliases":["合作社","生产者合作社","农协","cooperative","co-op","coop","farmers cooperative","producer group","association"]},
+    "station": {"nameZh":"处理站／水洗站","nameEn":"Washing Station / Mill","aliases":["处理站","水洗站","处理厂","加工站","湿磨坊","干磨坊","磨坊","washing station","wash station","wet mill","dry mill","mill","processing station","processing facility","WS","W.S."]},
+    "lot": {"nameZh":"批次","nameEn":"Lot / Batch","aliases":["批次","批号","地块批次","微批次","纳米批次","lot","lot no","lot no.","lot number","batch","batch no","batch no.","micro lot","microlot","nano lot","nanolot"]},
+    "species": {"nameZh":"物种","nameEn":"Species","aliases":["物种","种属","咖啡物种","species","coffee species","botanical species","sp."]},
+    "variety": {"nameZh":"品种／栽培种","nameEn":"Variety / Cultivar","aliases":["豆种","品种","咖啡品种","栽培种","植物品种","variety","varieties","varietal","varietals","cultivar","cultivars","botanical variety","var.","var","cv.","cv"]},
+    "process": {"nameZh":"处理法","nameEn":"Processing Method","aliases":["处理法","处理方式","加工法","加工方式","处理工艺","加工工艺","发酵方式","后制处理","process","processing","processing method","process method","proc.","proc","method","fermentation","post-harvest process"]},
+    "roastLevel": {"nameZh":"烘焙度","nameEn":"Roast Level","aliases":["烘焙度","烘焙程度","焙度","烘焙风格","roast level","roast degree","roast style","roast profile","roast"]},
+    "roastDate": {"nameZh":"烘焙日期","nameEn":"Roast Date","aliases":["烘焙日期","烘焙时间","烘焙日","焙炒日期","烘烤日期","出炉日期","烘焙于","roast date","roasted on","roast on","date roasted","rst date","rst dt","R/D","RD","RO"]},
+    "productionDate": {"nameZh":"生产日期","nameEn":"Production Date","aliases":["生产日期","制造日期","生产日","production date","prod date","prod. date","manufactured on","manufacturing date","MFG","MFG date","MFD","PROD DATE"]},
+    "packDate": {"nameZh":"包装日期","nameEn":"Packaging Date","aliases":["包装日期","分装日期","包装日","pack date","packed on","packing date","packaging date","PKD","PACK DATE"]},
+    "bestBefore": {"nameZh":"最佳赏味期","nameEn":"Best Before","aliases":["最佳赏味期","最佳饮用期","建议饮用日期","赏味期限","最佳食用期","best before","best by","best before end","BB","BBE","BEST BEFORE","BEST BY"]},
+    "expiryDate": {"nameZh":"到期日","nameEn":"Expiry Date","aliases":["到期日","有效期至","保质期至","失效日期","use by","expiry","expiry date","expiration","expiration date","EXP","USE BY","EXPIRY"]},
+    "harvest": {"nameZh":"产季／收获年份","nameEn":"Crop Year / Harvest","aliases":["产季","收获季","收获年份","采收季","采收年份","生豆产季","采摘年份","crop","crop year","harvest","harvest year","harvest season","crop season","CY"]},
+    "roaster": {"nameZh":"烘焙商","nameEn":"Roaster","aliases":["烘焙商","烘焙厂","烘焙品牌","烘焙者","品牌","roaster","roasted by","roast house","roastery","coffee roaster"]},
+    "altitude": {"nameZh":"海拔","nameEn":"Altitude / Elevation","aliases":["海拔","种植海拔","种植高度","高度","海拔高度","elevation","altitude","elev.","elev","alt.","alt","MASL","m.a.s.l.","meters above sea level","metres above sea level","AMSL","ASL","ft ASL","feet above sea level"]},
+    "flavor": {"nameZh":"风味描述","nameEn":"Flavor / Tasting Notes","aliases":["风味","风味描述","杯测风味","风味标签","品鉴笔记","味谱","香气","味觉描述","flavor","flavour","flavor notes","flavour notes","tasting notes","taste notes","cup notes","cupping notes","sensory notes","aroma","profile"]},
+    "roastColor": {"nameZh":"烘焙色值","nameEn":"Roast Color / Agtron","aliases":["烘焙色值","色值","豆表色值","粉色值","艾格壮","agtron","agtron value","agtron score","gourmet agtron","commercial agtron","roast color","roast colour","color value","colour value","whole bean color","whole bean colour","whole bean agtron","ground color","ground colour","ground agtron","WBA","GBA"]},
+    "weight": {"nameZh":"净重","nameEn":"Net Weight","aliases":["净重","重量","克重","包装重量","内容量","net weight","net wt","net wt.","N.W.","NW","NET WEIGHT"]},
+    "grade": {"nameZh":"等级／筛网／杯测分","nameEn":"Grade / Screen / Cup Score","aliases":["等级","分级","筛网","目数","杯测分","杯测评分","grade","quality grade","screen size","screen","cup score","cupping score","score"]}
+  },
+  "valueAliases": {
+    "species": {
+      "arabica": ["Arabica","Coffea arabica","C. arabica","阿拉比卡"],
+      "canephora": ["Robusta","Canephora","Coffea canephora","C. canephora","罗布斯塔","卡内弗拉"],
+      "liberica": ["Liberica","Coffea liberica","C. liberica","利比里卡"],
+      "excelsa": ["Excelsa","Coffea excelsa","C. excelsa","埃塞尔萨"]
+    },
+    "process": {
+      "washed": ["水洗","全水洗","Washed","Fully Washed","Wet Process","Wet-processed"],
+      "natural": ["日晒","天然日晒","Natural","Dry Process","Dry-processed","Sun Dried","Sun-dried"],
+      "honey": ["蜜处理","Honey","Honey Process","Pulped Natural","Semi-washed","White Honey","Yellow Honey","Red Honey","Black Honey"],
+      "wetHulled": ["湿刨","Wet Hulled","Wet-hulled","Giling Basah","Semi-washed Indonesia"],
+      "anaerobic": ["厌氧","厌氧发酵","Anaerobic","Anaerobic Fermentation","AF"],
+      "carbonicMaceration": ["二氧化碳浸渍","碳酸浸渍","Carbonic Maceration","CM"],
+      "controlledFermentation": ["控制发酵","Controlled Fermentation","Controlled","CF"],
+      "doubleFermentation": ["双重发酵","Double Fermentation","Double Fermented","DF"],
+      "extendedFermentation": ["延长发酵","Extended Fermentation","Extended","EF"],
+      "thermalShock": ["热冲击","Thermal Shock","Thermal-shock"],
+      "decaf": ["低因","脱因","Decaf","Decaffeinated","Swiss Water","Swiss Water Process","Sugarcane Decaf","EA Decaf","Ethyl Acetate","CO2 Decaf"]
+    },
+    "roastLevel": {
+      "light": ["浅烘","浅度烘焙","Light","Light Roast","Light-roasted"],
+      "mediumLight": ["中浅烘","中浅度烘焙","Medium Light","Medium-light"],
+      "medium": ["中烘","中度烘焙","Medium","Medium Roast"],
+      "mediumDark": ["中深烘","中深度烘焙","Medium Dark","Medium-dark"],
+      "dark": ["深烘","深度烘焙","Dark","Dark Roast"]
+    }
+  },
+  "dateRecognition": {
+    "storageFormat": "YYYY-MM-DD",
+    "principles": [
+      "字段标签优先：烘焙日期、生产日期、包装日期、最佳赏味期和到期日必须分别保存，不得相互覆盖。",
+      "YYYY-MM-DD和YYYYMMDD按年-月-日确定解析；纯数字YYMMDD仅在日期标签上下文中解析。",
+      "当日和月均不大于12时，DD/MM/YY与MM/DD/YY必须保存两个候选并要求人工确认。",
+      "保留rawValue、formatId、normalizedValue、candidates、confidence和warnings。",
+      "没有日期标签时，不把批次、净重、价格、海拔或Agtron数字自动解释为日期。"
+    ],
+    "formats": [
+      {"id":"ISO_EXTENDED","examples":["2026-07-27"],"order":"YMD","unambiguous":true},
+      {"id":"ISO_BASIC","examples":["20260727"],"order":"YMD","unambiguous":true,"requiresDateContext":true},
+      {"id":"YMD_SLASH","examples":["2026/07/27"],"order":"YMD","unambiguous":true},
+      {"id":"YMD_DOT","examples":["2026.07.27"],"order":"YMD","unambiguous":true},
+      {"id":"ZH_YMD","examples":["2026年7月27日","26年7月27日"],"order":"YMD","unambiguous":true},
+      {"id":"DMY_TEXT","examples":["27 Jul 2026","27 July 2026"],"order":"DMY","unambiguous":true},
+      {"id":"MDY_TEXT","examples":["Jul 27 2026","July 27, 2026"],"order":"MDY","unambiguous":true},
+      {"id":"DMY_NUMERIC","examples":["27/07/2026","27-07-26"],"order":"DMY","unambiguousWhen":"firstNumber>12"},
+      {"id":"MDY_NUMERIC","examples":["07/27/2026","07-27-26"],"order":"MDY","unambiguousWhen":"secondNumber>12"},
+      {"id":"AMBIGUOUS_DMY_MDY","examples":["07/08/26","08-07-2026"],"order":"AMBIGUOUS","unambiguous":false},
+      {"id":"GS1_YYMMDD","examples":["260727"],"order":"YMD","unambiguous":true,"requiresDateContext":true},
+      {"id":"ISO_ORDINAL","examples":["2026-208","2026208"],"order":"YEAR_DAY_OF_YEAR","unambiguous":true},
+      {"id":"SHORT_YEAR_ORDINAL","examples":["26-208","26.208"],"order":"YEAR_DAY_OF_YEAR","unambiguous":true,"requiresDateContext":true}
+    ],
+    "twoDigitYearPolicy": {"pivot":70,"00-69":"2000-2069","70-99":"1970-1999"}
+  },
+  "harvestRecognition": {
+    "formats": [
+      {"id":"HARVEST_YEAR","examples":["2026","26产季","Harvest 2026","Crop Year 2026"]},
+      {"id":"HARVEST_RANGE","examples":["2025/26","2025-2026","Crop 2025/26","Harvest 25/26"]}
+    ],
+    "rules": ["产季是与采收开始月份相关的12个月区间，不等同于自然年。","区间形式保存harvestYear和harvestEndYear；不得把产季数字填入烘焙日期。","仅在产季／crop／harvest标签或明确字段附近捕捉两位年份。"]
+  },
+  "numericRecognition": {
+    "roastColor": {"requiresLabel":true,"typicalAgtronGourmetRange":[20,100],"hardAcceptedRange":[0,150],"subtypes":["wholeBean","ground"],"rules":["Whole Bean Agtron和Ground Agtron分别保存，不得混为单一色值。","无Agtron／色值标签的两位或三位数字不得自动归类。","典型范围外保留原值但降低置信度并提示复核。"]},
+    "altitude": {"requiresUnitOrLabel":true,"units":["m","meter","meters","metre","metres","MASL","m.a.s.l.","AMSL","ASL","ft","feet","ft ASL"],"rules":["范围形式如1800-2100 MASL保存最小值和最大值。","英尺可换算为米但必须保留原始单位和原始值。"]},
+    "weight": {"requiresUnitOrLabel":true,"units":["g","gram","grams","kg","oz","ounce","ounces","lb","lbs"],"rules":["净重字段与豆子剩余克重不同；OCR导入时只初始化包装净重。"]}
+  },
+  "sources": [
+    {"organization":"Specialty Coffee Association","title":"Coffee Value Assessment","url":"https://sca.coffee/value-assessment","use":"物理、描述、情感与外在信息字段框架"},
+    {"organization":"Specialty Coffee Association","title":"Yipao Coffee Roasters — Coffee Design Awards","url":"https://design.sca.coffee/latest/yipao-coffee-roasters","use":"零售袋常见追溯字段：origin, producer, region, altitude, variety, process, roast level, roast date"},
+    {"organization":"Specialty Coffee Association","title":"What Color is Your Coffee?","url":"https://sca.coffee/sca-news/25/issue-21/what-color-is-your-coffee-37lk7","use":"Agtron Gourmet色值及约20—100的行业常见范围"},
+    {"organization":"ISO","title":"ISO 8601-1:2019","url":"https://www.iso.org/standard/70907.html","use":"日期交换格式与年-月-日顺序"},
+    {"organization":"GS1","title":"GS1 Logistic Label Guideline","url":"https://www.gs1.org/standards/gs1-logistic-label-guideline/1-3","use":"生产、包装、最佳食用、到期日期标签及YYMMDD"},
+    {"organization":"International Coffee Organization","title":"Glossary of Terms","url":"https://dev.ico.org/glossary.asp","use":"country of origin与crop year定义"},
+    {"organization":"World Coffee Research","title":"Coffee Varieties Catalog","url":"https://varieties.worldcoffeeresearch.org/about-the-catalog/whats-included","use":"species、variety、cultivar术语边界"}
+  ]
+}
