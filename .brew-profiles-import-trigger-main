@@ -1,4 +1,5 @@
 source=zjcrop/brew-profiles
 artifact=BrewProfiles-v1.0.1-debug-apk
 source_sha=b55c52b47fb1dbeaa16c33cbecf7fedd536cd68b
-requested_at=2026-08-04T13:08:00+08:00
+requested_at=2026-08-04T13:12:00+08:00
+trigger_mode=merged-pr
