@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/zjcrop/BrewIon/main/provider/schemas/codebook-corrections.schema.json",
+  "title": "BrewIon non-index-breaking corrections",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "fromVersion", "toVersion", "operations"],
+  "properties": {
+    "contract": {"const": "coffee-codebook-corrections/1.0"},
+    "fromVersion": {"type": ["string", "null"]},
+    "toVersion": {"type": "string"},
+    "operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["operation", "table"],
+        "properties": {
+          "operation": {"enum": ["replace-row-metadata", "replace-table"]},
+          "table": {"type": "string"},
+          "index": {"type": "integer", "minimum": 0},
+          "code": {"type": ["string", "null"]},
+          "beforeSha256": {"type": ["string", "null"]},
+          "afterSha256": {"type": "string"},
+          "value": {}
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}
