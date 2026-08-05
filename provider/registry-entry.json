@@ -1,0 +1,10 @@
+{
+  "provider": "brewion",
+  "type": "dataset",
+  "contract": "coffee-codebook/1.0",
+  "manifestUrl": "https://raw.githubusercontent.com/zjcrop/BrewIon/main/provider/releases/latest.json",
+  "fallbackArtifactUrl": "https://raw.githubusercontent.com/zjcrop/BrewIon/main/coffee-qr-codebook/coffee_qr_codebook_v6.json",
+  "required": true,
+  "updatePolicy": "background-check-stage-verify-atomic-activate",
+  "failurePolicy": "retain-last-known-good"
+}
