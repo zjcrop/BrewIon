@@ -1,9 +1,12 @@
+import { getSetting, setSetting } from './db.js';
+
 const SUPABASE_URL = 'https://vaxwncdcuvbpvdbbketb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_MsB0RFoxxf5zJbbT9PPBjQ_WP7GBMMn';
 const SESSION_KEY = 'luckybean.supabase.session.v099d';
 const SOURCE_APP = 'luckybean';
 let busy = false;
 let bypassNativeIntercept = false;
+let verifyPromise = null;
 
 function session() {
   try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch { return null; }
@@ -58,6 +61,29 @@ function esc(value) {
 }
 function root() { return document.querySelector('#overlayRoot'); }
 function close() { if (root()) root().innerHTML = ''; }
+function notifyAuth(type, detail = {}) {
+  document.documentElement.dataset.authState = type;
+  document.dispatchEvent(new CustomEvent(`luckybean:auth-${type}`, { detail }));
+}
+async function persistVerifiedIdentity(user) {
+  const email = String(user?.email || '').trim().toLowerCase();
+  if (!email) return;
+  const nickname = user?.user_metadata?.nickname || email.split('@')[0] || '云端用户';
+  const settings = await getSetting('app.settings', {});
+  const current = settings?.identity || {};
+  await setSetting('app.settings', {
+    ...(settings || {}),
+    identity: {
+      ...current,
+      mode: 'email',
+      nickname,
+      email,
+      verified: true,
+      cloudUserId: user?.id || current.cloudUserId || '',
+      publicId: current.publicId || user?.id || ''
+    }
+  });
+}
 function formValues() {
   return {
     nickname: document.querySelector('#v099dAuthNickname')?.value?.trim() || '',
@@ -75,7 +101,7 @@ function render(mode = 'login', notice = '', values = {}) {
   if (!host) return;
   const register = mode === 'register';
   host.innerHTML = `<div class="overlay" data-overlay="supabase-auth"><div class="dialog v099d-auth-dialog">
-    <div class="dialog-header"><div><h2>${register ? '注册富贵盒子' : '登录富贵盒子'}</h2><p>账户认证使用 Lucky Bean 独立 Supabase 项目；业务记录与 Grind-PSD 完全隔离。</p></div><button class="close-button" type="button" data-auth-close>×</button></div>
+    <div class="dialog-header"><div><h2>${register ? '注册富贵盒子' : '登录富贵盒子'}</h2><p>登录前所有操作只保存在本机；登录成功后才启用云端同步。</p></div><button class="close-button" type="button" data-auth-close>×</button></div>
     ${register ? `<label class="field"><span>昵称</span><input id="v099dAuthNickname" class="control" maxlength="24" autocomplete="nickname" value="${esc(values.nickname || '')}"></label>` : ''}
     <label class="field"><span>邮箱</span><input id="v099dAuthEmail" class="control" type="email" autocomplete="email" value="${esc(values.email || '')}" placeholder="name@example.com"></label>
     <label class="field"><span>密码</span><input id="v099dAuthPassword" class="control" type="password" minlength="8" autocomplete="${register ? 'new-password' : 'current-password'}" placeholder="至少8位"></label>
@@ -115,12 +141,14 @@ async function submit(mode) {
   if (submitButton) { submitButton.disabled = true; submitButton.textContent = '处理中…'; }
   try {
     if (mode === 'register') {
-      const redirect = `${location.origin}${location.pathname}?v=1.0.0-alpha`;
+      const redirect = `${location.origin}${location.pathname}?v=1.0.8-test`;
       const payload = await request(`/auth/v1/signup?redirect_to=${encodeURIComponent(redirect)}`, {
         body: { email: input.email, password: input.password, data: { nickname: input.nickname || input.email.split('@')[0], source_app: SOURCE_APP } }
       });
       if (payload?.access_token) {
         storeSession(payload);
+        await persistVerifiedIdentity(payload.user);
+        notifyAuth('verified', { user: payload.user });
         enterThroughNativeIdentity(payload.user);
       } else {
         render('login', '注册请求已提交。请完成邮箱验证后，再使用相同邮箱和密码登录。', { email: input.email });
@@ -129,7 +157,10 @@ async function submit(mode) {
     }
     const payload = await request('/auth/v1/token?grant_type=password', { body: { email: input.email, password: input.password } });
     storeSession(payload);
-    enterThroughNativeIdentity(payload.user || await currentUser(payload));
+    const user = payload.user || await currentUser(payload);
+    await persistVerifiedIdentity(user);
+    notifyAuth('verified', { user });
+    enterThroughNativeIdentity(user);
   } catch (error) {
     message(error.message);
   } finally {
@@ -156,21 +187,40 @@ function intercept(event) {
 }
 document.addEventListener('click', intercept, true);
 async function restore() {
-  const active = session();
-  if (!active?.access_token || !document.querySelector('#loginScreen:not(.hidden)')) return;
-  try {
-    const user = await currentUser(active);
-    if (user) enterThroughNativeIdentity(user);
-  } catch { /* login page remains available */ }
+  if (verifyPromise) return verifyPromise;
+  verifyPromise = (async () => {
+    const active = session();
+    if (!active?.access_token) {
+      notifyAuth('missing');
+      return null;
+    }
+    try {
+      const user = await currentUser(active);
+      if (!user) {
+        notifyAuth('missing');
+        return null;
+      }
+      await persistVerifiedIdentity(user);
+      notifyAuth('verified', { user });
+      return user;
+    } catch (error) {
+      storeSession(null);
+      notifyAuth('missing', { error: error.message });
+      return null;
+    }
+  })().finally(() => { verifyPromise = null; });
+  return verifyPromise;
 }
 document.addEventListener('DOMContentLoaded', () => setTimeout(restore, 0), { once: true });
 if (document.readyState !== 'loading') setTimeout(restore, 0);
 globalThis.LuckyBeanSupabaseAuth = {
-  revision: '099d', sourceApp: SOURCE_APP,
+  revision: '108-local-first', sourceApp: SOURCE_APP,
+  verifySession: restore,
   signOut: async () => {
     const active = session();
     if (active?.access_token) await request('/auth/v1/logout', { token: active.access_token }).catch(() => {});
     storeSession(null);
+    notifyAuth('missing');
     location.reload();
   }
 };

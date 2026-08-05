@@ -1,7 +1,7 @@
 {
-  "name": "富贵盒子 1.0.0-alpha",
+  "name": "富贵盒子 1.0.8-test",
   "short_name": "富贵盒子",
-  "start_url": "./?v=1.0.0-alpha",
+  "start_url": "./?v=1.0.8-test",
   "scope": "./",
   "display": "standalone",
   "background_color": "#080909",
@@ -9,12 +9,12 @@
   "lang": "zh-CN",
   "icons": [
     {
-      "src": "./public/app-logo.webp?v=1.0.0-alpha",
+      "src": "./public/app-logo.webp?v=1.0.8-test",
       "sizes": "512x512",
       "type": "image/webp",
       "purpose": "any maskable"
     }
   ],
-  "description": "富贵盒子 1.0.0-alpha：本地优先的咖啡豆管理、豆袋识别、冲煮轨迹、品鉴与器具数据工具",
-  "version": "1.0.7-consolidated-test"
+  "description": "富贵盒子 1.0.8-test：本地优先启动、后台账户验证、批量冲煮记录管理与可选择克重回补",
+  "version": "1.0.8-test"
 }
