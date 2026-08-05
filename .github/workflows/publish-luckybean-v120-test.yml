@@ -1,0 +1,192 @@
+name: Publish LuckyBean v1.2.0 test web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-luckybean-v120-test.yml'
+      - '.luckybean-v120-test-trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-luckybean-v120-test-web
+  cancel-in-progress: false
+
+env:
+  SOURCE_REPOSITORY: zjcrop/luckybean
+  SOURCE_REF: d110d3ce17c234106de0ef4c66a5efa52530ad0d
+  EXPECTED_VERSION: 1.2.0-test
+  TARGET_DIR: luckybean-test
+  PUBLIC_URL: https://zjcrop.github.io/BrewIon/luckybean-test/
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout BrewIon Pages repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Checkout verified LuckyBean source
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.SOURCE_REPOSITORY }}
+          ref: ${{ env.SOURCE_REF }}
+          path: _luckybean_v120
+
+      - name: Verify exact source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git -C _luckybean_v120 rev-parse HEAD)"
+          actual_version="$(node -p "require('./_luckybean_v120/package.json').version")"
+          [[ "$actual_sha" == "$SOURCE_REF" ]]
+          [[ "$actual_version" == "$EXPECTED_VERSION" ]]
+          echo "ACTUAL_SOURCE_SHA=$actual_sha" >> "$GITHUB_ENV"
+
+      - name: Validate local-first web source
+        working-directory: _luckybean_v120
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run test:static
+          find src -name '*.js' -print0 | xargs -0 -n1 node --check
+          test -s index.html
+          test -s styles.css
+          test -s manifest.webmanifest
+          test -s sw.js
+          test -s src/core/startup-controller.js
+          test -s src/services/cloud-auth-service.js
+          test -s src/services/cloud-sync-service.js
+          grep -F 'content="1.2.0-test"' index.html
+          grep -F "CACHE_PREFIX = 'luckybean-v120-test-'" sw.js
+          grep -F 'key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME' sw.js
+          ! grep -R 'v109-supabase-auth-gate' index.html src sw.js
+          ! grep -R '正在验证账号' index.html src
+
+      - name: Publish isolated v1.2.0 test runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$TARGET_DIR"
+          mkdir -p "$TARGET_DIR"
+          cp _luckybean_v120/index.html "$TARGET_DIR/"
+          cp _luckybean_v120/styles.css "$TARGET_DIR/"
+          cp _luckybean_v120/manifest.webmanifest "$TARGET_DIR/"
+          cp _luckybean_v120/sw.js "$TARGET_DIR/"
+          cp -R _luckybean_v120/src "$TARGET_DIR/"
+          cp -R _luckybean_v120/public "$TARGET_DIR/"
+          touch "$TARGET_DIR/.nojekyll"
+          cat > "$TARGET_DIR/release.json" <<EOF
+          {
+            "name": "LuckyBean v1.2.0 local-first test",
+            "version": "$EXPECTED_VERSION",
+            "source_repository": "$SOURCE_REPOSITORY",
+            "source_ref": "$SOURCE_REF",
+            "source_sha": "$ACTUAL_SOURCE_SHA",
+            "published_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "url": "$PUBLIC_URL",
+            "stable_site_untouched": true
+          }
+          EOF
+          rm -rf _luckybean_v120
+
+      - name: Commit verified test page
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$TARGET_DIR"
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: publish LuckyBean v1.2.0 isolated test page'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+
+      - name: Verify public test deployment
+        id: verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="$PUBLIC_URL"
+          ok='false'
+          index_code='000'
+          startup_code='000'
+          app_code='000'
+          sw_code='000'
+          manifest_code='000'
+          release_code='000'
+          release_version=''
+          release_sha=''
+          for attempt in $(seq 1 24); do
+            nonce="$(date +%s)-$attempt"
+            index_code="$(curl -L -sS -o /tmp/lb120-index.html -w '%{http_code}' --max-time 20 "${base}?v=${nonce}" || true)"
+            startup_code="$(curl -L -sS -o /tmp/lb120-startup.js -w '%{http_code}' --max-time 20 "${base}src/core/startup-controller.js?v=${nonce}" || true)"
+            app_code="$(curl -L -sS -o /tmp/lb120-app.js -w '%{http_code}' --max-time 20 "${base}src/app.js?v=${nonce}" || true)"
+            sw_code="$(curl -L -sS -o /tmp/lb120-sw.js -w '%{http_code}' --max-time 20 "${base}sw.js?v=${nonce}" || true)"
+            manifest_code="$(curl -L -sS -o /tmp/lb120-manifest.json -w '%{http_code}' --max-time 20 "${base}manifest.webmanifest?v=${nonce}" || true)"
+            release_code="$(curl -L -sS -o /tmp/lb120-release.json -w '%{http_code}' --max-time 20 "${base}release.json?v=${nonce}" || true)"
+            if [[ "$release_code" == '200' ]]; then
+              release_version="$(python -c "import json; print(json.load(open('/tmp/lb120-release.json')).get('version',''))" 2>/dev/null || true)"
+              release_sha="$(python -c "import json; print(json.load(open('/tmp/lb120-release.json')).get('source_sha',''))" 2>/dev/null || true)"
+            fi
+            if [[ "$index_code" == '200' && "$startup_code" == '200' && "$app_code" == '200' && "$sw_code" == '200' && "$manifest_code" == '200' && "$release_code" == '200' ]] \
+              && grep -q '<title>富贵盒子 1.2.0-test</title>' /tmp/lb120-index.html \
+              && grep -q 'ensureLocalIdentity' /tmp/lb120-startup.js \
+              && grep -q "serviceWorker.register('./sw.js')" /tmp/lb120-app.js \
+              && grep -q "CACHE_PREFIX = 'luckybean-v120-test-'" /tmp/lb120-sw.js \
+              && grep -q 'key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME' /tmp/lb120-sw.js \
+              && ! grep -q 'v109-supabase-auth-gate' /tmp/lb120-index.html \
+              && [[ "$release_version" == "$EXPECTED_VERSION" ]] \
+              && [[ "$release_sha" == "$SOURCE_REF" ]]; then
+              ok='true'
+              break
+            fi
+            sleep 10
+          done
+          export base ok index_code startup_code app_code sw_code manifest_code release_code release_version release_sha
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          report = {
+              'checked_at': datetime.now(timezone.utc).isoformat(),
+              'url': os.environ['base'],
+              'expected_version': os.environ['EXPECTED_VERSION'],
+              'expected_source_sha': os.environ['SOURCE_REF'],
+              'index_http': os.environ['index_code'],
+              'startup_http': os.environ['startup_code'],
+              'app_http': os.environ['app_code'],
+              'service_worker_http': os.environ['sw_code'],
+              'manifest_http': os.environ['manifest_code'],
+              'release_http': os.environ['release_code'],
+              'release_version': os.environ['release_version'],
+              'release_source_sha': os.environ['release_sha'],
+              'isolated_cache_prefix': 'luckybean-v120-test-',
+              'stable_site_untouched': True,
+              'site_verified': os.environ['ok'] == 'true',
+          }
+          with open(os.path.join(os.environ['TARGET_DIR'], 'deployment-status.json'), 'w', encoding='utf-8') as fh:
+              json.dump(report, fh, ensure_ascii=False, indent=2)
+              fh.write('\n')
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+          PY
+          [[ "$ok" == 'true' ]]
+
+      - name: Commit deployment verification
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git pull --rebase origin main
+          git add "$TARGET_DIR/deployment-status.json" || true
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: record LuckyBean v1.2.0 test deployment status [skip ci]'
+            git push origin HEAD:main
+          fi
