@@ -1,4 +1,4 @@
-name: Publish LuckyBean v1.0.7 Web Test
+name: Publish LuckyBean Web Test
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
   issues: write
 
 concurrency:
-  group: publish-luckybean-v107-web-test
+  group: publish-luckybean-web-test
   cancel-in-progress: true
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'push' ||
-      github.event.issue.title == 'LB-V107-WEB-PUBLISH-20260804'
+      github.event.issue.title == 'LB-V108-WEB-PUBLISH-20260805'
     runs-on: ubuntu-latest
     steps:
       - name: Report publish start
@@ -29,12 +29,7 @@ jobs:
         with:
           script: |
             const issueNumber = context.eventName === 'issues' ? context.issue.number : 7;
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issueNumber,
-              body: `LuckyBean Web publish started: ${context.runId}`
-            });
+            await github.rest.issues.createComment({owner: context.repo.owner, repo: context.repo.repo, issue_number: issueNumber, body: `LuckyBean Web publish started: ${context.runId}`});
 
       - name: Checkout BrewIon Pages source
         uses: actions/checkout@v4
@@ -60,13 +55,13 @@ jobs:
           mkdir -p site/luckybean-test-v107
           cp -R preview/. site/luckybean-test-v107/
           rm -rf site/luckybean-test-v107/.git
-          printf 'LuckyBean 1.0.7 consolidated test\nSource: zjcrop/luckybean@test-v107-web\nBuild run: 30927083338\n' > site/luckybean-test-v107/BUILD-INFO.txt
+          printf 'LuckyBean 1.0.8 local-first history test\nSource: zjcrop/luckybean@test-v107-web\nBuild run: 30969716329\n' > site/luckybean-test-v107/BUILD-INFO.txt
           cd site
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add luckybean-test-v107
           git diff --cached --check
-          git commit -m 'test(web): publish LuckyBean 1.0.7 preview'
+          git commit -m 'test(web): publish LuckyBean 1.0.8 preview'
           git push origin HEAD:main
 
       - name: Report test URL
@@ -74,9 +69,4 @@ jobs:
         with:
           script: |
             const issueNumber = context.eventName === 'issues' ? context.issue.number : 7;
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issueNumber,
-              body: 'LuckyBean Web test published: https://zjcrop.github.io/BrewIon/luckybean-test-v107/'
-            });
+            await github.rest.issues.createComment({owner: context.repo.owner, repo: context.repo.repo, issue_number: issueNumber, body: 'LuckyBean 1.0.8 Web test published: https://zjcrop.github.io/BrewIon/luckybean-test-v107/'});
