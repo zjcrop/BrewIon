@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/zjcrop/BrewIon/main/provider/schemas/codebook-delta.schema.json",
+  "title": "BrewIon append-only codebook delta",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "fromVersion", "toVersion", "appendOnly", "startingIndexes", "tables"],
+  "properties": {
+    "contract": {"const": "coffee-codebook/1.0"},
+    "fromVersion": {"type": ["string", "null"]},
+    "toVersion": {"type": "string"},
+    "appendOnly": {"const": true},
+    "startingIndexes": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "tables": {"type": "object", "additionalProperties": {"type": "array"}}
+  }
+}
