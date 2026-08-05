@@ -1,0 +1,95 @@
+{
+  "provider": "brewion",
+  "contract": "coffee-codebook/1.0",
+  "releaseId": "brewion-codebook-6.0.0",
+  "dataVersion": "6.0.0",
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-07-13T00:00:00.000Z",
+  "status": "stable",
+  "appendOnly": true,
+  "source": {
+    "repository": "zjcrop/BrewIon",
+    "ref": "main",
+    "path": "coffee-qr-codebook/coffee_qr_codebook_v6.json",
+    "commit": "cf2f6266fbd779aaebfa6f60a6808ea4fe46d953"
+  },
+  "compatibility": {
+    "minimumConsumerContract": "coffee-codebook/1.0",
+    "previousReleaseId": null,
+    "previousDataVersion": null
+  },
+  "counts": {
+    "countries": 56,
+    "regions": 247,
+    "entities": 460,
+    "varieties": 52,
+    "processes": 25,
+    "flavors": 127,
+    "relations": 1105,
+    "aliases": 2630
+  },
+  "artifacts": [
+    {
+      "kind": "full",
+      "path": "full/coffee-codebook-6.0.0.json",
+      "mediaType": "application/json",
+      "bytes": 385280,
+      "sha256": "a438f93644dfe7bdc5541a13174c1e723c4ce21bfe3966b11ab629a8ffbfd47c",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/main/provider/releases/full/coffee-codebook-6.0.0.json",
+      "tables": [
+        "countries",
+        "regions",
+        "entities",
+        "varieties",
+        "processes",
+        "flavors",
+        "relations",
+        "aliases"
+      ]
+    },
+    {
+      "kind": "delta",
+      "path": "delta/coffee-codebook-bootstrap-to-6.0.0.json",
+      "mediaType": "application/json",
+      "bytes": 158330,
+      "sha256": "a2b44a1af9bce2cdd285a1dbb4c79b1b9b6857080b83b98bf63c452ee9fe821b",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/main/provider/releases/delta/coffee-codebook-bootstrap-to-6.0.0.json",
+      "fromVersion": null,
+      "tables": [
+        "countries",
+        "regions",
+        "entities",
+        "varieties",
+        "processes",
+        "flavors"
+      ]
+    },
+    {
+      "kind": "corrections",
+      "path": "corrections/coffee-codebook-bootstrap-to-6.0.0.json",
+      "mediaType": "application/json",
+      "bytes": 311244,
+      "sha256": "d8db268a5cfcab9beaa2d0375dacbfee3792014dbc77ef6d46936da0b3767691",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/main/provider/releases/corrections/coffee-codebook-bootstrap-to-6.0.0.json",
+      "fromVersion": null,
+      "tables": [
+        "countries",
+        "regions",
+        "entities",
+        "varieties",
+        "processes",
+        "flavors",
+        "relations",
+        "aliases"
+      ]
+    }
+  ],
+  "warnings": [
+    "Indexed table codes and row positions are immutable; new rows are appended only.",
+    "Existing-row metadata changes and mutable relations/aliases are delivered through the corrections artifact."
+  ],
+  "metadata": {
+    "sourceVersion": "6",
+    "sourceUpdatedAt": "2026-07-13"
+  }
+}
