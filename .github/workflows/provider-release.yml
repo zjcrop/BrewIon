@@ -1,0 +1,57 @@
+name: BrewIon provider release
+
+on:
+  pull_request:
+    paths:
+      - 'coffee-qr-codebook/coffee_qr_codebook_v6.json'
+      - 'provider/**'
+      - '.github/workflows/provider-release.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'coffee-qr-codebook/coffee_qr_codebook_v6.json'
+      - 'provider/schemas/**'
+      - 'provider/scripts/**'
+      - 'provider/tests/**'
+      - 'provider/registry-entry.json'
+      - '.github/workflows/provider-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: brewion-provider-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Unit tests
+        run: node --test provider/tests/*.test.mjs
+      - name: Build candidate provider release
+        run: |
+          rm -rf "$RUNNER_TEMP/brewion-provider"
+          SOURCE_COMMIT="$(git log -1 --format=%H -- coffee-qr-codebook/coffee_qr_codebook_v6.json)" node provider/scripts/build-provider-release.mjs --output="$RUNNER_TEMP/brewion-provider"
+          node provider/scripts/verify-provider-release.mjs --output="$RUNNER_TEMP/brewion-provider"
+      - name: Publish stable artifacts on main
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          SOURCE_COMMIT="$(git log -1 --format=%H -- coffee-qr-codebook/coffee_qr_codebook_v6.json)" node provider/scripts/build-provider-release.mjs --write
+          node provider/scripts/verify-provider-release.mjs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add provider/releases
+          if git diff --cached --quiet; then
+            echo "Provider release is already current."
+            exit 0
+          fi
+          git commit -m "data(provider): publish BrewIon verified release [skip provider]"
+          git push

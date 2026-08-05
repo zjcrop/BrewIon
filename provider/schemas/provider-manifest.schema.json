@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/zjcrop/brew-profiles/main/contracts/provider-manifest.schema.json",
+  "title": "Coffee Platform Provider Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["provider", "contract", "releaseId", "dataVersion", "schemaVersion", "generatedAt", "status", "source", "compatibility", "artifacts"],
+  "properties": {
+    "provider": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,63}$"},
+    "contract": {"type": "string", "pattern": "^[a-z0-9-]+/[0-9]+\\.[0-9]+$"},
+    "releaseId": {"type": "string", "minLength": 3},
+    "dataVersion": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$"},
+    "schemaVersion": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+$"},
+    "generatedAt": {"type": "string", "format": "date-time"},
+    "status": {"enum": ["testing", "stable", "deprecated", "withdrawn"]},
+    "appendOnly": {"type": "boolean"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "ref", "path"],
+      "properties": {
+        "repository": {"type": "string", "pattern": "^[^/]+/[^/]+$"},
+        "ref": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"}
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimumConsumerContract"],
+      "properties": {
+        "minimumConsumerContract": {"type": "string"},
+        "previousReleaseId": {"type": ["string", "null"]},
+        "previousDataVersion": {"type": ["string", "null"]}
+      }
+    },
+    "counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "path", "mediaType", "bytes", "sha256"],
+        "properties": {
+          "kind": {"enum": ["full", "delta", "corrections", "catalog", "module", "schema", "evidence"]},
+          "path": {"type": "string", "minLength": 1},
+          "url": {"type": "string", "format": "uri"},
+          "mediaType": {"type": "string", "minLength": 1},
+          "bytes": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "fromVersion": {"type": ["string", "null"]},
+          "tables": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+        }
+      }
+    },
+    "warnings": {"type": "array", "items": {"type": "string"}},
+    "metadata": {"type": "object"}
+  }
+}
