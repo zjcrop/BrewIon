@@ -21,7 +21,7 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'push' ||
-      github.event.issue.title == 'LB-V108-WEB-PUBLISH-20260805'
+      github.event.issue.title == 'LB-V109-WEB-PUBLISH-20260805'
     runs-on: ubuntu-latest
     steps:
       - name: Report publish start
@@ -49,19 +49,27 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Validate gated-auth preview
+        run: |
+          grep -F 'data-auth-gate="checking"' preview/index.html
+          grep -F 'v109-supabase-auth-gate.js?v=1.0.9-test' preview/index.html
+          grep -F 'v109-history-management.js?v=1.0.9-test' preview/index.html
+          ! grep -F 'v108-local-first-history.js' preview/index.html
+          find preview/src -name '*.js' -print0 | xargs -0 -n1 node --check
+
       - name: Publish isolated test directory
         run: |
           rm -rf site/luckybean-test-v107
           mkdir -p site/luckybean-test-v107
           cp -R preview/. site/luckybean-test-v107/
           rm -rf site/luckybean-test-v107/.git
-          printf 'LuckyBean 1.0.8 local-first history test\nSource: zjcrop/luckybean@test-v107-web\nBuild run: 30969716329\n' > site/luckybean-test-v107/BUILD-INFO.txt
+          printf 'LuckyBean 1.0.9 gated fast-auth test\nSource: zjcrop/luckybean@test-v107-web\nBuild run: 30972646155\n' > site/luckybean-test-v107/BUILD-INFO.txt
           cd site
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add luckybean-test-v107
           git diff --cached --check
-          git commit -m 'test(web): publish LuckyBean 1.0.8 preview'
+          git commit -m 'test(web): publish LuckyBean 1.0.9 preview'
           git push origin HEAD:main
 
       - name: Report test URL
@@ -69,4 +77,4 @@ jobs:
         with:
           script: |
             const issueNumber = context.eventName === 'issues' ? context.issue.number : 7;
-            await github.rest.issues.createComment({owner: context.repo.owner, repo: context.repo.repo, issue_number: issueNumber, body: 'LuckyBean 1.0.8 Web test published: https://zjcrop.github.io/BrewIon/luckybean-test-v107/'});
+            await github.rest.issues.createComment({owner: context.repo.owner, repo: context.repo.repo, issue_number: issueNumber, body: 'LuckyBean 1.0.9 Web test published: https://zjcrop.github.io/BrewIon/luckybean-test-v107/'});
