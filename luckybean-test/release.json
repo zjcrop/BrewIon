@@ -1,0 +1,10 @@
+{
+  "name": "LuckyBean v1.2.0 local-first test",
+  "version": "1.2.0-test",
+  "source_repository": "zjcrop/luckybean",
+  "source_ref": "d110d3ce17c234106de0ef4c66a5efa52530ad0d",
+  "source_sha": "d110d3ce17c234106de0ef4c66a5efa52530ad0d",
+  "published_at": "2026-08-05T15:59:39Z",
+  "url": "https://zjcrop.github.io/BrewIon/luckybean-test/",
+  "stable_site_untouched": true
+}

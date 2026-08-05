@@ -1,0 +1,28 @@
+html,
+body,
+.app-shell,
+.main-content {
+  max-width: 100%;
+}
+
+html,
+body {
+  overflow-x: clip;
+}
+
+.page,
+.page-heading,
+.top-controls,
+.brew-heading-bean,
+#brewContent,
+#sensoryContent,
+#settingsContent {
+  min-width: 0;
+}
+
+canvas,
+svg,
+img,
+video {
+  max-width: 100%;
+}
