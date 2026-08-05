@@ -1,14 +1,16 @@
-// LuckyBean local-first test release: 1.0.8-test
-const CACHE_NAME = 'luckybean-1.0.8-test';
+// LuckyBean gated auth test release: 1.0.9-test
+const CACHE_NAME = 'luckybean-1.0.9-test';
 const CORE = [
   './',
   './index.html',
-  './manifest.webmanifest?v=1.0.8-test',
-  './styles.css?v=1.0.8-test',
-  './src/app.js?v=1.0.8-test',
-  './src/v099d-supabase-auth.js?v=1.0.8-test',
-  './src/v108-local-first-history.js?v=1.0.8-test',
-  './public/app-logo.webp?v=1.0.8-test',
+  './manifest.webmanifest?v=1.0.9-test',
+  './styles.css?v=1.0.9-test',
+  './src/app.js?v=1.0.9-test',
+  './src/v109-supabase-auth-gate.js?v=1.0.9-test',
+  './src/v109-history-management.js?v=1.0.9-test',
+  './public/app-logo.webp?v=1.0.9-test',
+  './public/splash-art-red.webp?v=1.0.9-test',
+  './public/splash-art-light.webp?v=1.0.9-test',
   './public/fallback-codebook.json',
   './public/legacy-flavor-map.json'
 ];

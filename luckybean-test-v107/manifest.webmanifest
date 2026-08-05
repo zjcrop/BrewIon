@@ -1,7 +1,7 @@
 {
-  "name": "富贵盒子 1.0.8-test",
+  "name": "富贵盒子 1.0.9-test",
   "short_name": "富贵盒子",
-  "start_url": "./?v=1.0.8-test",
+  "start_url": "./?v=1.0.9-test",
   "scope": "./",
   "display": "standalone",
   "background_color": "#080909",
@@ -9,12 +9,12 @@
   "lang": "zh-CN",
   "icons": [
     {
-      "src": "./public/app-logo.webp?v=1.0.8-test",
+      "src": "./public/app-logo.webp?v=1.0.9-test",
       "sizes": "512x512",
       "type": "image/webp",
       "purpose": "any maskable"
     }
   ],
-  "description": "富贵盒子 1.0.8-test：本地优先启动、后台账户验证、批量冲煮记录管理与可选择克重回补",
-  "version": "1.0.8-test"
+  "description": "富贵盒子 1.0.9-test：恢复启动封面和明确登录门禁，优化 Supabase 会话续期与账号验证速度，保留批量冲煮记录管理及克重回补",
+  "version": "1.0.9-test"
 }
