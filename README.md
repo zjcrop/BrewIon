@@ -177,13 +177,14 @@ Fork和衍生项目可以按许可证独立维护，但不得把其修改版描�
 
 BrewIon 是咖啡豆身份、产地、处理法、品种、烘焙和风味标签的数据提供方。二维码压缩协议与跨项目业务数据是两层不同的东西：二维码字节布局、编码表版本和工具版本不得直接作为其他项目的数据接口。
 
-稳定豆子对象包括：bean.id；origin.country、origin.region、origin.farm；processing；variety；roast；altitude_m；flavors；roastDate；cropSeason。
+稳定豆子对象固定放在 `bean` 中：`id`、`countryCode`、`regionCode`、`entityCode`、`varietyCode`、`processCode`、`roastCode`、`roastColor`、`altitude`、`roastDate`、`flavorTags`、`cropSeason`。`altitude` 单位为 m；显示名称和二维码内部索引不得替代这些规范字段。
 
 规则如下：
 
 - ID 生成后保持稳定，不因显示名修改。
 - 产地层级不得混用；无法确认的庄园、品种或海拔必须保留未知，不得伪造。
-- 海拔使用 m；区间不得强行变成单点。
+- `countryCode / regionCode / entityCode` 保持产地层级；`varietyCode / processCode / roastCode` 使用稳定代码。
+- `altitude` 使用 m；区间不得强行变成单点。
 - 风味标签是感官标签，不得冒充化学测量。
 - 二维码协议必须可逆、可校验并兼容旧码；编码表索引发布后不得因排序或删除改变。
 - 自定义字段必须与官方编码表隔离。
