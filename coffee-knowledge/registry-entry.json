@@ -1,0 +1,14 @@
+{
+  "provider": "brewion",
+  "type": "knowledge_dataset",
+  "contract": "coffee-knowledge/1.0",
+  "manifestUrl": "https://raw.githubusercontent.com/zjcrop/BrewIon/main/coffee-knowledge/releases/latest.json",
+  "fallbackArtifactUrl": "https://raw.githubusercontent.com/zjcrop/BrewIon/main/coffee-knowledge/releases/coffee-knowledge-1.0.0-alpha.1.json",
+  "required": false,
+  "updatePolicy": "background-check-stage-verify-atomic-activate",
+  "failurePolicy": "retain-last-known-good",
+  "compatibility": {
+    "qrCodebookProvider": "../provider/registry-entry.json",
+    "qrIndexesOwnedByKnowledgeLayer": false
+  }
+}
