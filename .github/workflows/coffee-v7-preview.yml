@@ -1,0 +1,52 @@
+name: Coffee v7 Append-only Preview
+
+on:
+  push:
+    paths:
+      - 'coffee-qr-codebook/coffee_qr_codebook_v6.json'
+      - 'coffee-knowledge/catalog/wcr_high_priority_varieties_v1.json'
+      - 'scripts/coffee-db/build-v7-preview.mjs'
+      - '.github/workflows/coffee-v7-preview.yml'
+  pull_request:
+    paths:
+      - 'coffee-qr-codebook/coffee_qr_codebook_v6.json'
+      - 'coffee-knowledge/catalog/wcr_high_priority_varieties_v1.json'
+      - 'scripts/coffee-db/build-v7-preview.mjs'
+      - '.github/workflows/coffee-v7-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Syntax
+        run: node --check scripts/coffee-db/build-v7-preview.mjs
+      - name: Build append-only v7 preview
+        run: node scripts/coffee-db/build-v7-preview.mjs --output=coffee-v7-preview
+      - name: Enforce non-production safety and prefix integrity
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const audit=JSON.parse(fs.readFileSync('coffee-v7-preview/v7_preview_audit.json','utf8'));
+          const preview=JSON.parse(fs.readFileSync('coffee-v7-preview/coffee_qr_codebook_v7_preview.json','utf8'));
+          if (audit.productionReady!==false || preview?._preview?.productionReady!==false) throw new Error('v7 preview must never be production-ready automatically.');
+          if (audit.oldQrIndexesChanged!==false || audit.indexedTablePrefixIntegrity!==true) throw new Error('v6 QR prefix integrity failed.');
+          if (audit.appendedVarietyCount!==16) throw new Error(`Expected 16 appended preview candidates, got ${audit.appendedVarietyCount}`);
+          if ((audit.appended||[]).some(x=>x.productionApproved===true)) throw new Error('Preview candidate must not be production-approved.');
+          console.log({v6:audit.v6VarietyCount,appended:audit.appendedVarietyCount,preview:audit.previewVarietyCount,oldQrIndexesChanged:audit.oldQrIndexesChanged});
+          NODE
+      - name: Upload v7 preview audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coffee-v7-append-only-preview-${{ github.run_id }}
+          path: coffee-v7-preview/
+          retention-days: 30
+          if-no-files-found: error
