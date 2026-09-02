@@ -1,0 +1,114 @@
+{
+  "_format": "coffee-knowledge-audit-batch",
+  "_schemaVersion": 1,
+  "batchId": "v6-varieties-batch2",
+  "createdAt": "2026-09-02",
+  "scope": "Second authoritative audit batch for existing v6 variety codes. No QR index changes.",
+  "records": [
+    {
+      "coreCode": "VA-BOU",
+      "coreNameEn": "Bourbon",
+      "classification": "traditional_cultivar",
+      "geneticGroup": "Bourbon-Typica group (Bourbon related)",
+      "lineage": "Bourbon-like genetic background",
+      "disposition": "keep_core_as_is_add_knowledge",
+      "sourceUrl": "https://varieties.worldcoffeeresearch.org/varieties/bourbon",
+      "confidence": 1.0
+    },
+    {
+      "coreCode": "VA-TY",
+      "coreNameEn": "Typica",
+      "classification": "traditional_cultivar",
+      "geneticGroup": "Bourbon-Typica group (Typica related)",
+      "knownAliases": ["Criollo", "Creole", "Indio", "Arábigo", "Plume Hidalgo", "Blue Mountain", "Sumatra"],
+      "disposition": "keep_core_as_is_add_aliases_and_knowledge",
+      "sourceUrl": "https://varieties.worldcoffeeresearch.org/varieties/typica",
+      "confidence": 1.0
+    },
+    {
+      "coreCode": "VA-MUN",
+      "coreNameEn": "Mundo Novo",
+      "classification": "natural_hybrid_selection",
+      "geneticGroup": "Bourbon-Typica group (Typica and Bourbon related)",
+      "lineage": "Typica x Bourbon",
+      "breeder": "Instituto Agronômico de Campinas (IAC), Brazil (selection)",
+      "originCountry": "Brazil",
+      "disposition": "keep_core_as_is_add_knowledge",
+      "sourceUrl": "https://varieties.worldcoffeeresearch.org/varieties/mundo-novo",
+      "confidence": 1.0
+    },
+    {
+      "coreCode": "VA-MAR",
+      "coreNameEn": "Maragogipe",
+      "classification": "natural_mutation",
+      "geneticGroup": "Bourbon-Typica group (Typica related)",
+      "lineage": "Natural mutation of Typica",
+      "originCountry": "Brazil",
+      "historyNote": "Discovered near Maragogipe, Brazil in 1870; large bean/leaf/internode phenotype is linked to a dominant mutation.",
+      "disposition": "keep_core_as_is_add_knowledge",
+      "sourceUrl": "https://varieties.worldcoffeeresearch.org/varieties/maragogipe",
+      "confidence": 1.0
+    },
+    {
+      "coreCode": "VA-MARSA",
+      "coreNameEn": "Marsellesa",
+      "classification": "cultivar_selection",
+      "geneticGroup": "Introgressed (Sarchimor related)",
+      "lineage": "Timor Hybrid 832/2 x Villa Sarchi CIFC 971/10",
+      "breeder": "CIRAD-ECOM",
+      "releaseYear": 2009,
+      "historyNote": "Same parent cross class as other Sarchimor-derived materials, but Marsellesa remains a distinct selection and must not be collapsed into the generic Sarchimor code.",
+      "disposition": "keep_core_as_is_add_knowledge",
+      "sourceUrl": "https://varieties.worldcoffeeresearch.org/varieties/marsellesa",
+      "confidence": 1.0
+    },
+    {
+      "coreCode": "VA-K7",
+      "coreNameEn": "K7",
+      "classification": "selection",
+      "geneticGroup": "Bourbon-Typica group (Bourbon related)",
+      "lineage": "Selected from French Mission; Bourbon-like genetic background",
+      "originCountry": "Kenya",
+      "selectionHistory": "Initial farmer selection by R.H. Walker; released after selection work in Kenya in 1936.",
+      "disposition": "keep_core_as_is_add_knowledge",
+      "sourceUrl": "https://varieties.worldcoffeeresearch.org/varieties/k7",
+      "confidence": 1.0
+    },
+    {
+      "coreCode": "VA-PAC",
+      "coreNameEn": "Pache",
+      "classification": "natural_mutation_selection",
+      "geneticGroup": "Bourbon-Typica group (Typica related)",
+      "lineage": "Natural mutation of Typica",
+      "originCountry": "Guatemala",
+      "historyNote": "Discovered in 1949 on the Brito farm in Santa Cruz Naranjo, Santa Rosa, Guatemala.",
+      "disposition": "keep_core_as_is_add_knowledge",
+      "sourceUrl": "https://varieties.worldcoffeeresearch.org/varieties/pache",
+      "confidence": 1.0
+    },
+    {
+      "coreCode": "VA-PACAS",
+      "coreNameEn": "Pacas",
+      "classification": "natural_mutation_selection",
+      "geneticGroup": "Bourbon-related",
+      "lineage": "Natural mutation of Bourbon",
+      "breeder": "Instituto Salvadoreño de Investigaciones del Café (ISIC) (selection program)",
+      "originCountry": "El Salvador",
+      "historyNote": "Discovered in 1949 on a Pacas family farm; ISIC began pedigree selection in 1960.",
+      "disposition": "keep_core_as_is_add_knowledge",
+      "sourceUrl": "https://varieties.worldcoffeeresearch.org/varieties/pacas",
+      "confidence": 1.0
+    },
+    {
+      "coreCode": "VA-JAV",
+      "coreNameEn": "Java",
+      "classification": "ethiopian_landrace_selection",
+      "geneticGroup": "Ethiopian landrace",
+      "lineage": "Selection from an Ethiopian landrace population known as Abysinia",
+      "historyNote": "Genetic fingerprinting summarized by WCR indicates Java is not simply a Typica selection; its historical trade route through Java explains the name.",
+      "disposition": "keep_core_as_is_add_corrected_genetic_context",
+      "sourceUrl": "https://varieties.worldcoffeeresearch.org/varieties/java",
+      "confidence": 1.0
+    }
+  ]
+}
