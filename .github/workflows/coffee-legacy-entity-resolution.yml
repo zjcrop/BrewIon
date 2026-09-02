@@ -1,0 +1,50 @@
+name: Coffee Legacy Entity Resolution Queue
+
+on:
+  pull_request:
+    paths:
+      - 'coffee-qr-codebook/coffee_qr_codebook_v6.json'
+      - 'coffee-knowledge/catalog/entity_identity_groups_v1.json'
+      - 'scripts/coffee-db/prioritize-legacy-entities.mjs'
+      - '.github/workflows/coffee-legacy-entity-resolution.yml'
+  push:
+    paths:
+      - 'coffee-qr-codebook/coffee_qr_codebook_v6.json'
+      - 'coffee-knowledge/catalog/entity_identity_groups_v1.json'
+      - 'scripts/coffee-db/prioritize-legacy-entities.mjs'
+      - '.github/workflows/coffee-legacy-entity-resolution.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Syntax
+        run: node --check scripts/coffee-db/prioritize-legacy-entities.mjs
+      - name: Build evidence-gated resolution queue
+        run: node scripts/coffee-db/prioritize-legacy-entities.mjs --output=coffee-legacy-entity-audit/resolution_queue.json
+      - name: Enforce no automatic core mutation
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const report=JSON.parse(fs.readFileSync('coffee-legacy-entity-audit/resolution_queue.json','utf8'));
+          if (report.summary.automaticCoreMutations !== 0) throw new Error('Automatic core mutation is forbidden.');
+          if ((report.queue||[]).some(x=>x.automaticCoreMutationAllowed!==false)) throw new Error('Every flagged legacy row must remain evidence-gated.');
+          if (report.summary.flaggedUniqueEntities !== report.queue.length) throw new Error('Queue count mismatch.');
+          console.log(report.summary);
+          NODE
+      - name: Upload resolution queue
+        uses: actions/upload-artifact@v4
+        with:
+          name: coffee-legacy-entity-resolution-${{ github.run_id }}
+          path: coffee-legacy-entity-audit/
+          retention-days: 30
+          if-no-files-found: error
