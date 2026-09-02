@@ -43,9 +43,10 @@ jobs:
           if (report.summary.automaticCoreMutations !== 0) throw new Error('Automatic core mutation is forbidden.');
           if ((report.queue||[]).some(x=>x.automaticCoreMutationAllowed!==false)) throw new Error('Every flagged legacy row must remain evidence-gated.');
           if (report.summary.flaggedUniqueEntities !== report.queue.length) throw new Error('Queue count mismatch.');
-          if (report.summary.knowledgeVerifiedCoreCandidatesRetained !== 14) throw new Error(`Expected 14 knowledge-verified candidate rows, got ${report.summary.knowledgeVerifiedCoreCandidatesRetained}`);
+          if (report.summary.knowledgeVerifiedCoreCandidatesRetained !== 15) throw new Error(`Expected 15 knowledge-verified candidate rows, got ${report.summary.knowledgeVerifiedCoreCandidatesRetained}`);
+          if (report.summary.resolvedAtKnowledgeLayer !== 17) throw new Error(`Expected 17 knowledge-layer resolved rows, got ${report.summary.resolvedAtKnowledgeLayer}`);
           if (report.summary.unresolvedNamedCandidates !== 9) throw new Error(`Expected 9 unresolved named candidates, got ${report.summary.unresolvedNamedCandidates}`);
-          if (report.summary.unresolvedFlaggedEntities !== 283) throw new Error(`Expected 283 unresolved flagged entities, got ${report.summary.unresolvedFlaggedEntities}`);
+          if (report.summary.unresolvedFlaggedEntities !== 282) throw new Error(`Expected 282 unresolved flagged entities, got ${report.summary.unresolvedFlaggedEntities}`);
           console.log(report.summary);
           NODE
       - name: Upload resolution queue
