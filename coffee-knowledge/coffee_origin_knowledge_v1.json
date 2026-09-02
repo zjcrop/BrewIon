@@ -1,0 +1,114 @@
+{
+  "_format": "coffee-origin-knowledge",
+  "_schemaVersion": 1,
+  "_description": "BrewIon 咖啡知识扩展层。与二维码核心编码表分离，不参与二维码数组行号编码。",
+  "version": "1.0.0-alpha",
+  "updatedAt": "2026-09-02",
+  "compatibility": {
+    "coreCodebook": "../coffee-qr-codebook/coffee_qr_codebook_v6.json",
+    "coreContract": "coffee-codebook/1.0",
+    "preserveIndexedRows": true,
+    "changesQrIndex": false
+  },
+  "languagePolicy": {
+    "requiredCoreLanguages": ["zh-Hans", "en"],
+    "supportedLanguages": ["zh-Hans", "zh-Hant", "en", "ja", "ko", "es", "pt", "fr"],
+    "preferredFallbackOrder": ["zh-Hans", "en", "original"],
+    "normalization": "Unicode NFKC for matching; preserve original form separately",
+    "singleLanguageAllowedOnlyWhen": "reliable bilingual form is unavailable",
+    "aiGeneratedNameTypes": ["ai_translated", "ai_transliterated"],
+    "verifiedNameTypes": ["official", "canonical", "market_verified"]
+  },
+  "confidencePolicy": {
+    "authoritative": 1.0,
+    "high": 0.9,
+    "medium": 0.7,
+    "candidate": 0.5,
+    "rule": "AI output alone cannot promote a candidate into authoritative data"
+  },
+  "entityRoles": [
+    "farm",
+    "estate",
+    "producer",
+    "cooperative",
+    "washing_station",
+    "wet_mill",
+    "dry_mill",
+    "processor",
+    "exporter",
+    "trader",
+    "research_station"
+  ],
+  "geoTypes": [
+    "country",
+    "state_province",
+    "department",
+    "district",
+    "municipality",
+    "coffee_region",
+    "coffee_subregion",
+    "microregion",
+    "appellation",
+    "gi",
+    "do",
+    "village",
+    "informal_origin"
+  ],
+  "nameTypes": [
+    "official",
+    "canonical",
+    "common",
+    "translated",
+    "transliterated",
+    "market_verified",
+    "historical",
+    "marketing",
+    "ocr_variant",
+    "ai_translated",
+    "ai_transliterated"
+  ],
+  "species": [
+    {
+      "id": "SP-ARABICA",
+      "scientificName": "Coffea arabica",
+      "names": [
+        {"language": "zh-Hans", "name": "阿拉比卡咖啡", "nameType": "canonical"},
+        {"language": "en", "name": "Arabica coffee", "nameType": "canonical"},
+        {"language": "ja", "name": "アラビカコーヒー", "nameType": "ai_transliterated"},
+        {"language": "ko", "name": "아라비카 커피", "nameType": "ai_transliterated"}
+      ],
+      "sourceRefs": ["SRC-WCR-CATALOG"],
+      "confidence": 1.0
+    },
+    {
+      "id": "SP-CANEPHORA",
+      "scientificName": "Coffea canephora",
+      "names": [
+        {"language": "zh-Hans", "name": "刚果咖啡 / 罗布斯塔", "nameType": "canonical"},
+        {"language": "en", "name": "Canephora / Robusta coffee", "nameType": "canonical"},
+        {"language": "ja", "name": "カネフォラ / ロブスタ", "nameType": "ai_transliterated"},
+        {"language": "ko", "name": "카네포라 / 로부스타", "nameType": "ai_transliterated"}
+      ],
+      "sourceRefs": ["SRC-WCR-CATALOG"],
+      "confidence": 1.0
+    }
+  ],
+  "processFamilies": [
+    {"id": "PF-NATURAL", "nameZh": "日晒 / Natural", "nameEn": "Natural", "sourceRefs": ["SRC-CQI-PROCESSING"], "confidence": 1.0},
+    {"id": "PF-HONEY", "nameZh": "蜜处理", "nameEn": "Honey", "sourceRefs": ["SRC-CQI-PROCESSING"], "confidence": 1.0},
+    {"id": "PF-MECH-DEMUC", "nameZh": "机械脱黏液", "nameEn": "Mechanically Demucilaged", "sourceRefs": ["SRC-CQI-PROCESSING"], "confidence": 1.0},
+    {"id": "PF-FULLY-WASHED", "nameZh": "全水洗", "nameEn": "Fully Washed", "sourceRefs": ["SRC-CQI-PROCESSING"], "confidence": 1.0},
+    {"id": "PF-WET-HULLED", "nameZh": "湿刨", "nameEn": "Wet Hulled", "sourceRefs": ["SRC-CQI-PROCESSING"], "confidence": 1.0}
+  ],
+  "geoDetails": [],
+  "entityDetails": [],
+  "varietyDetails": [],
+  "varietyLineage": [],
+  "processDetails": [],
+  "fermentationMethods": [],
+  "dryingMethods": [],
+  "localizedNames": [],
+  "localizedAliases": [],
+  "temporalRelations": [],
+  "lots": []
+}

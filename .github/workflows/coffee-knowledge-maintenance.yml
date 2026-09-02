@@ -1,0 +1,101 @@
+name: Coffee Knowledge Maintenance
+
+on:
+  schedule:
+    - cron: '30 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      force_ai_scan:
+        description: 'Force GLM analysis even when a source has no previous baseline'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  maintain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Restore source-state cache
+        uses: actions/cache@v4
+        with:
+          path: .coffee-maintenance-cache
+          key: coffee-knowledge-state-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            coffee-knowledge-state-${{ runner.os }}-
+
+      - name: Initialize cached state
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .coffee-maintenance-cache
+          if [ ! -s .coffee-maintenance-cache/source_state_v1.json ]; then
+            cp coffee-knowledge/maintenance/source_state_v1.json .coffee-maintenance-cache/source_state_v1.json
+          fi
+
+      - name: Validate static database contracts
+        run: |
+          node scripts/coffee-db/validate-codebook.mjs
+          node scripts/coffee-db/validate-knowledge.mjs
+
+      - name: Check authoritative sources and build candidates
+        env:
+          COFFEE_MAINTENANCE_STATE: .coffee-maintenance-cache/source_state_v1.json
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+          ZHIPU_MODEL: glm-4.7-flash
+          FORCE_AI_SCAN: ${{ inputs.force_ai_scan && '1' || '0' }}
+        run: node scripts/coffee-db/weekly-maintainer.mjs
+
+      - name: Re-run validators
+        run: |
+          node scripts/coffee-db/validate-codebook.mjs
+          node scripts/coffee-db/validate-knowledge.mjs
+
+      - name: Upload maintenance report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coffee-knowledge-maintenance-${{ github.run_id }}
+          path: |
+            coffee-knowledge/maintenance/weekly_candidates.json
+            coffee-knowledge/maintenance/weekly_report.md
+            .coffee-maintenance-cache/source_state_v1.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Open review issue when candidates exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          count="$(node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync('coffee-knowledge/maintenance/weekly_candidates.json','utf8'));process.stdout.write(String((j.candidates||[]).length))")"
+          if [ "$count" -eq 0 ]; then
+            echo 'No candidate issue needed.'
+            exit 0
+          fi
+          title="Coffee knowledge candidates $(date -u +%F)"
+          existing="$(gh issue list --state open --search \"$title in:title\" --json number --jq '.[0].number // empty')"
+          if [ -n "$existing" ]; then
+            echo "Review issue already exists: #$existing"
+            exit 0
+          fi
+          {
+            cat coffee-knowledge/maintenance/weekly_report.md
+            echo
+            echo "Candidate JSON is available in workflow artifact: coffee-knowledge-maintenance-${GITHUB_RUN_ID}."
+            echo
+            echo 'No candidate has been merged into the formal codebook.'
+          } > /tmp/coffee-knowledge-issue.md
+          gh issue create --title "$title" --body-file /tmp/coffee-knowledge-issue.md
