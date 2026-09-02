@@ -2,9 +2,9 @@
   "_format": "coffee-knowledge-release-manifest",
   "_schemaVersion": 1,
   "artifact": {
-    "bytes": 762845,
-    "name": "coffee-knowledge-1.0.0-alpha.6.json",
-    "sha256": "e1ccfc82c022a471d6522c70d62200ef38fab09fcbbe23ea764a43c4a484bbd4"
+    "bytes": 770060,
+    "name": "coffee-knowledge-1.0.0-alpha.7.json",
+    "sha256": "33190490e0190426c96be3511d8101238221ae5163b796837ed8c25cc7458ec4"
   },
   "compatibility": {
     "baselinePolicy": "materialize-core-then-overlay-knowledge",
@@ -42,5 +42,5 @@
   "provider": "brewion",
   "type": "knowledge_dataset",
   "updatedAt": "2026-09-02",
-  "version": "1.0.0-alpha.6"
+  "version": "1.0.0-alpha.7"
 }
