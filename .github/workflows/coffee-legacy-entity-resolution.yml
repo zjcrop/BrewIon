@@ -7,7 +7,9 @@ on:
       - 'coffee-knowledge/knowledge-manifest_v1.json'
       - 'coffee-knowledge/coffee_origin_knowledge_v1.json'
       - 'coffee-knowledge/catalog/**'
+      - 'coffee-knowledge/audits/**'
       - 'scripts/coffee-db/prioritize-legacy-entities.mjs'
+      - 'scripts/coffee-db/validate-remaining-named-candidates.mjs'
       - '.github/workflows/coffee-legacy-entity-resolution.yml'
   push:
     paths:
@@ -15,7 +17,9 @@ on:
       - 'coffee-knowledge/knowledge-manifest_v1.json'
       - 'coffee-knowledge/coffee_origin_knowledge_v1.json'
       - 'coffee-knowledge/catalog/**'
+      - 'coffee-knowledge/audits/**'
       - 'scripts/coffee-db/prioritize-legacy-entities.mjs'
+      - 'scripts/coffee-db/validate-remaining-named-candidates.mjs'
       - '.github/workflows/coffee-legacy-entity-resolution.yml'
   workflow_dispatch:
 
@@ -32,7 +36,11 @@ jobs:
         with:
           node-version: '20'
       - name: Syntax
-        run: node --check scripts/coffee-db/prioritize-legacy-entities.mjs
+        run: |
+          node --check scripts/coffee-db/prioritize-legacy-entities.mjs
+          node --check scripts/coffee-db/validate-remaining-named-candidates.mjs
+      - name: Validate remaining named-candidate evidence classes
+        run: node scripts/coffee-db/validate-remaining-named-candidates.mjs
       - name: Build evidence-gated resolution queue
         run: node scripts/coffee-db/prioritize-legacy-entities.mjs --output=coffee-legacy-entity-audit/resolution_queue.json
       - name: Enforce no automatic core mutation and knowledge resolution counts
@@ -43,10 +51,10 @@ jobs:
           if (report.summary.automaticCoreMutations !== 0) throw new Error('Automatic core mutation is forbidden.');
           if ((report.queue||[]).some(x=>x.automaticCoreMutationAllowed!==false)) throw new Error('Every flagged legacy row must remain evidence-gated.');
           if (report.summary.flaggedUniqueEntities !== report.queue.length) throw new Error('Queue count mismatch.');
-          if (report.summary.knowledgeVerifiedCoreCandidatesRetained !== 15) throw new Error(`Expected 15 knowledge-verified candidate rows, got ${report.summary.knowledgeVerifiedCoreCandidatesRetained}`);
-          if (report.summary.resolvedAtKnowledgeLayer !== 17) throw new Error(`Expected 17 knowledge-layer resolved rows, got ${report.summary.resolvedAtKnowledgeLayer}`);
-          if (report.summary.unresolvedNamedCandidates !== 9) throw new Error(`Expected 9 unresolved named candidates, got ${report.summary.unresolvedNamedCandidates}`);
-          if (report.summary.unresolvedFlaggedEntities !== 282) throw new Error(`Expected 282 unresolved flagged entities, got ${report.summary.unresolvedFlaggedEntities}`);
+          if (report.summary.knowledgeVerifiedCoreCandidatesRetained !== 19) throw new Error(`Expected 19 knowledge-verified candidate rows, got ${report.summary.knowledgeVerifiedCoreCandidatesRetained}`);
+          if (report.summary.resolvedAtKnowledgeLayer !== 21) throw new Error(`Expected 21 knowledge-layer resolved rows, got ${report.summary.resolvedAtKnowledgeLayer}`);
+          if (report.summary.unresolvedNamedCandidates !== 5) throw new Error(`Expected 5 unresolved named candidates, got ${report.summary.unresolvedNamedCandidates}`);
+          if (report.summary.unresolvedFlaggedEntities !== 278) throw new Error(`Expected 278 unresolved flagged entities, got ${report.summary.unresolvedFlaggedEntities}`);
           console.log(report.summary);
           NODE
       - name: Upload resolution queue
