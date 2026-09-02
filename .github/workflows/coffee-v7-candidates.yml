@@ -1,0 +1,48 @@
+name: Coffee v7 Candidate Build
+
+on:
+  pull_request:
+    paths:
+      - 'coffee-knowledge/catalog/wcr_catalog_snapshot_v1.json'
+      - 'coffee-knowledge/audits/variety_gap_analysis_v1.json'
+      - 'coffee-qr-codebook/coffee_qr_codebook_v6.json'
+      - 'scripts/coffee-db/build-v7-candidates.mjs'
+      - '.github/workflows/coffee-v7-candidates.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-candidates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Syntax
+        run: node --check scripts/coffee-db/build-v7-candidates.mjs
+      - name: Build deterministic candidate set
+        run: node scripts/coffee-db/build-v7-candidates.mjs --output=.coffee-v7-candidates
+      - name: Enforce candidate-only safety
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const j=JSON.parse(fs.readFileSync('.coffee-v7-candidates/v7_variety_candidates.json','utf8'));
+          if ((j.candidates||[]).some(x=>x.readyForCoreAppend===true)) throw new Error('Candidate generator must never auto-approve core append.');
+          const codes=new Set();
+          for (const x of j.candidates||[]) {
+            if (!x.proposedCode || codes.has(x.proposedCode)) throw new Error(`Invalid/duplicate proposedCode ${x.proposedCode}`);
+            codes.add(x.proposedCode);
+            if (x.reviewStatus!=='candidate_only') throw new Error(`Unexpected reviewStatus for ${x.nameEn}`);
+          }
+          console.log(j.counts);
+          NODE
+      - name: Upload candidate report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coffee-v7-candidates-${{ github.run_id }}
+          path: .coffee-v7-candidates/
+          retention-days: 30
