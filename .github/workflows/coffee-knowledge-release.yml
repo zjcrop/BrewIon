@@ -1,0 +1,77 @@
+name: Coffee Knowledge Release
+
+on:
+  pull_request:
+    paths:
+      - 'coffee-knowledge/**'
+      - 'coffee-qr-codebook/coffee_qr_codebook_v6.json'
+      - 'scripts/coffee-db/build-knowledge-bundle.mjs'
+      - 'scripts/coffee-db/verify-knowledge-release.mjs'
+      - 'scripts/coffee-db/validate-knowledge.mjs'
+      - '.github/workflows/coffee-knowledge-release.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'coffee-knowledge/**'
+      - 'coffee-qr-codebook/coffee_qr_codebook_v6.json'
+      - 'scripts/coffee-db/build-knowledge-bundle.mjs'
+      - 'scripts/coffee-db/verify-knowledge-release.mjs'
+      - 'scripts/coffee-db/validate-knowledge.mjs'
+      - '.github/workflows/coffee-knowledge-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: coffee-knowledge-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate source contracts
+        run: |
+          node --check scripts/coffee-db/build-knowledge-bundle.mjs
+          node --check scripts/coffee-db/verify-knowledge-release.mjs
+          node scripts/coffee-db/validate-codebook.mjs
+          node scripts/coffee-db/validate-knowledge.mjs
+
+      - name: Build candidate knowledge release
+        run: |
+          rm -rf "$RUNNER_TEMP/coffee-knowledge-release"
+          node scripts/coffee-db/build-knowledge-bundle.mjs --output="$RUNNER_TEMP/coffee-knowledge-release"
+          node scripts/coffee-db/verify-knowledge-release.mjs --output="$RUNNER_TEMP/coffee-knowledge-release"
+
+      - name: Upload candidate artifact on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coffee-knowledge-candidate-${{ github.run_id }}
+          path: ${{ runner.temp }}/coffee-knowledge-release
+          retention-days: 14
+
+      - name: Publish stable knowledge artifacts on main
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          node scripts/coffee-db/build-knowledge-bundle.mjs --write
+          node scripts/coffee-db/verify-knowledge-release.mjs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add coffee-knowledge/releases
+          if git diff --cached --quiet; then
+            echo "Coffee Knowledge release is already current."
+            exit 0
+          fi
+          git commit -m "data(knowledge): publish verified Coffee Knowledge release [skip knowledge]"
+          git push
