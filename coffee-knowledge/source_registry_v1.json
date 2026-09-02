@@ -1,0 +1,104 @@
+{
+  "_format": "coffee-knowledge-source-registry",
+  "_schemaVersion": 1,
+  "version": "1.0.0-alpha",
+  "updatedAt": "2026-09-02",
+  "policy": {
+    "cashCostDefault": 0,
+    "paidSearchEnabled": false,
+    "fetchMode": "direct official-source HTTP only",
+    "aiModel": "glm-4.7-flash",
+    "aiUsage": "parse, translate, normalize, classify and propose candidates only",
+    "autoMerge": false
+  },
+  "sources": [
+    {
+      "id": "SRC-WCR-CATALOG",
+      "publisher": "World Coffee Research",
+      "authorityLevel": "A",
+      "sourceType": "research_catalog",
+      "url": "https://varieties.worldcoffeeresearch.org/",
+      "scope": ["species", "variety", "genetic_group", "agronomy"],
+      "languages": ["en"],
+      "checkStrategy": "content_hash",
+      "enabled": true
+    },
+    {
+      "id": "SRC-WCR-ARABICA",
+      "publisher": "World Coffee Research",
+      "authorityLevel": "A",
+      "sourceType": "research_catalog",
+      "url": "https://varieties.worldcoffeeresearch.org/arabica/varieties",
+      "scope": ["arabica_variety", "alias", "genetic_group"],
+      "languages": ["en"],
+      "checkStrategy": "content_hash",
+      "enabled": true
+    },
+    {
+      "id": "SRC-WCR-ROBUSTA",
+      "publisher": "World Coffee Research",
+      "authorityLevel": "A",
+      "sourceType": "research_catalog",
+      "url": "https://varieties.worldcoffeeresearch.org/robusta/varieties",
+      "scope": ["canephora_variety", "clone", "alias", "agronomy"],
+      "languages": ["en"],
+      "checkStrategy": "content_hash",
+      "enabled": true
+    },
+    {
+      "id": "SRC-CQI-PROCESSING",
+      "publisher": "Coffee Quality Institute",
+      "authorityLevel": "A",
+      "sourceType": "industry_training_standard",
+      "url": "https://www.coffeeinstitute.org/education/processing/courses",
+      "scope": ["process_family", "processing_terminology"],
+      "languages": ["en"],
+      "checkStrategy": "content_hash",
+      "enabled": true
+    },
+    {
+      "id": "SRC-INDIA-COFFEE-BOARD-REGIONS",
+      "publisher": "Coffee Board of India",
+      "authorityLevel": "A",
+      "sourceType": "government_industry_board",
+      "url": "https://coffeeboard.gov.in/coffee-regions-india.html",
+      "scope": ["country", "region", "species", "variety", "altitude", "rainfall"],
+      "languages": ["en"],
+      "checkStrategy": "content_hash",
+      "enabled": true
+    },
+    {
+      "id": "SRC-ANACAFE",
+      "publisher": "Anacafé",
+      "authorityLevel": "A",
+      "sourceType": "national_coffee_association",
+      "url": "https://www.anacafe.org/",
+      "scope": ["guatemala_region", "variety", "producer", "competition_lot"],
+      "languages": ["es"],
+      "checkStrategy": "content_hash",
+      "enabled": true
+    },
+    {
+      "id": "SRC-ICAFE",
+      "publisher": "Instituto del Café de Costa Rica",
+      "authorityLevel": "A",
+      "sourceType": "national_coffee_institute",
+      "url": "https://www.icafe.cr/",
+      "scope": ["costa_rica_region", "producer", "industry_structure"],
+      "languages": ["es"],
+      "checkStrategy": "content_hash",
+      "enabled": true
+    },
+    {
+      "id": "SRC-NAEB-RWANDA",
+      "publisher": "National Agricultural Export Development Board Rwanda",
+      "authorityLevel": "A",
+      "sourceType": "government_agency",
+      "url": "https://www.naeb.gov.rw/",
+      "scope": ["rwanda_region", "washing_station", "producer", "exporter"],
+      "languages": ["en"],
+      "checkStrategy": "content_hash",
+      "enabled": true
+    }
+  ]
+}
