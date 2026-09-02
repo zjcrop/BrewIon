@@ -1,7 +1,7 @@
 {
   "_format": "coffee-knowledge-source-registry",
   "_schemaVersion": 1,
-  "version": "1.0.0-alpha",
+  "version": "1.0.0-alpha.1",
   "updatedAt": "2026-09-02",
   "policy": {
     "cashCostDefault": 0,
@@ -64,6 +64,17 @@
       "url": "https://coffeeboard.gov.in/coffee-regions-india.html",
       "scope": ["country", "region", "species", "variety", "altitude", "rainfall"],
       "languages": ["en"],
+      "checkStrategy": "content_hash",
+      "enabled": true
+    },
+    {
+      "id": "SRC-CENICAFE-VARIETIES",
+      "publisher": "Cenicafé / Federación Nacional de Cafeteros de Colombia",
+      "authorityLevel": "A",
+      "sourceType": "national_coffee_research_institute",
+      "url": "https://publicaciones.cenicafe.org/index.php/bot/article/view/1323",
+      "scope": ["colombia_variety", "breeding_history", "rust_resistance"],
+      "languages": ["es"],
       "checkStrategy": "content_hash",
       "enabled": true
     },
