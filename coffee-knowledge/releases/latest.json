@@ -2,13 +2,15 @@
   "_format": "coffee-knowledge-release-manifest",
   "_schemaVersion": 1,
   "artifact": {
-    "bytes": 716736,
-    "name": "coffee-knowledge-1.0.0-alpha.2.json",
-    "sha256": "3a33ae628ccdca3d36c3398c9ae31f9bcfbf46276faffe6c3c0e83471311814c"
+    "bytes": 731024,
+    "name": "coffee-knowledge-1.0.0-alpha.3.json",
+    "sha256": "1e67f27b20b36a9d6a401be0572efdb25cc919c6be8552c429b75c3efb61f557"
   },
   "compatibility": {
     "baselinePolicy": "materialize-core-then-overlay-knowledge",
     "canonicalEntityIdentityPolicy": "deduplicate-display-preserve-core-code",
+    "canonicalGeoIdentityPolicy": "deduplicate-display-preserve-core-code",
+    "localizationPolicy": "ai-candidates-never-overwrite-official-names",
     "qrIndexesChanged": false
   },
   "contract": "coffee-knowledge/1.0",
@@ -16,6 +18,7 @@
   "counts": {
     "aliases": 2630,
     "canonicalEntityIdentityGroups": 12,
+    "canonicalGeoIdentityGroups": 1,
     "countries": 56,
     "enrichedCountries": 1,
     "enrichedEntities": 3,
@@ -24,7 +27,12 @@
     "enrichedVarieties": 52,
     "entities": 460,
     "flavors": 127,
+    "geoHierarchyCorrections": 1,
     "groupedEntityCoreCodes": 24,
+    "groupedRegionCoreCodes": 2,
+    "localizedAliases": 60,
+    "localizedNames": 9,
+    "pendingLocalizedAliases": 52,
     "processes": 25,
     "regions": 247,
     "relations": 1105,
@@ -34,5 +42,5 @@
   "provider": "brewion",
   "type": "knowledge_dataset",
   "updatedAt": "2026-09-02",
-  "version": "1.0.0-alpha.2"
+  "version": "1.0.0-alpha.3"
 }
