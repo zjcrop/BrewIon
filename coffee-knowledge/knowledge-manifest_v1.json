@@ -2,15 +2,17 @@
   "_format": "coffee-knowledge-source-manifest",
   "_schemaVersion": 1,
   "contract": "coffee-knowledge/1.0",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "updatedAt": "2026-09-02",
   "coreCodebook": "../coffee-qr-codebook/coffee_qr_codebook_v6.json",
   "mainKnowledge": "coffee_origin_knowledge_v1.json",
   "sourceRegistry": "source_registry_v1.json",
   "catalogModules": [
-    "catalog/v6_variety_details_remaining_v1.json"
+    "catalog/v6_variety_details_remaining_v1.json",
+    "catalog/localized_aliases_seed_v1.json"
   ],
   "entityIdentityModule": "catalog/entity_identity_groups_v1.json",
+  "geoIdentityModule": "catalog/geo_identity_groups_v1.json",
   "supplementalModels": [
     "process_model_v1.json"
   ],
@@ -20,7 +22,8 @@
   "releasePolicy": {
     "baseline": "Every QR-indexed core row is materialized automatically into the knowledge bundle.",
     "enrichment": "Verified knowledge records overlay the baseline by stable coreCode; unverified legacy rows remain queryable with legacy_core evidence status.",
-    "identity": "Confirmed duplicate entity core codes remain permanently decodable and may resolve to one canonicalIdentityId for search/display deduplication.",
+    "identity": "Confirmed duplicate entity and geography core codes remain permanently decodable and may resolve to canonical identity IDs for search/display deduplication.",
+    "localization": "AI-translated/transliterated aliases remain explicitly typed and pending market verification; they never replace official/canonical names automatically.",
     "compatibility": "Knowledge release must never change QR row indexes.",
     "publication": "PR builds and verifies a candidate; main publishes a deterministic hashed release."
   }
