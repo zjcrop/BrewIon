@@ -42,6 +42,25 @@ if (bundle.counts.enrichedVarieties !== bundle.counts.varieties) throw new Error
 if (bundle.counts.enrichedProcesses !== bundle.counts.processes) throw new Error('Process knowledge coverage is not complete.');
 if (!Array.isArray(bundle.sourceRegistry?.sources) || bundle.sourceRegistry.sources.length < 1) throw new Error('Source registry missing.');
 
+const groups = Array.isArray(bundle.entityIdentityGroups) ? bundle.entityIdentityGroups : [];
+if (groups.length !== Number(manifest.counts?.canonicalEntityIdentityGroups || 0)) throw new Error('Canonical entity identity group count mismatch.');
+const entityCodes = new Set(bundle.entities.map((x) => x.code));
+const groupedCodes = new Set();
+const groupIds = new Set();
+for (const group of groups) {
+  if (!group.canonicalIdentityId || groupIds.has(group.canonicalIdentityId)) throw new Error(`Invalid or duplicate canonicalIdentityId ${group.canonicalIdentityId}`);
+  groupIds.add(group.canonicalIdentityId);
+  if (!Array.isArray(group.coreCodes) || group.coreCodes.length < 2) throw new Error(`${group.canonicalIdentityId} must include at least two coreCodes.`);
+  for (const code of group.coreCodes) {
+    if (!entityCodes.has(code)) throw new Error(`${group.canonicalIdentityId} references missing entity ${code}`);
+    if (groupedCodes.has(code)) throw new Error(`Entity ${code} appears in multiple canonical identity groups.`);
+    groupedCodes.add(code);
+    const materialized = bundle.entities.find((x) => x.code === code);
+    if (materialized?.canonicalIdentityId !== group.canonicalIdentityId) throw new Error(`Entity ${code} canonicalIdentityId was not materialized correctly.`);
+  }
+}
+if (groupedCodes.size !== Number(manifest.counts?.groupedEntityCoreCodes || 0)) throw new Error('Grouped entity core-code count mismatch.');
+
 console.log(JSON.stringify({
   verified: true,
   artifact: manifest.artifact.name,
