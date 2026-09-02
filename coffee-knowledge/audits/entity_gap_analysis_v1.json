@@ -1,0 +1,86 @@
+{
+  "_format": "coffee-knowledge-gap-analysis",
+  "_schemaVersion": 1,
+  "createdAt": "2026-09-02",
+  "baseline": {
+    "coreEntities": 460,
+    "coreTable": "coffee_qr_codebook_v6.json#entities",
+    "note": "The v6 entities table mixes estates/farms, washing stations/factories and some other organization roles."
+  },
+  "officialScaleChecks": [
+    {
+      "country": "Kenya",
+      "sourceId": "SRC-KENYA-AFA-YEARBOOK",
+      "period": "2023/2024",
+      "activeCooperatives": 682,
+      "activeFactories": 1176,
+      "activeEstates": 2764,
+      "finding": "Kenya alone has far more official operating entities than the entire v6 global entity table."
+    },
+    {
+      "country": "Rwanda",
+      "sourceId": "SRC-NAEB-RWANDA",
+      "period": "2024 season",
+      "activeCoffeeWashingStations": 313,
+      "totalCoffeeWashingStations": 313,
+      "finding": "Rwanda's CWS network alone is comparable in scale to the current global v6 entity table."
+    }
+  ],
+  "architectureDecision": {
+    "knowledgeLayer": "May contain comprehensive official entities when a stable authoritative source exists.",
+    "coreQrLayer": "Must remain curated for human selection and QR usefulness; do not mirror every official registry entry.",
+    "reason": [
+      "Avoid thousands of low-frequency items in dropdowns.",
+      "Keep QR index growth controlled and append-only.",
+      "Preserve fast local rendering and fuzzy matching.",
+      "Allow yearly active/inactive status to change without consuming new QR indexes."
+    ]
+  },
+  "coreInclusionPolicy": {
+    "required": [
+      "stable identifiable entity",
+      "country confirmed",
+      "entity role confirmed",
+      "reliable English or original-language name",
+      "Chinese display name or a translation candidate with review status",
+      "at least one traceable source"
+    ],
+    "prioritySignals": [
+      "frequent appearance on specialty-coffee retail labels",
+      "frequent appearance in official competitions or traceable export lots",
+      "recognized washing station/factory/cooperative/estate with persistent identity",
+      "important for OCR disambiguation or supply-chain traceability"
+    ],
+    "excludeOrKnowledgeOnly": [
+      "one-off unverified marketing names",
+      "temporary traders with no origin role",
+      "generic place-holder entities",
+      "same-name entity without sufficient geographic disambiguation",
+      "registry-only entity with no expected consumer/traceability value"
+    ]
+  },
+  "entityRolePolicy": {
+    "farm": "production holding/farm",
+    "estate": "named estate/plantation; may also act as producer or processor",
+    "producer": "person or producing organization; not automatically the farm",
+    "cooperative": "farmer cooperative/society; may own or operate multiple factories",
+    "washing_station": "central washing station/CWS",
+    "factory": "Kenyan coffee factory/wet-processing collection point; preserve the official local term instead of translating every factory into estate",
+    "wet_mill": "wet mill when distinct from station/factory",
+    "dry_mill": "dry mill",
+    "processor": "processing operator when physical facility is not clear",
+    "exporter": "exporting company; should not be treated as farm/estate",
+    "trader": "trader/buyer",
+    "research_station": "research/breeding station"
+  },
+  "temporalPolicy": {
+    "rule": "Active/inactive status, operator, cooperative membership and ownership are time-dependent relations.",
+    "fields": ["validFrom", "validTo", "cropYear", "observedAt", "sourceRef"],
+    "warning": "Do not convert one annual yearbook relationship into a permanent timeless attribute."
+  },
+  "target": {
+    "phase1CoreEntities": "1200-1500 curated global entities",
+    "knowledgeLayerEntities": "No artificial numerical cap; prioritize authoritative import batches and useful traceability.",
+    "measurement": "Relationship coverage and OCR hit-rate matter more than raw row count."
+  }
+}

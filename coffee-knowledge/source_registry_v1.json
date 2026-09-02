@@ -1,7 +1,7 @@
 {
   "_format": "coffee-knowledge-source-registry",
   "_schemaVersion": 1,
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "updatedAt": "2026-09-02",
   "policy": {
     "cashCostDefault": 0,
@@ -21,6 +21,7 @@
     {"id":"SRC-ANACAFE","publisher":"Anacafé","authorityLevel":"A","sourceType":"national_coffee_association","url":"https://www.anacafe.org/","scope":["guatemala_region","variety","producer","competition_lot"],"languages":["es"],"checkStrategy":"content_hash","enabled":true},
     {"id":"SRC-ICAFE","publisher":"Instituto del Café de Costa Rica","authorityLevel":"A","sourceType":"national_coffee_institute","url":"https://www.icafe.cr/","scope":["costa_rica_region","producer","industry_structure"],"languages":["es"],"checkStrategy":"content_hash","enabled":true},
     {"id":"SRC-NAEB-RWANDA","publisher":"National Agricultural Export Development Board Rwanda","authorityLevel":"A","sourceType":"government_agency","url":"https://www.naeb.gov.rw/","scope":["rwanda_region","washing_station","producer","exporter"],"languages":["en"],"checkStrategy":"content_hash","enabled":true},
+    {"id":"SRC-KENYA-AFA-YEARBOOK","publisher":"Agriculture and Food Authority (AFA) - Coffee Directorate, Kenya","authorityLevel":"A","sourceType":"government_coffee_regulator","url":"https://www.afa.go.ke/wp-content/uploads/2025/06/Coffee-Yearbook-Small.pdf","scope":["kenya_county","cooperative","factory","estate","production"],"languages":["en"],"checkStrategy":"content_hash","enabled":true},
     {"id":"SRC-HCA-HAWAII-REGIONS","publisher":"Hawaiʻi Coffee Association","authorityLevel":"A","sourceType":"regional_industry_association","url":"https://www.hawaiicoffeeassoc.org/History","scope":["hawaii_state","coffee_region","variety","industry_history"],"languages":["en"],"checkStrategy":"content_hash","enabled":true},
     {"id":"SRC-BRAZIL-INPI-GI","publisher":"Instituto Nacional da Propriedade Industrial (INPI), Brazil","authorityLevel":"A","sourceType":"government_geographical_indication_registry","url":"https://www.gov.br/inpi/pt-br/servicos/indicacoes-geograficas/cadernos-de-especificacoes-tecnicas-das-indicacoes-geograficas","scope":["geographical_indication","ip","do","coffee_region"],"languages":["pt"],"checkStrategy":"content_hash","enabled":true}
   ]
