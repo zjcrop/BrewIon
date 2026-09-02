@@ -1,0 +1,94 @@
+{
+  "_format": "coffee-verified-named-candidate-entities",
+  "_schemaVersion": 1,
+  "version": "2.0.0",
+  "updatedAt": "2026-09-02",
+  "policy": {
+    "scope": "Second evidence-gated batch from the remaining explicitly named v6 candidate entities.",
+    "coreMutation": false,
+    "qrIndexChanged": false,
+    "coreStatusPromotion": false,
+    "identityRule": "Only rows with sufficiently distinctive name-country identity plus direct or independently corroborated coffee-supply-chain evidence are materialized here. Same-name ambiguity, geography conflicts and likely taxonomy errors remain audit findings only.",
+    "chineseNameRule": "Legacy Chinese display names remain unverified unless supported by source evidence."
+  },
+  "entityDetails": [
+    {
+      "id": "ED-ST-BR-PRI-VERIFIED",
+      "coreCode": "ST-BR-PRI@深度研究",
+      "roles": ["farm"],
+      "canonicalNameEn": "Fazenda Primavera",
+      "legacyNameZh": "春之谷庄园",
+      "nameZhVerificationStatus": "legacy_core_not_source_verified",
+      "countryCode": "CO-BR",
+      "producerName": "Leonardo Montesanto Tavares",
+      "regionNote": "Angelândia / Chapada de Minas, Minas Gerais, Brazil",
+      "evidenceStatus": "independently_corroborated_entity_existence",
+      "verificationScope": "Alliance for Coffee Excellence and BSCA independently identify Fazenda Primavera as a specialty-coffee farm in Chapada de Minas; this enriches the legacy row without changing its QR/core status.",
+      "sourceUrls": [
+        "https://cupofexcellence.org/brazil-2019/",
+        "https://www.bsca.com.br/chapada-de-minas-e-cerrado-mineiro-produzem-os-melhores-cafes-especiais-do-brasil-em-2018/"
+      ],
+      "confidence": 0.98
+    },
+    {
+      "id": "ED-ST-CO-NEG-VERIFIED",
+      "coreCode": "ST-CO-NEG@深度研究",
+      "roles": ["farm"],
+      "canonicalNameEn": "Finca La Negrita",
+      "legacyNameZh": "黑美人庄园",
+      "nameZhVerificationStatus": "legacy_core_not_source_verified",
+      "countryCode": "CO-CO",
+      "producerName": "Mauricio Shattah",
+      "regionNote": "Tolima, Colombia",
+      "evidenceStatus": "independently_corroborated_entity_existence",
+      "verificationScope": "Multiple independent specialty-coffee buyers and roasters identify Mauricio Shattah as the producer of Finca La Negrita in Tolima, Colombia.",
+      "sourceUrls": [
+        "https://thebarn.de/products/finca-la-negrita",
+        "https://assemblycoffee.live/products/colombia-mauricio-shattah-sidra",
+        "https://philsebastian.com/products/finca-la-negrita-red-geisha-washed"
+      ],
+      "confidence": 0.98
+    },
+    {
+      "id": "ED-ST-GT-SEN-VERIFIED",
+      "coreCode": "ST-GT-SEN@深度研究",
+      "roles": ["farm"],
+      "canonicalNameEn": "Finca La Senda",
+      "legacyNameZh": "小径庄园",
+      "nameZhVerificationStatus": "legacy_core_not_source_verified",
+      "countryCode": "CO-GT",
+      "producerName": "Arnoldo Pérez Melendez and Maria Eugenia Escobar",
+      "regionNote": "Aldea El Socorro, Acatenango, Guatemala",
+      "evidenceStatus": "independently_corroborated_entity_existence",
+      "verificationScope": "Independent importer, equipment-industry and long-term buyer records consistently identify Finca La Senda, its operators and Acatenango location.",
+      "sourceUrls": [
+        "https://sendero-coffee.com/blogs/interesting-reads/origin-report-guatemala",
+        "https://www.roestcoffee.com/blog/css-finca-la-senda",
+        "https://meritcoffee.com/products/la-senda-dulce-fuego-1"
+      ],
+      "confidence": 0.98
+    },
+    {
+      "id": "ED-ST-GT-MOR-VERIFIED",
+      "coreCode": "ST-GT-MOR@深度研究",
+      "roles": ["farm"],
+      "canonicalNameEn": "Finca El Morito",
+      "legacyNameZh": "莫里托庄园",
+      "nameZhVerificationStatus": "legacy_core_not_source_verified",
+      "countryCode": "CO-GT",
+      "producerName": "José Roberto Monterroso Pineda",
+      "regionNote": "Mataquescuintla, Jalapa, Guatemala",
+      "evidenceStatus": "verified_entity_existence",
+      "verificationScope": "Alliance for Coffee Excellence identifies José Roberto Monterroso as owner/producer of Finca El Morito in Mataquescuintla, Jalapa, Guatemala; the Guatemala country constraint distinguishes it from unrelated same-name entities elsewhere.",
+      "sourceUrls": [
+        "https://allianceforcoffeeexcellence.org/legends-2026/",
+        "https://auction.allianceforcoffeeexcellence.org/en/lots/el-morito-2"
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "species": [],
+  "varietyDetails": [],
+  "localizedNames": [],
+  "localizedAliases": []
+}
