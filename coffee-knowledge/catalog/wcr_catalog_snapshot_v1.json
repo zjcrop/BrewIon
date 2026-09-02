@@ -1,0 +1,12 @@
+{
+  "_format": "wcr-varieties-catalog-snapshot",
+  "_schemaVersion": 1,
+  "capturedAt": "2026-09-02",
+  "sourceUrl": "https://varieties.worldcoffeeresearch.org/build-your-own",
+  "sourceAuthority": "A",
+  "catalogReportedCounts": {"arabica":55,"robusta":47},
+  "note": "The interactive build-your-own page can expose entries beyond the two downloadable headline counts; candidate generation compares names semantically and does not assume raw count arithmetic.",
+  "entries": [
+    "AB3","Anacafe 14","Batian","Bourbon","Bourbon Mayaguez 139","Bourbon Mayaguez 71","BP 534","BP 936","BP 939","BPL10","BRS 1216","BRS 2299","BRS 2314","BRS 2336","BRS 2357","BRS 3137","BRS 3193","BRS 3210","BRS 3213","BRS 3220","Caripe","Casiopea","Catigua MG2","Catimor 129","Catisic","Catuai","Caturra","Centroamericano","Costa Rica 95","Cuscatleco","EC15","Esperanza","Evaluna","Fronton","Geisha (Panama)","H3","Harar Rwanda","IAPAR 59","IHCAFE 90","INIFAP 00-24","INIFAP 00-28","INIFAP 95-9","INIFAP 97-14","INIFAP 97-15","IPR 103","IPR 107","Jackson 2/1257","Java","K7","Kartika 1","KP423","Lempira","Limani","Maragogipe","Marsellesa","Mibirizi","Milenio","Monte Claro","Mundo Maya","Mundo Novo","NARO-Kituza Robusta 1","NARO-Kituza Robusta 10","NARO-Kituza Robusta 2","NARO-Kituza Robusta 3","NARO-Kituza Robusta 4","NARO-Kituza Robusta 5","NARO-Kituza Robusta 6","NARO-Kituza Robusta 7","NARO-Kituza Robusta 8","NARO-Kituza Robusta 9","Nayarita","Nemaya (Coffea canephora)","Nyasaland","Obata (Red)","Oro Azteca","Pacamara","Pacas","Pache","Parainema","Paraiso","Perdenia","Pop3303/21","RAB C15","Roubi 1","Roubi 10","Roubi 2","Roubi 4","Roubi 5","Roubi 6","Roubi 7","Roubi 8","Roubi 9","Ruiru 11","S4808","S795","SA 237","SL14","SL28","SL34","Sln.1R","Sln.2R","Sln.3R","Sln.5B","Sln.6","Starmaya","T5175","T5296","T8667","Tekisic","TR11","TR4","TR9","TRS1","Typica","Venecia","Villa Sarchi","Xanh lun"
+  ]
+}
