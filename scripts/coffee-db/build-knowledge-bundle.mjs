@@ -61,6 +61,9 @@ const supplementalModels = (manifest.supplementalModels || []).map((modulePath) 
   modulePath,
   data: readRelative(knowledgeDir, modulePath),
 }));
+const entityIdentity = manifest.entityIdentityModule
+  ? readRelative(knowledgeDir, manifest.entityIdentityModule)
+  : { groups: [] };
 
 const moduleSpecies = catalogs.flatMap((x) => x.data.species || []);
 const moduleVarieties = catalogs.flatMap((x) => x.data.varietyDetails || []);
@@ -78,17 +81,48 @@ const entityByCore = indexByCoreCode(entityDetails);
 const varietyByCore = indexByCoreCode(varietyDetails);
 const processByCore = indexByCoreCode(processDetails);
 
+const coreEntityRows = (core.entities || []).map((row, index) => ({ ...rowToObject(core._columns.entities, row), qrIndex: index + 1 }));
+const coreEntityByCode = new Map(coreEntityRows.map((x) => [x.code, x]));
+const entityIdentityIds = new Set();
+const entityIdentityByCore = new Map();
+for (const group of entityIdentity.groups || []) {
+  const canonicalIdentityId = String(group.canonicalIdentityId || '').trim();
+  if (!canonicalIdentityId) throw new Error('Entity identity group is missing canonicalIdentityId.');
+  if (entityIdentityIds.has(canonicalIdentityId)) throw new Error(`Duplicate canonicalIdentityId ${canonicalIdentityId}`);
+  entityIdentityIds.add(canonicalIdentityId);
+  if (!Array.isArray(group.coreCodes) || group.coreCodes.length < 2) throw new Error(`${canonicalIdentityId} must group at least two core entity codes.`);
+  for (const coreCode of group.coreCodes) {
+    const coreEntity = coreEntityByCode.get(coreCode);
+    if (!coreEntity) throw new Error(`${canonicalIdentityId} references missing entity coreCode ${coreCode}`);
+    if (group.countryCode && group.countryCode !== coreEntity.countryCode) {
+      throw new Error(`${canonicalIdentityId} country mismatch for ${coreCode}: ${group.countryCode} != ${coreEntity.countryCode}`);
+    }
+    if (entityIdentityByCore.has(coreCode)) throw new Error(`Entity coreCode ${coreCode} belongs to multiple canonical identity groups.`);
+    entityIdentityByCore.set(coreCode, group);
+  }
+}
+
 function materialize(tableName, enrichmentMap = null) {
   const columns = core._columns?.[tableName];
   if (!Array.isArray(columns)) throw new Error(`Missing core columns for ${tableName}`);
   return (core[tableName] || []).map((row, index) => {
     const base = rowToObject(columns, row);
     const enrichment = enrichmentMap?.get(base.code) || null;
+    const identityGroup = tableName === 'entities' ? entityIdentityByCore.get(base.code) || null : null;
     return {
       ...base,
       qrIndex: index + 1,
       evidenceStatus: enrichment ? (enrichment.evidenceStatus || 'knowledge_enriched') : 'legacy_core',
       ...(enrichment ? { knowledge: enrichment } : {}),
+      ...(identityGroup ? {
+        canonicalIdentityId: identityGroup.canonicalIdentityId,
+        canonicalIdentity: {
+          canonicalNameZh: identityGroup.canonicalNameZh || null,
+          canonicalNameEn: identityGroup.canonicalNameEn || null,
+          resolution: identityGroup.resolution || null,
+          confidence: identityGroup.confidence ?? null,
+        },
+      } : {}),
     };
   });
 }
@@ -153,6 +187,8 @@ const bundle = {
     enrichedEntities: entities.filter((x) => x.knowledge).length,
     enrichedVarieties: varieties.filter((x) => x.knowledge).length,
     enrichedProcesses: processes.filter((x) => x.knowledge).length,
+    canonicalEntityIdentityGroups: entityIdentityIds.size,
+    groupedEntityCoreCodes: entityIdentityByCore.size,
   },
   countries,
   regions,
@@ -163,6 +199,7 @@ const bundle = {
   relations,
   aliases,
   species,
+  entityIdentityGroups: entityIdentity.groups || [],
   processFamilies: knowledge.processFamilies || [],
   fermentationMethods: knowledge.fermentationMethods || [],
   dryingMethods: knowledge.dryingMethods || [],
@@ -216,6 +253,7 @@ const releaseManifest = {
   compatibility: {
     qrIndexesChanged: false,
     baselinePolicy: 'materialize-core-then-overlay-knowledge',
+    canonicalEntityIdentityPolicy: 'deduplicate-display-preserve-core-code',
   },
 };
 fs.writeFileSync(path.join(releaseDir, 'latest.json'), stableJson(releaseManifest), 'utf8');
