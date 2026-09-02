@@ -1,0 +1,158 @@
+{
+  "_format": "coffee-entity-identity-groups",
+  "_schemaVersion": 1,
+  "version": "1.0.0",
+  "updatedAt": "2026-09-02",
+  "policy": {
+    "qrCompatibility": "All listed coreCodes remain permanently decodable; identity grouping never reassigns a QR index.",
+    "uiBehavior": "Consumers may deduplicate selection/search results by canonicalIdentityId while retaining the original coreCode on decoded historical records.",
+    "mergeThreshold": "Groups require exact/near-exact identity plus producer, industry, government or independently corroborated supply-chain evidence.",
+    "noPhysicalDeletion": true
+  },
+  "groups": [
+    {
+      "canonicalIdentityId": "ENT-BO-TAKESI",
+      "countryCode": "CO-BO",
+      "canonicalNameZh": "Takesi 庄园",
+      "canonicalNameEn": "Finca Takesi",
+      "coreCodes": ["ST-BO-TAK", "ST-BO-TAK2"],
+      "resolution": "same_entity_confirmed",
+      "evidence": "Takesi's own site identifies the operation as its coffee finca in Sud Yungas/Yanacachi, La Paz; both v6 rows use the same farm name and country.",
+      "sourceUrls": ["https://takesi.bo/nuestra-finca-2/"],
+      "confidence": 1.0
+    },
+    {
+      "canonicalIdentityId": "ENT-BR-FAZENDA-RAINHA",
+      "countryCode": "CO-BR",
+      "canonicalNameZh": "Fazenda Rainha / 皇后庄园",
+      "canonicalNameEn": "Fazenda Rainha",
+      "coreCodes": ["ST-BR-RAI", "ST-BR-RAIN"],
+      "resolution": "same_entity_confirmed",
+      "evidence": "BSCA identifies Fazenda Rainha in São Sebastião da Grama as a single specialty-coffee property and competition producer; the v6 pair is an exact same-country English-name duplicate.",
+      "sourceUrls": [
+        "https://www.bsca.com.br/38-2/",
+        "https://www.bsca.com.br/fazendas-rainha-e-sertaozinho-sao-as-campeas-do-concurso-aroma-bsca/"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "canonicalIdentityId": "ENT-CO-GRANJA-ESPERANZA",
+      "countryCode": "CO-CO",
+      "canonicalNameZh": "Café Granja La Esperanza",
+      "canonicalNameEn": "Café Granja La Esperanza",
+      "coreCodes": ["ST-CO-GRA", "ST-CO-GRAN"],
+      "resolution": "same_entity_confirmed",
+      "evidence": "The producer's own site presents Café Granja La Esperanza and its farms/lots as one Colombian specialty-coffee operation; the two v6 rows share the same identity name.",
+      "sourceUrls": ["https://cafegranjalaesperanza.com/pages/coffees"],
+      "confidence": 1.0
+    },
+    {
+      "canonicalIdentityId": "ENT-CO-LA-PALMA-TUCAN",
+      "countryCode": "CO-CO",
+      "canonicalNameZh": "La Palma & El Tucán",
+      "canonicalNameEn": "La Palma & El Tucán",
+      "coreCodes": ["ST-CO-LPA", "ST-CO-LPT2"],
+      "resolution": "same_entity_confirmed",
+      "evidence": "The producer's own green-coffee site identifies La Palma & El Tucán as the Zipacón, Colombia estate/project; both v6 entries are the same-name same-country identity.",
+      "sourceUrls": ["https://lapalmayeltucan.com/en-us/pages/green-coffee-1"],
+      "confidence": 1.0
+    },
+    {
+      "canonicalIdentityId": "ENT-CO-FINCA-MILAN",
+      "countryCode": "CO-CO",
+      "canonicalNameZh": "Finca Milán",
+      "canonicalNameEn": "Finca Milán",
+      "coreCodes": ["ST-CO-MIL", "ST-CO-MIL2"],
+      "resolution": "same_entity_confirmed",
+      "evidence": "Café UBA identifies Finca Milán in Betulia/Arabia, Pereira as a single farm producing coffee since 1982; independent supply-chain listings describe the same producer/farm identity.",
+      "sourceUrls": [
+        "https://www.cafeuba.com/es/pages/about-us",
+        "https://www.touton-specialty-coffee.com/en/p11480"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "canonicalIdentityId": "ENT-ID-JAVA-FRINSA",
+      "countryCode": "CO-ID",
+      "canonicalNameZh": "Java Frinsa Estate / 弗林莎庄园",
+      "canonicalNameEn": "Java Frinsa Estate",
+      "coreCodes": ["ST-ID-FRIN", "ST-ID-FRIN2"],
+      "resolution": "same_entity_confirmed",
+      "evidence": "Java Frinsa Estate's own site identifies the West Java farm/processing operation owned by Wildan Mustofa and Atieq Mustikaningtyas; both v6 rows are the same Frinsa Estate identity.",
+      "sourceUrls": ["https://javafrinsaestate.co.id/about-java-frinsa-estate/"],
+      "confidence": 1.0
+    },
+    {
+      "canonicalIdentityId": "ENT-PA-FINCA-DEBORAH",
+      "countryCode": "CO-PA",
+      "canonicalNameZh": "Finca Deborah / 黛博拉庄园",
+      "canonicalNameEn": "Finca Deborah",
+      "coreCodes": ["ST-PA-DEB", "ST-PA-FTL"],
+      "resolution": "same_entity_confirmed",
+      "evidence": "Finca Deborah's official site and the Specialty Coffee Association of Panama identify one Volcán, Chiriquí farm operated by Jamison Savage.",
+      "sourceUrls": [
+        "https://www.fincadeborah.com/",
+        "https://scap-panama.com/finca-deborah/"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "canonicalIdentityId": "ENT-PA-ELIDA-ESTATE",
+      "countryCode": "CO-PA",
+      "canonicalNameZh": "Elida Estate / 艾力达庄园",
+      "canonicalNameEn": "Elida Estate",
+      "coreCodes": ["ST-PA-EL", "ST-PA-ELD"],
+      "resolution": "same_entity_confirmed",
+      "evidence": "Lamastus Family Estates' official site identifies Elida Estate as one of its Panama estates; both v6 rows are the same exact English estate name.",
+      "sourceUrls": ["https://lamastusfamilyestates.com/"],
+      "confidence": 1.0
+    },
+    {
+      "canonicalIdentityId": "ENT-PA-HACIENDA-ESMERALDA",
+      "countryCode": "CO-PA",
+      "canonicalNameZh": "Hacienda La Esmeralda / 翡翠庄园",
+      "canonicalNameEn": "Hacienda La Esmeralda",
+      "coreCodes": ["ST-PA-ES", "ST-PA-ESM"],
+      "resolution": "same_entity_confirmed",
+      "evidence": "Hacienda La Esmeralda's official site identifies a single Peterson-family specialty-coffee producer with multiple farms; the two v6 rows have identical English and Chinese identity names.",
+      "sourceUrls": ["https://haciendaesmeralda.com/"],
+      "confidence": 1.0
+    },
+    {
+      "canonicalIdentityId": "ENT-PA-FINCA-LERIDA",
+      "countryCode": "CO-PA",
+      "canonicalNameZh": "Finca Lérida / 莱里达庄园",
+      "canonicalNameEn": "Finca Lérida",
+      "coreCodes": ["ST-PA-FIN", "ST-PA-LERI"],
+      "resolution": "same_entity_confirmed",
+      "evidence": "The Specialty Coffee Association of Panama and Finca Lérida's own estate/hotel site identify the same historic Boquete coffee estate.",
+      "sourceUrls": [
+        "https://scap-panama.com/finca-lerida/",
+        "https://hotelfincalerida.com/"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "canonicalIdentityId": "ENT-PA-FINCA-HARTMANN",
+      "countryCode": "CO-PA",
+      "canonicalNameZh": "Finca Hartmann / 哈特曼庄园",
+      "canonicalNameEn": "Finca Hartmann",
+      "coreCodes": ["ST-PA-HAR", "ST-PA-HART"],
+      "resolution": "same_entity_confirmed",
+      "evidence": "Panama's government operation registry records FINCA HARTMANN S.A. in Santa Clara, Renacimiento, Chiriquí; the two v6 rows are identical farm-name entries in Panama.",
+      "sourceUrls": ["https://www.panamaemprende.gob.pa/resultado-consulta/861958/2"],
+      "confidence": 1.0
+    },
+    {
+      "canonicalIdentityId": "ENT-PE-FINCA-TASTA",
+      "countryCode": "CO-PE",
+      "canonicalNameZh": "Finca Tasta / 塔斯塔庄园",
+      "canonicalNameEn": "Finca Tasta",
+      "coreCodes": ["ST-PE-TAS", "ST-PE-TAST"],
+      "resolution": "same_entity_confirmed",
+      "evidence": "Finca Tasta's official site identifies one Peruvian specialty-coffee farm/brand; the v6 pair is an exact same-country English-name duplicate.",
+      "sourceUrls": ["https://fincatasta.com/"],
+      "confidence": 1.0
+    }
+  ]
+}
