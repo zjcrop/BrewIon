@@ -1,0 +1,56 @@
+name: Coffee Legacy Core Audit
+
+on:
+  pull_request:
+    paths:
+      - 'coffee-qr-codebook/coffee_qr_codebook_v6.json'
+      - 'coffee-knowledge/**'
+      - 'scripts/coffee-db/audit-legacy-core.mjs'
+      - '.github/workflows/coffee-legacy-audit.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'coffee-qr-codebook/coffee_qr_codebook_v6.json'
+      - 'coffee-knowledge/**'
+      - 'scripts/coffee-db/audit-legacy-core.mjs'
+      - '.github/workflows/coffee-legacy-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run full structural audit
+        run: |
+          node --check scripts/coffee-db/audit-legacy-core.mjs
+          node scripts/coffee-db/audit-legacy-core.mjs --output="$RUNNER_TEMP/v6_structural_audit.json"
+
+      - name: Write summary
+        shell: bash
+        run: |
+          node - <<'NODE' >> "$GITHUB_STEP_SUMMARY"
+          const fs = require('fs');
+          const p = process.env.RUNNER_TEMP + '/v6_structural_audit.json';
+          const r = JSON.parse(fs.readFileSync(p, 'utf8'));
+          console.log('# BrewIon v6 structural audit');
+          console.log('');
+          for (const [k,v] of Object.entries(r.summary)) console.log(`- ${k}: ${v}`);
+          console.log(`- priorityQueue: ${r.priorityQueue.length}`);
+          NODE
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coffee-legacy-core-audit-${{ github.run_id }}
+          path: ${{ runner.temp }}/v6_structural_audit.json
+          retention-days: 30
