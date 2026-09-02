@@ -1,0 +1,254 @@
+{
+  "_format": "coffee-verified-named-candidate-entities",
+  "_schemaVersion": 1,
+  "version": "1.0.0",
+  "updatedAt": "2026-09-02",
+  "policy": {
+    "scope": "Legacy v6 entity rows with explicit names and candidate status for which entity existence or entity/brand/farm relation can be supported by direct producer sources, industry associations, government sources, or independently corroborated specialty-coffee supply-chain evidence.",
+    "coreMutation": false,
+    "qrIndexChanged": false,
+    "coreStatusPromotion": false,
+    "identityRule": "Verification of existence does not automatically prove equivalence to another core row and does not rewrite the frozen v6 entity type/status.",
+    "chineseNameRule": "Legacy Chinese display names are retained only as legacyNameZh unless a source-backed Chinese canonical form exists."
+  },
+  "entityDetails": [
+    {
+      "id": "ED-ST-CO-CAM-VERIFIED",
+      "coreCode": "ST-CO-CAM@深度研究",
+      "roles": ["farm"],
+      "canonicalNameEn": "Finca Campo Hermoso",
+      "legacyNameZh": "美丽田园庄园",
+      "nameZhVerificationStatus": "legacy_core_not_source_verified",
+      "countryCode": "CO-CO",
+      "producerName": "Edwin Noreña",
+      "regionNote": "Circasia, Quindío, Colombia",
+      "evidenceStatus": "independently_corroborated_entity_existence",
+      "verificationScope": "Farm identity and producer association are independently corroborated; no QR/core status mutation is implied.",
+      "sourceUrls": [
+        "https://sensorial.coffee/en/colombia/campo-hermoso-farm/",
+        "https://www.candela.coffee/nuestros-cafes/2024-0008-campo-hermoso"
+      ],
+      "confidence": 0.95
+    },
+    {
+      "id": "ED-ST-CO-RIV-VERIFIED",
+      "coreCode": "ST-CO-RIV@深度研究",
+      "roles": ["farm"],
+      "canonicalNameEn": "Finca La Riviera",
+      "legacyNameZh": "里维埃拉庄园",
+      "nameZhVerificationStatus": "legacy_core_not_source_verified",
+      "countryCode": "CO-CO",
+      "evidenceStatus": "verified_entity_existence",
+      "verificationScope": "Farm existence is stated by the producer/company source.",
+      "sourceUrls": ["https://www.cafeuba.com.co/pages/about-us"],
+      "confidence": 1.0
+    },
+    {
+      "id": "ED-ST-CO-ROS-VERIFIED",
+      "coreCode": "ST-CO-ROS@深度研究",
+      "roles": ["farm"],
+      "canonicalNameEn": "Paraíso Villa Rosita",
+      "legacyNameZh": "天堂庄园罗西塔微地块",
+      "nameZhVerificationStatus": "legacy_core_not_source_verified",
+      "countryCode": "CO-CO",
+      "regionNote": "Piendamó-Tunia, Cauca, Colombia",
+      "parentOperationNameEn": "Finca El Paraíso",
+      "evidenceStatus": "verified_entity_existence",
+      "verificationScope": "Official Finca El Paraíso source lists Villa Rosita as one of its farms.",
+      "sourceUrls": [
+        "https://www.fincaelparaiso.com/villa-rosita",
+        "https://www.fincaelparaiso.com/farms"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "id": "ED-ST-CO-MAR-VERIFIED",
+      "coreCode": "ST-CO-MAR@深度研究",
+      "roles": ["farm"],
+      "canonicalNameEn": "Las Margaritas",
+      "legacyNameZh": "玛格丽特庄园",
+      "nameZhVerificationStatus": "legacy_core_not_source_verified",
+      "countryCode": "CO-CO",
+      "regionNote": "Caicedonia, Valle del Cauca, Colombia",
+      "parentOperationNameEn": "Café Granja La Esperanza",
+      "evidenceStatus": "verified_entity_existence",
+      "verificationScope": "Official Café Granja La Esperanza farm directory lists Las Margaritas as a Colombian farm.",
+      "sourceUrls": ["https://cafegranjalaesperanza.com/pages/farms"],
+      "confidence": 1.0
+    },
+    {
+      "id": "ED-ST-CO-POT-VERIFIED",
+      "coreCode": "ST-CO-POT@深度研究",
+      "roles": ["farm"],
+      "canonicalNameEn": "Potosí",
+      "legacyNameZh": "波托西庄园",
+      "nameZhVerificationStatus": "legacy_core_not_source_verified",
+      "countryCode": "CO-CO",
+      "regionNote": "Caicedonia, Valle del Cauca, Colombia",
+      "parentOperationNameEn": "Café Granja La Esperanza",
+      "evidenceStatus": "verified_entity_existence",
+      "verificationScope": "Official Café Granja La Esperanza farm directory lists Potosí as a Colombian farm.",
+      "sourceUrls": [
+        "https://cafegranjalaesperanza.com/pages/farms",
+        "https://cafegranjalaesperanza.com/pages/coffees"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "id": "ED-ST-CR-MIN-VERIFIED",
+      "coreCode": "ST-CR-MIN@深度研究",
+      "roles": ["estate", "producer"],
+      "canonicalNameEn": "Hacienda La Minita",
+      "legacyNameZh": "拉米尼塔庄园",
+      "nameZhVerificationStatus": "legacy_core_not_source_verified",
+      "countryCode": "CO-CR",
+      "regionNote": "Los Santos, Costa Rica",
+      "evidenceStatus": "verified_entity_existence",
+      "verificationScope": "Official Hacienda La Minita source identifies the flagship estate in Los Santos, Costa Rica.",
+      "sourceUrls": [
+        "https://www.laminita.com/hacienda-la-minita",
+        "https://www.laminita.com/farms-mills/hacienda-la-minita"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "id": "ED-ST-CR-SUM-VERIFIED",
+      "coreCode": "ST-CR-SUM@深度研究",
+      "roles": ["farm", "processor"],
+      "canonicalNameEn": "Finca Sumava de Lourdes",
+      "legacyNameZh": "苏玛瓦庄园",
+      "nameZhVerificationStatus": "legacy_core_not_source_verified",
+      "countryCode": "CO-CR",
+      "producerName": "Francisco Mena",
+      "regionNote": "Naranjo de Lourdes, West Valley, Costa Rica",
+      "evidenceStatus": "independently_corroborated_entity_existence",
+      "verificationScope": "Farm, producer and Sumava de Lourdes processing operation are independently corroborated by long-term buyer/exporter and Costa Rican competition records.",
+      "sourceUrls": [
+        "https://www.stumptowncoffee.com/pages/producer-francisco-mena",
+        "https://exclusivecoffeecr.com/relationships_westValley.html",
+        "https://sca.cr/wp-content/uploads/2025/06/RESULTS.pdf"
+      ],
+      "confidence": 0.98
+    },
+    {
+      "id": "ED-ST-HN-JER-VERIFIED",
+      "coreCode": "ST-HN-JER@深度研究",
+      "roles": ["producer", "exporter"],
+      "canonicalNameEn": "Finca Jerusalén",
+      "legacyNameZh": "耶路撒冷庄园",
+      "nameZhVerificationStatus": "legacy_core_not_source_verified",
+      "countryCode": "CO-HN",
+      "evidenceStatus": "verified_entity_reference_semantics_pending",
+      "verificationScope": "The official source describes a legally constituted association of specialty-coffee producers operating under the Finca Jerusalén brand; it does not establish that the core row is one single physical farm.",
+      "coreSemanticIssue": "Legacy entityType estate_or_farm may conflate a producer association/brand with one physical farm.",
+      "sourceUrls": [
+        "https://www.fincajerusalen.com/conocenos",
+        "https://www.fincajerusalen.com/en/conocenos"
+      ],
+      "confidence": 0.95
+    },
+    {
+      "id": "ED-ST-PA-MUL-VERIFIED",
+      "coreCode": "ST-PA-MUL@深度研究",
+      "roles": ["farm"],
+      "canonicalNameEn": "Finca La Mula",
+      "legacyNameZh": "骡子庄园",
+      "nameZhVerificationStatus": "legacy_core_not_source_verified",
+      "countryCode": "CO-PA",
+      "evidenceStatus": "verified_entity_existence",
+      "verificationScope": "Official farm source documents Finca La Mula and its Panamanian coffee production/processing context.",
+      "sourceUrls": ["https://lamulacoffee.com/"],
+      "confidence": 1.0
+    },
+    {
+      "id": "ED-ST-PA-ABU-VERIFIED",
+      "coreCode": "ST-PA-ABU@深度研究",
+      "roles": ["producer", "estate"],
+      "canonicalNameEn": "ABU Coffee",
+      "legacyNameZh": "阿布庄园",
+      "nameZhVerificationStatus": "legacy_core_not_source_verified",
+      "countryCode": "CO-PA",
+      "physicalFarmNameEn": "Hacienda Cañas Verdes",
+      "producerName": "José Luttrell",
+      "regionNote": "Boquete, Panama",
+      "evidenceStatus": "verified_brand_farm_relation",
+      "verificationScope": "Specialty Coffee Association of Panama identifies ABU Coffee and Hacienda Cañas Verdes as its physical farm; brand and farm names must not be collapsed without preserving this relation.",
+      "coreSemanticIssue": "Legacy row label is a brand/producer name while the physical farm is Hacienda Cañas Verdes.",
+      "sourceUrls": ["https://scap-panama.com/abucoffee/"],
+      "confidence": 1.0
+    },
+    {
+      "id": "ED-ST-PA-NIN-VERIFIED",
+      "coreCode": "ST-PA-NIN@深度研究",
+      "roles": ["estate", "producer"],
+      "canonicalNameEn": "Ninety Plus Gesha Estates",
+      "legacyNameZh": "九十加瑰夏庄园",
+      "nameZhVerificationStatus": "legacy_core_not_source_verified",
+      "countryCode": "CO-PA",
+      "regionNote": "Volcán Barú, Panama",
+      "evidenceStatus": "verified_entity_existence",
+      "verificationScope": "Ninety Plus official source identifies Gesha Estates as its first Panamanian farm/estate.",
+      "sourceUrls": [
+        "https://www.ninetypluscoffee.com/",
+        "https://www.ninetypluscoffee.com/blogs/journal/our-story"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "id": "ED-ST-PA-MIF-VERIFIED",
+      "coreCode": "ST-PA-MIF@深度研究",
+      "roles": ["producer", "trader"],
+      "canonicalNameEn": "Mi Finquita Panama",
+      "legacyNameZh": "我的小庄园",
+      "nameZhVerificationStatus": "legacy_core_not_source_verified",
+      "countryCode": "CO-PA",
+      "evidenceStatus": "verified_entity_reference_semantics_pending",
+      "verificationScope": "The official source verifies Mi Finquita Panama as a coffee-production/commercialization operation, but does not by itself prove that the core row represents one single physical farm.",
+      "coreSemanticIssue": "Legacy entityType estate_or_farm may overstate physical-farm identity for a brand/company reference.",
+      "sourceUrls": [
+        "https://www.mifinquitabyratibor.com/historia/",
+        "https://www.mifinquitabyratibor.com/inicio/"
+      ],
+      "confidence": 0.92
+    },
+    {
+      "id": "ED-ST-PA-ALT-VERIFIED",
+      "coreCode": "ST-PA-ALT@深度研究",
+      "roles": ["producer", "estate"],
+      "canonicalNameEn": "Altieri Specialty Coffee",
+      "legacyNameZh": "阿尔铁里庄园",
+      "nameZhVerificationStatus": "legacy_core_not_source_verified",
+      "countryCode": "CO-PA",
+      "regionNote": "Boquete, Chiriquí, Panama",
+      "evidenceStatus": "verified_producer_group",
+      "verificationScope": "Official company and Specialty Coffee Association of Panama sources describe Altieri Specialty Coffee as a family-owned group of coffee-growing farms rather than one single estate.",
+      "coreSemanticIssue": "Legacy entityType estate_or_farm may conflate a producer group/brand with its member farms.",
+      "sourceUrls": [
+        "https://www.altiericoffee.com/",
+        "https://scap-panama.com/altieri-coffee-farms/"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "id": "ED-ST-SV-PIR-VERIFIED",
+      "coreCode": "ST-SV-PIR@深度研究",
+      "roles": ["farm", "producer"],
+      "canonicalNameEn": "Finca Los Pirineos",
+      "legacyNameZh": "洛斯皮里内奥斯庄园",
+      "nameZhVerificationStatus": "legacy_core_not_source_verified",
+      "countryCode": "CO-SV",
+      "regionNote": "Berlín / Usulután, El Salvador",
+      "evidenceStatus": "independently_corroborated_entity_existence",
+      "verificationScope": "Farm existence and production identity are corroborated by El Salvador tourism, Alliance for Coffee Excellence and specialty-coffee industry records.",
+      "sourceUrls": [
+        "https://elsalvador.travel/experience/los-pirineos-coffee-farm/",
+        "https://allianceforcoffeeexcellence.org/farm-directory/87-13-8/"
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "species": [],
+  "varietyDetails": [],
+  "localizedNames": [],
+  "localizedAliases": []
+}
