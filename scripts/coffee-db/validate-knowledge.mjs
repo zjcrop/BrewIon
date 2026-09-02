@@ -7,6 +7,7 @@ const knowledgePath = path.resolve(ROOT, 'coffee-knowledge/coffee_origin_knowled
 const sourcesPath = path.resolve(ROOT, 'coffee-knowledge/source_registry_v1.json');
 const corePath = path.resolve(ROOT, 'coffee-qr-codebook/coffee_qr_codebook_v6.json');
 const varietyModulePath = path.resolve(ROOT, 'coffee-knowledge/catalog/v6_variety_details_remaining_v1.json');
+const entityIdentityPath = path.resolve(ROOT, 'coffee-knowledge/catalog/entity_identity_groups_v1.json');
 
 const knowledge = JSON.parse(fs.readFileSync(knowledgePath, 'utf8'));
 const registry = JSON.parse(fs.readFileSync(sourcesPath, 'utf8'));
@@ -14,6 +15,9 @@ const core = JSON.parse(fs.readFileSync(corePath, 'utf8'));
 const varietyModule = fs.existsSync(varietyModulePath)
   ? JSON.parse(fs.readFileSync(varietyModulePath, 'utf8'))
   : { species: [], varietyDetails: [], localizedNames: [], localizedAliases: [] };
+const entityIdentity = fs.existsSync(entityIdentityPath)
+  ? JSON.parse(fs.readFileSync(entityIdentityPath, 'utf8'))
+  : { groups: [] };
 const errors = [];
 const warnings = [];
 
@@ -45,12 +49,14 @@ for (const source of registry.sources || []) {
 
 const coreCodes = new Set();
 const coreVarietyCodes = new Set();
+const coreEntityByCode = new Map();
 for (const table of ['countries', 'regions', 'entities', 'varieties', 'processes', 'flavors']) {
   for (const row of core[table] || []) {
     if (!row?.[0]) continue;
     const code = String(row[0]);
     coreCodes.add(code);
     if (table === 'varieties') coreVarietyCodes.add(code);
+    if (table === 'entities') coreEntityByCode.set(code, { countryCode: String(row[1] || ''), entityType: String(row[2] || '') });
   }
 }
 
@@ -141,6 +147,27 @@ for (const [index, rel] of arrayOf(knowledge, 'temporalRelations').entries()) {
   if (!validConfidence(rel.confidence)) fail(`temporalRelations[${index}] confidence must be 0..1`);
 }
 
+const identityIds = new Set();
+const identityCodeOwners = new Map();
+for (const [index, group] of arrayOf(entityIdentity, 'groups').entries()) {
+  const id = String(group.canonicalIdentityId || '').trim();
+  if (!id) { fail(`entityIdentity.groups[${index}] missing canonicalIdentityId`); continue; }
+  if (identityIds.has(id)) fail(`duplicate canonicalIdentityId ${id}`);
+  identityIds.add(id);
+  if (!String(group.canonicalNameZh || '').trim() || !String(group.canonicalNameEn || '').trim()) fail(`${id} must have zh/en canonical names`);
+  if (!validConfidence(group.confidence)) fail(`${id} confidence must be 0..1`);
+  if (!Array.isArray(group.sourceUrls) || group.sourceUrls.length < 1) fail(`${id} requires at least one sourceUrl`);
+  for (const url of group.sourceUrls || []) if (!/^https:\/\//.test(String(url))) fail(`${id} sourceUrl must use https: ${url}`);
+  if (!Array.isArray(group.coreCodes) || group.coreCodes.length < 2) fail(`${id} must contain at least two coreCodes`);
+  for (const coreCode of group.coreCodes || []) {
+    const entity = coreEntityByCode.get(coreCode);
+    if (!entity) { fail(`${id} references non-entity or missing coreCode ${coreCode}`); continue; }
+    if (group.countryCode && group.countryCode !== entity.countryCode) fail(`${id} country mismatch for ${coreCode}`);
+    if (identityCodeOwners.has(coreCode)) fail(`${coreCode} assigned to multiple canonical identity groups: ${identityCodeOwners.get(coreCode)} and ${id}`);
+    identityCodeOwners.set(coreCode, id);
+  }
+}
+
 const missingVarietyCoverage = [...coreVarietyCodes].filter((code) => !materializedVarietyCodes.has(code));
 const foreignVarietyCoverage = [...materializedVarietyCodes].filter((code) => !coreVarietyCodes.has(code));
 if (missingVarietyCoverage.length) fail(`v6 variety semantic coverage incomplete: missing ${missingVarietyCoverage.join(', ')}`);
@@ -156,6 +183,8 @@ const summary = {
   processDetails: knowledge.processDetails?.length || 0,
   processFamilies: knowledge.processFamilies?.length || 0,
   fermentationMethods: knowledge.fermentationMethods?.length || 0,
+  canonicalEntityIdentityGroups: identityIds.size,
+  groupedEntityCoreCodes: identityCodeOwners.size,
   sources: registry.sources?.length || 0,
   localizedNames: (knowledge.localizedNames?.length || 0) + (varietyModule.localizedNames?.length || 0),
   localizedAliases: (knowledge.localizedAliases?.length || 0) + (varietyModule.localizedAliases?.length || 0),
