@@ -69,6 +69,7 @@ const geoIdentity = manifest.geoIdentityModule
   : { identityGroups: [], hierarchyCorrections: [] };
 
 const moduleSpecies = catalogs.flatMap((x) => x.data.species || []);
+const moduleEntities = catalogs.flatMap((x) => x.data.entityDetails || []);
 const moduleVarieties = catalogs.flatMap((x) => x.data.varietyDetails || []);
 const moduleLocalizedNames = catalogs.flatMap((x) => x.data.localizedNames || []);
 const moduleLocalizedAliases = catalogs.flatMap((x) => x.data.localizedAliases || []);
@@ -76,7 +77,7 @@ const moduleLocalizedAliases = catalogs.flatMap((x) => x.data.localizedAliases |
 const species = mergeUniqueById([...(knowledge.species || []), ...moduleSpecies]);
 const varietyDetails = mergeUniqueById([...(knowledge.varietyDetails || []), ...moduleVarieties]);
 const geoDetails = mergeUniqueById(knowledge.geoDetails || []);
-const entityDetails = mergeUniqueById(knowledge.entityDetails || []);
+const entityDetails = mergeUniqueById([...(knowledge.entityDetails || []), ...moduleEntities]);
 const processDetails = mergeUniqueById(knowledge.processDetails || []);
 
 const geoByCore = indexByCoreCode(geoDetails);
