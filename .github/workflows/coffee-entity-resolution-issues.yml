@@ -1,0 +1,70 @@
+name: Coffee Entity Resolution Issues
+
+on:
+  pull_request:
+    paths:
+      - 'coffee-knowledge/catalog/entity_resolution_issues_v1.json'
+      - 'coffee-knowledge/knowledge-manifest_v1.json'
+      - 'scripts/coffee-db/validate-entity-resolution-issues.mjs'
+      - 'scripts/coffee-db/build-knowledge-bundle.mjs'
+      - '.github/workflows/coffee-entity-resolution-issues.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'coffee-knowledge/catalog/entity_resolution_issues_v1.json'
+      - 'coffee-knowledge/knowledge-manifest_v1.json'
+      - 'scripts/coffee-db/validate-entity-resolution-issues.mjs'
+      - 'scripts/coffee-db/build-knowledge-bundle.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Syntax
+        run: |
+          node --check scripts/coffee-db/validate-entity-resolution-issues.mjs
+          node --check scripts/coffee-db/build-knowledge-bundle.mjs
+      - name: Validate issue contract
+        run: node scripts/coffee-db/validate-entity-resolution-issues.mjs
+      - name: Build candidate knowledge release
+        run: node scripts/coffee-db/build-knowledge-bundle.mjs --output=coffee-entity-resolution-build
+      - name: Enforce release materialization and safety
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const manifest=JSON.parse(fs.readFileSync('coffee-entity-resolution-build/latest.json','utf8'));
+          const artifact=JSON.parse(fs.readFileSync(`coffee-entity-resolution-build/${manifest.artifact.name}`,'utf8'));
+          if (artifact.version !== '1.0.0-alpha.7') throw new Error(`Expected alpha.7, got ${artifact.version}`);
+          if (manifest.compatibility?.qrIndexesChanged !== false) throw new Error('QR indexes changed.');
+          if (artifact.counts?.entities !== 460) throw new Error(`Entity count changed: ${artifact.counts?.entities}`);
+          if (artifact.counts?.enrichedEntities !== 21) throw new Error(`Verified entity count changed: ${artifact.counts?.enrichedEntities}`);
+          const key='catalog/entity_resolution_issues_v1.json';
+          const model=artifact.supplementalModels?.[key];
+          if (!model) throw new Error(`Missing supplemental model ${key}`);
+          if (!Array.isArray(model.issues) || model.issues.length !== 5) throw new Error(`Expected 5 resolution issues, got ${model.issues?.length}`);
+          if (model.issues.some(x=>x.blockAutomaticEntityResolution!==true)) throw new Error('Every resolution issue must block automatic entity resolution.');
+          const blocked=new Set(model.issues.map(x=>x.coreCode));
+          const byCode=new Map((artifact.entities||[]).map(x=>[x.code,x]));
+          for (const code of blocked) {
+            if (byCode.get(code)?.knowledge) throw new Error(`Blocked entity was incorrectly materialized as verified knowledge: ${code}`);
+            if (String(byCode.get(code)?.status||'').toLowerCase()!=='candidate') throw new Error(`Blocked entity core status changed: ${code}`);
+          }
+          console.log({version:artifact.version,entities:artifact.counts.entities,enrichedEntities:artifact.counts.enrichedEntities,resolutionIssues:model.issues.length,qrIndexesChanged:manifest.compatibility.qrIndexesChanged});
+          NODE
+      - name: Upload candidate release
+        uses: actions/upload-artifact@v4
+        with:
+          name: coffee-entity-resolution-candidate-${{ github.run_id }}
+          path: coffee-entity-resolution-build/
+          retention-days: 30
+          if-no-files-found: error
