@@ -1,0 +1,35 @@
+{
+  "_format": "coffee-knowledge-release-manifest",
+  "_schemaVersion": 1,
+  "artifact": {
+    "bytes": 704990,
+    "name": "coffee-knowledge-1.0.0-alpha.1.json",
+    "sha256": "bbd2c609f6e23b850a6f574a1b72c79bd34598b737674ed2037e3d01f53c44d7"
+  },
+  "compatibility": {
+    "baselinePolicy": "materialize-core-then-overlay-knowledge",
+    "qrIndexesChanged": false
+  },
+  "contract": "coffee-knowledge/1.0",
+  "coreCodebookVersion": "6",
+  "counts": {
+    "aliases": 2630,
+    "countries": 56,
+    "enrichedCountries": 1,
+    "enrichedEntities": 3,
+    "enrichedProcesses": 25,
+    "enrichedRegions": 3,
+    "enrichedVarieties": 52,
+    "entities": 460,
+    "flavors": 127,
+    "processes": 25,
+    "regions": 247,
+    "relations": 1105,
+    "species": 4,
+    "varieties": 52
+  },
+  "provider": "brewion",
+  "type": "knowledge_dataset",
+  "updatedAt": "2026-09-02",
+  "version": "1.0.0-alpha.1"
+}
