@@ -1,0 +1,82 @@
+{
+  "_format": "coffee-wcr-high-priority-varieties",
+  "_schemaVersion": 1,
+  "version": "1.0.0",
+  "updatedAt": "2026-09-02",
+  "policy": {
+    "scope": "WCR entries identified as high-priority gaps by the deterministic v7 candidate build.",
+    "coreStatus": "knowledge_only_pending_usage_review",
+    "qrIndexAssigned": false,
+    "namePolicy": "English names follow WCR. Chinese forms below are AI-assisted display candidates and remain pending market verification where no established Chinese designation is available."
+  },
+  "species": [],
+  "varietyDetails": [
+    {
+      "id":"WCR-HP-ANACAFE-14","recordType":"cultivar_or_breeding_population","canonicalNameEn":"Anacafe 14","speciesId":"SP-ARABICA","geneticGroup":"Introgressed (Catimor related)","lineage":"(Timor Hybrid 832/1 x Caturra) x Pacamara","breeder":"National Coffee Association of Guatemala (ANACAFÉ)","releaseCountry":"Guatemala","releaseYear":2014,"uniformityStatus":"not_uniform_not_stable","sourceRefs":["SRC-WCR-CATALOG"],"sourceUrls":["https://varieties.worldcoffeeresearch.org/varieties/anacafe-14"],"confidence":1.0,"coreEligibility":"pending_consumer_ocr_frequency_review"
+    },
+    {
+      "id":"WCR-HP-COSTA-RICA-95","recordType":"cultivar_selection","canonicalNameEn":"Costa Rica 95","speciesId":"SP-ARABICA","geneticGroup":"Introgressed (Catimor related)","lineage":"Timor Hybrid 832/1 x Caturra","breeder":"Instituto del Café de Costa Rica (ICAFE)","releaseCountry":"Costa Rica","agronomyNote":"WCR reports recent scientific confirmation that CR95 is susceptible to coffee leaf rust in Costa Rica and possibly elsewhere in Central America.","sourceRefs":["SRC-WCR-CATALOG"],"sourceUrls":["https://varieties.worldcoffeeresearch.org/varieties/costa-rica-95"],"confidence":1.0,"coreEligibility":"pending_consumer_ocr_frequency_review"
+    },
+    {
+      "id":"WCR-HP-T5175","recordType":"breeding_line","canonicalNameEn":"T5175","speciesId":"SP-ARABICA","geneticGroup":"Introgressed (Catimor related)","lineage":"Timor Hybrid 832/1 x Caturra","breeder":"Instituto del Café de Costa Rica (ICAFE) / CATIE breeding-history context","uniformityStatus":"not_homogeneous_not_stable","historyNote":"WCR states it was never officially released by ICAFE; additional selection in Honduras produced IHCAFE 90 and Lempira.","sourceRefs":["SRC-WCR-CATALOG"],"sourceUrls":["https://varieties.worldcoffeeresearch.org/varieties/t5175"],"confidence":1.0,"coreEligibility":"knowledge_reference_priority"
+    },
+    {
+      "id":"WCR-HP-T5296","recordType":"breeding_line","canonicalNameEn":"T5296","speciesId":"SP-ARABICA","geneticGroup":"Introgressed (Sarchimor related)","lineage":"Timor Hybrid CIFC 832/2 x Villa Sarchi","uniformityStatus":"not_uniform_not_stable","historyNote":"WCR describes T5296 as an important rust-resistant breeding line not recommended itself; Cuscatleco and Parainema are pedigree selections of T5296.","sourceRefs":["SRC-WCR-CATALOG"],"sourceUrls":["https://varieties.worldcoffeeresearch.org/varieties/t5296"],"confidence":1.0,"coreEligibility":"knowledge_reference_priority"
+    },
+    {
+      "id":"WCR-HP-T8667","recordType":"breeding_line","canonicalNameEn":"T8667","speciesId":"SP-ARABICA","geneticGroup":"Introgressed (Catimor related)","lineage":"Timor Hybrid 832/1 x Caturra","breeder":"None listed by WCR","historyNote":"WCR identifies T8667 as an important Central American rust-resistance breeding line; separate selection streams contributed to Costa Rica 95 and Lempira.","sourceRefs":["SRC-WCR-CATALOG"],"sourceUrls":["https://varieties.worldcoffeeresearch.org/varieties/T8667"],"confidence":1.0,"coreEligibility":"knowledge_reference_priority"
+    },
+    {
+      "id":"WCR-HP-STARMAYA","recordType":"f1_hybrid","canonicalNameEn":"Starmaya","speciesId":"SP-ARABICA","geneticGroup":"F1 hybrid (introgressed)","lineage":"Marsellesa x wild Ethiopian/Sudanese male-sterile natural mutant","breeder":"CIRAD-ECOM","developmentCountry":"Nicaragua","uniformityStatus":"WCR page reports segregation/non-uniformity","sourceRefs":["SRC-WCR-CATALOG"],"sourceUrls":["https://varieties.worldcoffeeresearch.org/varieties/starmaya"],"confidence":1.0,"coreEligibility":"pending_consumer_ocr_frequency_review"
+    },
+    {
+      "id":"WCR-HP-VENECIA","recordType":"natural_mutation_selection","canonicalNameEn":"Venecia","speciesId":"SP-ARABICA","geneticGroup":"Bourbon-Typica group (Bourbon related)","lineage":"Natural mutation of Bourbon","breeder":"Instituto del Café de Costa Rica (ICAFE)","originCountry":"Costa Rica","sourceRefs":["SRC-WCR-CATALOG"],"sourceUrls":["https://varieties.worldcoffeeresearch.org/varieties/venecia"],"confidence":1.0,"coreEligibility":"pending_consumer_ocr_frequency_review"
+    },
+    {
+      "id":"WCR-HP-CATIMOR-129","recordType":"cultivar_selection","canonicalNameEn":"Catimor 129","aliases":["Cat129","Nyika"],"speciesId":"SP-ARABICA","geneticGroup":"Introgressed (Catimor related)","lineage":"Selection of a Catimor breeding line from Colombia (Caturra x Timor Hybrid 1343)","breeder":"Cenicafé","historyNote":"Introduced to Africa via Kenya and later selected/released in Malawi; WCR notes use as a female parent in some Ruiru 11 progenies.","sourceRefs":["SRC-WCR-CATALOG"],"sourceUrls":["https://varieties.worldcoffeeresearch.org/varieties/catimor-129"],"confidence":1.0,"coreEligibility":"pending_consumer_ocr_frequency_review"
+    },
+    {
+      "id":"WCR-HP-CATISIC","recordType":"cultivar_selection","canonicalNameEn":"Catisic","speciesId":"SP-ARABICA","geneticGroup":"Introgressed (Catimor related)","lineage":"Timor Hybrid 832/1 x Caturra","breeder":"Instituto Salvadoreño de Investigaciones del Café (ISIC)","releaseCountry":"El Salvador","sourceRefs":["SRC-WCR-CATALOG"],"sourceUrls":["https://varieties.worldcoffeeresearch.org/varieties/catisic"],"confidence":1.0,"coreEligibility":"pending_consumer_ocr_frequency_review"
+    },
+    {
+      "id":"WCR-HP-IAPAR-59","recordType":"cultivar_selection","canonicalNameEn":"IAPAR 59","speciesId":"SP-ARABICA","geneticGroup":"Introgressed (Sarchimor related)","lineage":"Timor Hybrid 832/2 x Villa Sarchi","breeder":"Instituto Agronômico do Paraná (IAPAR), Brazil","originCountry":"Brazil","sourceRefs":["SRC-WCR-CATALOG"],"sourceUrls":["https://varieties.worldcoffeeresearch.org/varieties/iapar-59"],"confidence":1.0,"coreEligibility":"pending_consumer_ocr_frequency_review"
+    },
+    {
+      "id":"WCR-HP-IPR-103","recordType":"cultivar","canonicalNameEn":"IPR 103","speciesId":"SP-ARABICA","geneticGroup":"Introgressed (Sarchimor related)","lineage":"Catuai x Icatu","breeder":"Instituto Agronômico (IAC), Brazil (WCR breeder field)","developmentNote":"WCR history states the cultivar was developed by IDR-Paraná.","originCountry":"Brazil","sourceRefs":["SRC-WCR-CATALOG"],"sourceUrls":["https://varieties.worldcoffeeresearch.org/varieties/ipr-103"],"confidence":1.0,"coreEligibility":"pending_consumer_ocr_frequency_review"
+    },
+    {
+      "id":"WCR-HP-IPR-107","recordType":"cultivar","canonicalNameEn":"IPR 107","speciesId":"SP-ARABICA","geneticGroup":"Introgressed (Sarchimor related)","lineage":"IAPAR 59 x Mundo Novo","breeder":"Instituto de Desenvolvimento Rural do Paraná (IDR-PR, formerly IAPAR)","releaseCountry":"Brazil","releaseYear":2010,"sourceRefs":["SRC-WCR-CATALOG"],"sourceUrls":["https://varieties.worldcoffeeresearch.org/varieties/ipr-107"],"confidence":1.0,"coreEligibility":"pending_consumer_ocr_frequency_review"
+    },
+    {
+      "id":"WCR-HP-PARAISO","recordType":"cultivar","canonicalNameEn":"Paraiso","speciesId":"SP-ARABICA","geneticGroup":"Introgressed (Sarchimor related)","lineage":"Catuai x Timor Hybrid","breeder":"EPAMIG and Federal University of Viçosa (UFV)","originCountry":"Brazil","historyNote":"WCR identifies Paraíso MG H 419-1 as originating from a 1980 cross between Catuaí Amarelo IAC 30 and Timor Hybrid UFV 445-46.","sourceRefs":["SRC-WCR-CATALOG"],"sourceUrls":["https://varieties.worldcoffeeresearch.org/varieties/paraiso"],"confidence":1.0,"coreEligibility":"pending_consumer_ocr_frequency_review"
+    },
+    {
+      "id":"WCR-HP-SL14","recordType":"selection","canonicalNameEn":"SL14","speciesId":"SP-ARABICA","geneticGroup":"Bourbon-Typica group (Typica related)","lineage":"Typica-like genetic background","breeder":"Scott Agricultural Laboratories","originCountry":"Kenya","selectionYear":1936,"historyNote":"Selected from a tree designated Drought Resistant II (D.R. II); WCR notes recent genetics confirm Typica-group relationship.","sourceRefs":["SRC-WCR-CATALOG"],"sourceUrls":["https://varieties.worldcoffeeresearch.org/varieties/sl14"],"confidence":1.0,"coreEligibility":"pending_consumer_ocr_frequency_review"
+    },
+    {
+      "id":"WCR-HP-SLN-5B","recordType":"selection","canonicalNameEn":"Sln.5B","aliases":["S.2931"],"speciesId":"SP-ARABICA","geneticGroup":"Introgressed (Other)","lineage":"Devamachy x Arabica (WCR Lineage field)","breeder":"Central Coffee Research Institute (CCRI)","originCountry":"India","sourceInternalAmbiguity":"WCR's Lineage field says 'Devamachy x Arabica', while its History section describes Sln.5B as derived from Devamachy x S.333, an introgressed C. liberica line. Both source statements are retained rather than silently reconciled.","historyLineageDetail":"Devamachy x S.333 (per WCR History section)","sourceRefs":["SRC-WCR-CATALOG"],"sourceUrls":["https://varieties.worldcoffeeresearch.org/varieties/sln-5b"],"confidence":1.0,"coreEligibility":"pending_source_lineage_reconciliation_and_usage_review"
+    },
+    {
+      "id":"WCR-HP-SLN-6","recordType":"interspecific_backcross_selection","canonicalNameEn":"Sln.6","aliases":["S.2828"],"speciesId":"SP-ARABICA","geneticGroup":"Introgressed (Other)","lineage":"Coffea canephora cv. S.274 x Coffea arabica cv. Kent, followed by backcrossing to Kent","breeder":"Central Coffee Research Institute (CCRI)","originCountry":"India","distributionNote":"WCR states the selection was distributed to Indian farmers in the 1970s and shared with Rwanda, Kenya, Zimbabwe and Uganda in 2010.","sourceRefs":["SRC-WCR-CATALOG"],"sourceUrls":["https://varieties.worldcoffeeresearch.org/varieties/sln-6"],"confidence":1.0,"coreEligibility":"pending_consumer_ocr_frequency_review"
+    }
+  ],
+  "localizedNames": [
+    {"targetId":"WCR-HP-ANACAFE-14","language":"zh-Hans","name":"Anacafé 14","nameType":"ai_transliterated","confidence":0.8,"reviewStatus":"pending_market_verification"},
+    {"targetId":"WCR-HP-COSTA-RICA-95","language":"zh-Hans","name":"哥斯达黎加95","nameType":"ai_translated","confidence":0.9,"reviewStatus":"pending_market_verification"},
+    {"targetId":"WCR-HP-T5175","language":"zh-Hans","name":"T5175","nameType":"canonical","confidence":1.0},
+    {"targetId":"WCR-HP-T5296","language":"zh-Hans","name":"T5296","nameType":"canonical","confidence":1.0},
+    {"targetId":"WCR-HP-T8667","language":"zh-Hans","name":"T8667","nameType":"canonical","confidence":1.0},
+    {"targetId":"WCR-HP-STARMAYA","language":"zh-Hans","name":"星玛雅","nameType":"ai_transliterated","confidence":0.75,"reviewStatus":"pending_market_verification"},
+    {"targetId":"WCR-HP-VENECIA","language":"zh-Hans","name":"Venecia","nameType":"ai_transliterated","confidence":0.6,"reviewStatus":"pending_market_verification"},
+    {"targetId":"WCR-HP-CATIMOR-129","language":"zh-Hans","name":"卡蒂姆129","nameType":"ai_transliterated","confidence":0.85,"reviewStatus":"pending_market_verification"},
+    {"targetId":"WCR-HP-CATISIC","language":"zh-Hans","name":"Catisic","nameType":"ai_transliterated","confidence":0.6,"reviewStatus":"pending_market_verification"},
+    {"targetId":"WCR-HP-IAPAR-59","language":"zh-Hans","name":"IAPAR 59","nameType":"canonical","confidence":1.0},
+    {"targetId":"WCR-HP-IPR-103","language":"zh-Hans","name":"IPR 103","nameType":"canonical","confidence":1.0},
+    {"targetId":"WCR-HP-IPR-107","language":"zh-Hans","name":"IPR 107","nameType":"canonical","confidence":1.0},
+    {"targetId":"WCR-HP-PARAISO","language":"zh-Hans","name":"Paraíso","nameType":"ai_transliterated","confidence":0.6,"reviewStatus":"pending_market_verification"},
+    {"targetId":"WCR-HP-SL14","language":"zh-Hans","name":"SL14","nameType":"canonical","confidence":1.0},
+    {"targetId":"WCR-HP-SLN-5B","language":"zh-Hans","name":"Sln.5B","nameType":"canonical","confidence":1.0},
+    {"targetId":"WCR-HP-SLN-6","language":"zh-Hans","name":"Sln.6","nameType":"canonical","confidence":1.0}
+  ],
+  "localizedAliases": []
+}
