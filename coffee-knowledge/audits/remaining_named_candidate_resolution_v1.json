@@ -1,0 +1,140 @@
+{
+  "_format": "coffee-remaining-named-candidate-resolution-audit",
+  "_schemaVersion": 1,
+  "version": "1.0.0",
+  "updatedAt": "2026-09-02",
+  "policy": {
+    "scope": "Nine explicitly named v6 legacy candidate entities remaining after alpha.5.",
+    "identityThreshold": "A name-country match is insufficient when multiple distinct farms share the same name; producer/location evidence is required before identity materialization.",
+    "geographyPolicy": "Source geography labels are recorded without using this audit to adjudicate sovereignty or alter frozen v6 country codes.",
+    "taxonomyPolicy": "A locality must not be promoted to farm/entity identity unless a source supports that entity type.",
+    "coreMutation": false,
+    "automaticPromotion": false
+  },
+  "summary": {
+    "reviewed": 9,
+    "materializedAsVerifiedKnowledge": 4,
+    "sameNameIdentityAmbiguous": 3,
+    "sourceGeographyConflict": 1,
+    "likelyTaxonomyMisclassification": 1,
+    "automaticCoreMutations": 0
+  },
+  "findings": [
+    {
+      "coreCode": "ST-BR-PRI@深度研究",
+      "nameEn": "Fazenda Primavera",
+      "coreCountryCode": "CO-BR",
+      "classification": "verified_entity_existence_matchable",
+      "materializeKnowledge": true,
+      "finding": "ACE and BSCA independently identify Fazenda Primavera in Chapada de Minas, Brazil; competition records provide producer/region context.",
+      "sourceUrls": [
+        "https://cupofexcellence.org/brazil-2019/",
+        "https://www.bsca.com.br/chapada-de-minas-e-cerrado-mineiro-produzem-os-melhores-cafes-especiais-do-brasil-em-2018/"
+      ]
+    },
+    {
+      "coreCode": "ST-CN-ZHU@深度研究",
+      "nameEn": "Zhuo Wu Mountain Coffee Farm",
+      "coreCountryCode": "CO-CN",
+      "classification": "source_geography_conflict",
+      "materializeKnowledge": false,
+      "finding": "Taiwan PCA identifies Zhuo Wu Mountain Coffee Farm in Chiayi County and the farm's own site gives a Chiayi City, Taiwan address. The frozen CO-CN assignment therefore does not match the source taxonomy. This is a database geography conflict flag only and does not adjudicate sovereignty.",
+      "sourceUrls": [
+        "https://twn.coffee/2021/lots-single01.html",
+        "https://twn.coffee/2022/lr03.html",
+        "https://www.zhuowucafe.com/en/"
+      ]
+    },
+    {
+      "coreCode": "ST-CO-JOS@深度研究",
+      "nameEn": "Finca San Jose",
+      "coreCountryCode": "CO-CO",
+      "classification": "same_name_identity_ambiguous",
+      "materializeKnowledge": false,
+      "finding": "ACE documents a San José farm of Alexander Torres in Pitalito, Huila, while Colombian government material independently references another Finca San José in San Agustín, Huila. Name plus country cannot uniquely identify the frozen core row.",
+      "sourceUrls": [
+        "https://allianceforcoffeeexcellence.org/farm-directory/84-16/",
+        "https://upra.gov.co/en/press-room/news/upra-constructs-agropecuary-landscapes-catalog-huila-producers"
+      ]
+    },
+    {
+      "coreCode": "ST-CO-NEG@深度研究",
+      "nameEn": "Finca La Negrita",
+      "coreCountryCode": "CO-CO",
+      "classification": "verified_entity_existence_matchable",
+      "materializeKnowledge": true,
+      "finding": "Multiple independent coffee buyers identify Mauricio Shattah's Finca La Negrita in Tolima, Colombia.",
+      "sourceUrls": [
+        "https://thebarn.de/products/finca-la-negrita",
+        "https://assemblycoffee.live/products/colombia-mauricio-shattah-sidra",
+        "https://philsebastian.com/products/finca-la-negrita-red-geisha-washed"
+      ]
+    },
+    {
+      "coreCode": "ST-CO-MIR@深度研究",
+      "nameEn": "Finca El Mirador",
+      "coreCountryCode": "CO-CO",
+      "classification": "same_name_identity_ambiguous",
+      "materializeKnowledge": false,
+      "finding": "Independent supply-chain sources identify multiple distinct Colombian farms named El Mirador, including farms associated with Elkin Guzmán, José Javier Canacue, Alonso Bustos and José Jadir Losada. The frozen core row has no producer/region discriminator.",
+      "sourceUrls": [
+        "https://www.touton-specialty-coffee.com/en/p11453",
+        "https://www.seycoffee.com/products/el-mirador",
+        "https://sucafina.com/emea/?sourceUrl=%2Fna%2Fofferings%2Falonso-bustos-el-mirador-anaerobic-natural",
+        "https://www.allycoffee.com/coffees/mirador-washed/"
+      ]
+    },
+    {
+      "coreCode": "ST-CO-DIV@深度研究",
+      "nameEn": "Finca El Diviso",
+      "coreCountryCode": "CO-CO",
+      "classification": "same_name_identity_ambiguous",
+      "materializeKnowledge": false,
+      "finding": "ACE records a 2005 El Diviso farm operated by Henry Cuellar Rojas in Oporapa, Huila, while current specialty-coffee records identify Néstor Lasso's different El Diviso operation near Pitalito. The core name-country pair cannot select between them.",
+      "sourceUrls": [
+        "https://cupofexcellence.org/colombia-north-2005/",
+        "https://kolibricoffee.com/product/el-diviso/",
+        "https://ineffablecoffee.com/blogs/aprendizaje-y-cultura-cafetera/nestor-lasso"
+      ]
+    },
+    {
+      "coreCode": "ST-GT-SEN@深度研究",
+      "nameEn": "Finca La Senda",
+      "coreCountryCode": "CO-GT",
+      "classification": "verified_entity_existence_matchable",
+      "materializeKnowledge": true,
+      "finding": "Independent sources consistently identify Finca La Senda in Acatenango, Guatemala, run by Arnoldo Pérez Melendez and Maria Eugenia Escobar.",
+      "sourceUrls": [
+        "https://sendero-coffee.com/blogs/interesting-reads/origin-report-guatemala",
+        "https://www.roestcoffee.com/blog/css-finca-la-senda",
+        "https://meritcoffee.com/products/la-senda-dulce-fuego-1"
+      ]
+    },
+    {
+      "coreCode": "ST-GT-MOR@深度研究",
+      "nameEn": "Finca El Morito",
+      "coreCountryCode": "CO-GT",
+      "classification": "verified_entity_existence_matchable",
+      "materializeKnowledge": true,
+      "finding": "Alliance for Coffee Excellence identifies José Roberto Monterroso Pineda as owner/producer of Finca El Morito in Mataquescuintla, Jalapa, Guatemala.",
+      "sourceUrls": [
+        "https://allianceforcoffeeexcellence.org/legends-2026/",
+        "https://auction.allianceforcoffeeexcellence.org/en/lots/el-morito-2"
+      ]
+    },
+    {
+      "coreCode": "ST-PE-HUA@深度研究",
+      "nameEn": "Finca El Huabo",
+      "coreCountryCode": "CO-PE",
+      "classification": "likely_taxonomy_misclassification",
+      "materializeKnowledge": false,
+      "finding": "Current supply-chain sources repeatedly use El Huabo as a community/subregion in San Ignacio, Cajamarca containing multiple distinct farms (for example Café Garmas, El Cedro, El Cautivo and El Lechero). No sufficiently strong source was found establishing one physical farm named Finca El Huabo, so the legacy row may conflate locality and farm entity.",
+      "sourceUrls": [
+        "https://sucafina.com/apac/offerings/cafe-garmas-maximiliano-garcia-esperanza-armijos-bourbon-washed",
+        "https://sucafina.com/na/offerings/orlando-jimenez-el-cedro-bourbon-fw-organic",
+        "https://49thcoffee.com/collections/single-origin/products/peru-san-ignacio-filter-roast-coffee",
+        "https://allianceforcoffeeexcellence.org/farm-directory/88-75-8/"
+      ]
+    }
+  ]
+}
