@@ -2,9 +2,9 @@
   "_format": "coffee-knowledge-release-manifest",
   "_schemaVersion": 1,
   "artifact": {
-    "bytes": 758702,
-    "name": "coffee-knowledge-1.0.0-alpha.5.json",
-    "sha256": "f0fc2f8f5493304fb13a083ecad175a8c597e0c98b3962815f7b7f05d8d3c9db"
+    "bytes": 762845,
+    "name": "coffee-knowledge-1.0.0-alpha.6.json",
+    "sha256": "e1ccfc82c022a471d6522c70d62200ef38fab09fcbbe23ea764a43c4a484bbd4"
   },
   "compatibility": {
     "baselinePolicy": "materialize-core-then-overlay-knowledge",
@@ -21,7 +21,7 @@
     "canonicalGeoIdentityGroups": 1,
     "countries": 56,
     "enrichedCountries": 1,
-    "enrichedEntities": 17,
+    "enrichedEntities": 21,
     "enrichedProcesses": 25,
     "enrichedRegions": 3,
     "enrichedVarieties": 52,
@@ -42,5 +42,5 @@
   "provider": "brewion",
   "type": "knowledge_dataset",
   "updatedAt": "2026-09-02",
-  "version": "1.0.0-alpha.5"
+  "version": "1.0.0-alpha.6"
 }
