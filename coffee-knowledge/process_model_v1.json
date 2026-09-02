@@ -1,0 +1,77 @@
+{
+  "_format": "coffee-process-knowledge",
+  "_schemaVersion": 1,
+  "version": "1.0.0-alpha",
+  "updatedAt": "2026-09-02",
+  "sourceRefs": ["SRC-CQI-PROCESSING"],
+  "baseProcesses": [
+    {"id":"PF-NATURAL","nameZh":"日晒","nameEn":"Natural","standard":true},
+    {"id":"PF-HONEY","nameZh":"蜜处理","nameEn":"Honey","standard":true},
+    {"id":"PF-MECH-DEMUC","nameZh":"机械脱黏液","nameEn":"Mechanically Demucilaged","standard":true},
+    {"id":"PF-FULLY-WASHED","nameZh":"全水洗","nameEn":"Fully Washed","standard":true},
+    {"id":"PF-WET-HULLED","nameZh":"湿刨","nameEn":"Wet Hulled","standard":true}
+  ],
+  "fermentationProtocols": [
+    {"id":"FM-ANAEROBIC","nameZh":"厌氧发酵","nameEn":"Anaerobic fermentation","status":"descriptive_protocol"},
+    {"id":"FM-CARBONIC","nameZh":"二氧化碳浸渍","nameEn":"Carbonic maceration","status":"descriptive_protocol"},
+    {"id":"FM-DOUBLE","nameZh":"双重/两段发酵","nameEn":"Double / two-stage fermentation","status":"underspecified_without_lot_context"},
+    {"id":"FM-BARREL","nameZh":"酒桶/桶内发酵","nameEn":"Barrel fermentation","status":"vessel_or_protocol"},
+    {"id":"FM-KOJI","nameZh":"曲霉/麴菌相关发酵","nameEn":"Koji-associated fermentation","status":"reported_or_inoculated_protocol"},
+    {"id":"FM-LACTIC","nameZh":"乳酸发酵","nameEn":"Lactic fermentation","status":"reported_protocol_requires_microbiology_caution"},
+    {"id":"FM-MOSTO","nameZh":"Mosto发酵","nameEn":"Mosto fermentation","status":"producer_specific_protocol"},
+    {"id":"FM-YEAST","nameZh":"酵母发酵","nameEn":"Yeast fermentation","status":"reported_or_inoculated_protocol"}
+  ],
+  "specialTreatments": [
+    {"id":"ST-FREEZE","nameZh":"冷冻/低温特殊处理","nameEn":"Freezing / subzero special treatment"},
+    {"id":"ST-THERMAL-SHOCK","nameZh":"热冲击","nameEn":"Thermal shock"},
+    {"id":"ST-MONSOONED","nameZh":"季风处理","nameEn":"Monsooning"},
+    {"id":"ST-INFUSED","nameZh":"浸渍/外源添加","nameEn":"Infusion / external addition","status":"must_not_be_assumed_equivalent_to_cofermentation"},
+    {"id":"ST-COFERMENT","nameZh":"共发酵","nameEn":"Co-fermentation","status":"keep_separate_from_infusion_when_evidence_allows"}
+  ],
+  "honeyMarketQualifiers": [
+    {"id":"HQ-WHITE","nameZh":"白蜜","nameEn":"White Honey"},
+    {"id":"HQ-YELLOW","nameZh":"黄蜜","nameEn":"Yellow Honey"},
+    {"id":"HQ-RED","nameZh":"红蜜","nameEn":"Red Honey"},
+    {"id":"HQ-BLACK","nameZh":"黑蜜","nameEn":"Black Honey"}
+  ],
+  "coreMappings": [
+    {"coreCode":"PR-NA","baseProcessId":"PF-NATURAL"},
+    {"coreCode":"PR-HO","baseProcessId":"PF-HONEY"},
+    {"coreCode":"PR-WA","baseProcessId":"PF-FULLY-WASHED"},
+    {"coreCode":"PR-WET","baseProcessId":"PF-WET-HULLED"},
+    {"coreCode":"PR-ANN","baseProcessId":"PF-NATURAL","fermentationId":"FM-ANAEROBIC"},
+    {"coreCode":"PR-ANW","baseProcessId":"PF-FULLY-WASHED","fermentationId":"FM-ANAEROBIC"},
+    {"coreCode":"PR-AN","fermentationId":"FM-ANAEROBIC"},
+    {"coreCode":"PR-CM","fermentationId":"FM-CARBONIC"},
+    {"coreCode":"PR-DF","fermentationId":"FM-DOUBLE"},
+    {"coreCode":"PR-BF","fermentationId":"FM-BARREL"},
+    {"coreCode":"PR-KOJI","fermentationId":"FM-KOJI"},
+    {"coreCode":"PR-LACT","fermentationId":"FM-LACTIC"},
+    {"coreCode":"PR-MOS","fermentationId":"FM-MOSTO"},
+    {"coreCode":"PR-YEAST","fermentationId":"FM-YEAST"},
+    {"coreCode":"PR-FRZ","specialTreatmentId":"ST-FREEZE"},
+    {"coreCode":"PR-TS","specialTreatmentId":"ST-THERMAL-SHOCK"},
+    {"coreCode":"PR-MONS","specialTreatmentId":"ST-MONSOONED"},
+    {"coreCode":"PR-INF","legacyConflatedTreatmentIds":["ST-INFUSED","ST-COFERMENT"]},
+    {"coreCode":"PR-WH","baseProcessId":"PF-HONEY","honeyQualifierId":"HQ-WHITE"},
+    {"coreCode":"PR-YH","baseProcessId":"PF-HONEY","honeyQualifierId":"HQ-YELLOW"},
+    {"coreCode":"PR-RH","baseProcessId":"PF-HONEY","honeyQualifierId":"HQ-RED"},
+    {"coreCode":"PR-BH","baseProcessId":"PF-HONEY","honeyQualifierId":"HQ-BLACK"},
+    {"coreCode":"PR-PN","mappingStatus":"origin_context_required","note":"Pulped Natural remains a market/origin term; do not force to one CQI family without source context."},
+    {"coreCode":"PR-SEMI","mappingStatus":"origin_context_required","note":"Semi Washed is origin-dependent and cannot be globally normalized to one base family."},
+    {"coreCode":"PR-EA","fermentationId":"FM-ANAEROBIC","mappingStatus":"marketing_or_experimental_qualifier"}
+  ],
+  "lotModel": {
+    "recommendedFields": [
+      "baseProcessId",
+      "fermentationProtocolIds",
+      "dryingProtocolIds",
+      "specialTreatmentIds",
+      "additionOrInfusionIds",
+      "reportedProcessText",
+      "sourceRefs",
+      "confidence"
+    ],
+    "rule": "Preserve the label printed by producer/roaster in reportedProcessText while also storing normalized dimensions separately."
+  }
+}

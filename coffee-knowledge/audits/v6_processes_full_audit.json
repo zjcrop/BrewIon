@@ -1,0 +1,58 @@
+{
+  "_format": "coffee-knowledge-audit-batch",
+  "_schemaVersion": 1,
+  "batchId": "v6-processes-full-audit",
+  "createdAt": "2026-09-02",
+  "scope": "Semantic decomposition of all 25 v6 core process codes. QR code/index rows remain unchanged.",
+  "referenceModel": {
+    "sourceId": "SRC-CQI-PROCESSING",
+    "standardBaseFamilies": [
+      "natural",
+      "honey",
+      "mechanically_demucilaged",
+      "fully_washed",
+      "wet_hulled"
+    ],
+    "dimensions": [
+      "base_process",
+      "fermentation_protocol",
+      "drying_protocol",
+      "special_treatment",
+      "addition_or_infusion",
+      "market_display_label"
+    ],
+    "rule": "A retail/core display process may combine several dimensions. Do not infer an unspecified base process from a fermentation-only label."
+  },
+  "records": [
+    {"coreCode":"PR-AN","coreNameEn":"Anaerobic Fermentation","classification":"fermentation_protocol","baseProcess":null,"fermentation":"anaerobic","risk":"Legacy label omits the base processing method.","disposition":"preserve_core_decompose_in_knowledge"},
+    {"coreCode":"PR-ANN","coreNameEn":"Anaerobic Natural","classification":"composite_display_label","baseProcess":"natural","fermentation":"anaerobic","disposition":"preserve_core_decompose_in_knowledge"},
+    {"coreCode":"PR-ANW","coreNameEn":"Anaerobic Washed","classification":"composite_display_label","baseProcess":"fully_washed","fermentation":"anaerobic","disposition":"preserve_core_decompose_in_knowledge"},
+    {"coreCode":"PR-BF","coreNameEn":"Barrel Fermentation","classification":"fermentation_or_vessel_protocol","baseProcess":null,"fermentation":"barrel_or_vessel","risk":"Barrel fermentation does not identify the complete post-harvest process.","disposition":"preserve_core_require_lot_context"},
+    {"coreCode":"PR-BH","coreNameEn":"Black Honey","classification":"honey_substyle","baseProcess":"honey","marketQualifier":"black_honey","disposition":"preserve_core_map_to_honey_family"},
+    {"coreCode":"PR-CM","coreNameEn":"Carbonic Maceration","classification":"fermentation_protocol","baseProcess":null,"fermentation":"carbonic_maceration","risk":"Carbonic maceration can be paired with different downstream/base process descriptions.","disposition":"preserve_core_require_base_process_when_known"},
+    {"coreCode":"PR-DF","coreNameEn":"Double Fermentation","classification":"fermentation_protocol","baseProcess":null,"fermentation":"double_or_two_stage","risk":"Term does not specify stage sequence, vessel, oxygen state or base process.","disposition":"preserve_core_mark_protocol_underspecified"},
+    {"coreCode":"PR-EA","coreNameEn":"Experimental Anaerobic","classification":"fermentation_protocol_marketing_label","baseProcess":null,"fermentation":"anaerobic","marketQualifier":"experimental","risk":"Experimental is not a standardized process definition.","disposition":"preserve_core_candidate_detail_only"},
+    {"coreCode":"PR-FRZ","coreNameEn":"Frozen Fermentation","classification":"special_temperature_treatment","baseProcess":null,"specialTreatment":"freezing_or_subzero_temperature","risk":"Name may refer to cherry/freezing/fermentation temperature variants and requires lot-specific evidence.","disposition":"preserve_core_require_lot_context"},
+    {"coreCode":"PR-HO","coreNameEn":"Honey","classification":"base_process","baseProcess":"honey","disposition":"preserve_core_standard_family"},
+    {"coreCode":"PR-INF","coreNameEn":"Infused / Co-fermented","classification":"legacy_conflated_label","baseProcess":null,"additionOrInfusion":"unknown_infused_or_cofermented","risk":"Infusion and co-fermentation are not necessarily the same operation; current core label intentionally preserves legacy compatibility but must be split in the knowledge layer when evidence exists.","disposition":"preserve_core_split_lot_level_semantics"},
+    {"coreCode":"PR-KOJI","coreNameEn":"Koji Fermentation","classification":"inoculated_fermentation_protocol","baseProcess":null,"fermentation":"koji_inoculated","disposition":"preserve_core_require_base_process_when_known"},
+    {"coreCode":"PR-LACT","coreNameEn":"Lactic Fermentation","classification":"fermentation_protocol_or_marketing_label","baseProcess":null,"fermentation":"lactic_or_lactic_acid_bacteria_associated","risk":"Do not infer laboratory-confirmed microbial dominance from a market label unless source evidence supports it.","disposition":"preserve_core_as_reported_label"},
+    {"coreCode":"PR-MONS","coreNameEn":"Monsooned","classification":"post_harvest_conditioning","baseProcess":null,"specialTreatment":"monsooning","risk":"Monsooning is a later conditioning/exposure treatment and should not be forced into the five base process families.","disposition":"preserve_core_special_treatment"},
+    {"coreCode":"PR-MOS","coreNameEn":"Mosto Fermentation","classification":"fermentation_protocol","baseProcess":null,"fermentation":"mosto_assisted_or_mosto_reported","risk":"Mosto terminology is producer-specific and should preserve source wording.","disposition":"preserve_core_require_lot_context"},
+    {"coreCode":"PR-NA","coreNameEn":"Natural","classification":"base_process","baseProcess":"natural","disposition":"preserve_core_standard_family"},
+    {"coreCode":"PR-PN","coreNameEn":"Pulped Natural","classification":"base_process_market_term","baseProcess":"honey_or_pulped_natural_context","risk":"Pulped Natural is a widely used market/origin term but should not automatically be equated to every Honey or mechanically-demucilaged process without producer evidence.","disposition":"preserve_core_origin_sensitive_mapping"},
+    {"coreCode":"PR-RH","coreNameEn":"Red Honey","classification":"honey_substyle","baseProcess":"honey","marketQualifier":"red_honey","disposition":"preserve_core_map_to_honey_family"},
+    {"coreCode":"PR-SEMI","coreNameEn":"Semi Washed","classification":"ambiguous_market_term","baseProcess":null,"risk":"Semi-washed terminology is origin-dependent and can describe materially different workflows. Do not globally map it to one CQI base family.","disposition":"preserve_core_require_origin_context"},
+    {"coreCode":"PR-TS","coreNameEn":"Thermal Shock","classification":"special_temperature_treatment","baseProcess":null,"specialTreatment":"thermal_shock","risk":"Does not identify base process, timing, temperatures or fermentation sequence.","disposition":"preserve_core_require_lot_context"},
+    {"coreCode":"PR-WA","coreNameEn":"Washed","classification":"base_process_market_term","baseProcess":"fully_washed","disposition":"preserve_core_map_to_fully_washed"},
+    {"coreCode":"PR-WET","coreNameEn":"Wet Hulled","classification":"base_process","baseProcess":"wet_hulled","disposition":"preserve_core_standard_family"},
+    {"coreCode":"PR-WH","coreNameEn":"White Honey","classification":"honey_substyle","baseProcess":"honey","marketQualifier":"white_honey","disposition":"preserve_core_map_to_honey_family"},
+    {"coreCode":"PR-YEAST","coreNameEn":"Yeast Fermentation","classification":"inoculated_fermentation_protocol","baseProcess":null,"fermentation":"yeast_inoculated_or_yeast_reported","risk":"Do not infer strain, inoculation dose or process stage unless documented.","disposition":"preserve_core_require_lot_context"},
+    {"coreCode":"PR-YH","coreNameEn":"Yellow Honey","classification":"honey_substyle","baseProcess":"honey","marketQualifier":"yellow_honey","disposition":"preserve_core_map_to_honey_family"}
+  ],
+  "compatibilityDecision": {
+    "coreRowsChanged": false,
+    "reason": "All 25 labels remain useful as consumer/OCR display vocabulary and are already QR-indexed. Scientific normalization belongs in the knowledge layer.",
+    "futureCorePolicy": "New complex process labels should be added only when commercially frequent; prefer combining knowledge dimensions rather than proliferating QR rows."
+  }
+}
