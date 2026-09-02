@@ -1,0 +1,37 @@
+{
+  "_format": "coffee-knowledge-gap-analysis",
+  "_schemaVersion": 1,
+  "createdAt": "2026-09-02",
+  "baseline": {
+    "coreCodebook": "coffee_qr_codebook_v6.json",
+    "coreVarietyRows": 52,
+    "note": "Core rows include true cultivars, genetic-group labels, species/market labels and legacy umbrella labels, so raw row count is not equal to a scientific cultivar count."
+  },
+  "externalReference": {
+    "publisher": "World Coffee Research",
+    "arabicaCatalogEntries": 55,
+    "robustaCatalogEntries": 47,
+    "catalogUrl": "https://varieties.worldcoffeeresearch.org/build-your-own",
+    "comparisonRule": "Do not infer 102 minus 52 as the exact missing count; compare semantically after alias/group normalization."
+  },
+  "firstPriorityMissingCandidates": [
+    {"name": "Anacafe 14", "reason": "Current WCR catalog; Central American commercial relevance"},
+    {"name": "Costa Rica 95", "reason": "Important Catimor-related cultivar and useful for clarifying the Catimor group"},
+    {"name": "T5175", "reason": "Reference Catimor line and close comparator for IHCAFE 90"},
+    {"name": "T5296", "reason": "Reference Sarchimor line and parent/selection source for multiple existing core entries"},
+    {"name": "T8667", "reason": "Reference Catimor line used by WCR to explain the Catimor group"},
+    {"name": "Starmaya", "reason": "Commercial F1 hybrid with current WCR catalog entry"},
+    {"name": "Venecia", "reason": "Costa Rican cultivar; relevant to existing Villa Sarchi/Tekisic context"},
+    {"name": "Catimor 129", "reason": "Specific cultivar that should be distinguished from the core Catimor group label"},
+    {"name": "Catisic", "reason": "Specific Catimor-related cultivar"},
+    {"name": "IAPAR 59", "reason": "Important Brazilian introgressed cultivar"},
+    {"name": "IPR 103", "reason": "Current Brazilian cultivar in WCR catalog"},
+    {"name": "IPR 107", "reason": "Current Brazilian cultivar in WCR catalog"},
+    {"name": "Paraiso", "reason": "Current Brazilian cultivar; distinct from Parainema"},
+    {"name": "SL14", "reason": "African cultivar useful alongside existing SL28/SL34"},
+    {"name": "Sln.5B", "reason": "Important Indian selection and cross-species breeding context"},
+    {"name": "Sln.6", "reason": "Important Indian selection"}
+  ],
+  "status": "candidate_only_no_core_codes_assigned",
+  "nextStep": "Verify each candidate with its own authoritative record, add Chinese/English names, aliases and lineage, then assign new core codes only in an append-only v7 data release."
+}
