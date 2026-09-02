@@ -19,6 +19,11 @@ function ensureArray(name) {
   if (!Array.isArray(knowledge[name])) fail(`${name} must be an array`);
   return Array.isArray(knowledge[name]) ? knowledge[name] : [];
 }
+function validConfidence(value) {
+  if (value === undefined || value === null || value === '') return true;
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 && number <= 1;
+}
 
 const supported = new Set(knowledge.languagePolicy?.supportedLanguages || []);
 for (const required of ['zh-Hans', 'en']) {
@@ -40,7 +45,17 @@ for (const table of ['countries', 'regions', 'entities', 'varieties', 'processes
 }
 
 const knowledgeIds = new Set();
-const idCollections = ['species', 'processFamilies', 'geoDetails', 'entityDetails', 'varietyDetails', 'fermentationMethods', 'dryingMethods', 'lots'];
+const idCollections = [
+  'species',
+  'processFamilies',
+  'geoDetails',
+  'entityDetails',
+  'varietyDetails',
+  'processDetails',
+  'fermentationMethods',
+  'dryingMethods',
+  'lots',
+];
 for (const name of idCollections) {
   for (const record of ensureArray(name)) {
     if (!record.id) { fail(`${name} record missing id`); continue; }
@@ -48,6 +63,7 @@ for (const name of idCollections) {
     knowledgeIds.add(record.id);
     for (const ref of record.sourceRefs || []) if (!sourceIds.has(ref)) fail(`${record.id} references missing source ${ref}`);
     if (record.coreCode && !coreCodes.has(record.coreCode)) fail(`${record.id} references missing coreCode ${record.coreCode}`);
+    if (!validConfidence(record.confidence)) fail(`${record.id} confidence must be 0..1`);
   }
 }
 
@@ -74,24 +90,37 @@ for (const name of ['localizedNames', 'localizedAliases']) {
     if (record.targetCode && !coreCodes.has(record.targetCode)) fail(`${name}[${index}] missing core target ${record.targetCode}`);
     if (record.targetId && !knowledgeIds.has(record.targetId)) fail(`${name}[${index}] missing knowledge target ${record.targetId}`);
     for (const ref of record.sourceRefs || []) if (!sourceIds.has(ref)) fail(`${name}[${index}] references missing source ${ref}`);
+    if (!validConfidence(record.confidence)) fail(`${name}[${index}] confidence must be 0..1`);
   }
 }
 
 for (const [index, rel] of ensureArray('varietyLineage').entries()) {
   if (!rel.parentId || !rel.childId) fail(`varietyLineage[${index}] missing parentId/childId`);
-  if (rel.parentId && !knowledgeIds.has(rel.parentId) && !coreCodes.has(rel.parentId)) warn(`varietyLineage[${index}] parent ${rel.parentId} is not yet registered`);
-  if (rel.childId && !knowledgeIds.has(rel.childId) && !coreCodes.has(rel.childId)) warn(`varietyLineage[${index}] child ${rel.childId} is not yet registered`);
+  if (rel.parentId && !knowledgeIds.has(rel.parentId) && !coreCodes.has(rel.parentId)) fail(`varietyLineage[${index}] parent ${rel.parentId} is not registered`);
+  if (rel.childId && !knowledgeIds.has(rel.childId) && !coreCodes.has(rel.childId)) fail(`varietyLineage[${index}] child ${rel.childId} is not registered`);
+  if (!validConfidence(rel.confidence)) fail(`varietyLineage[${index}] confidence must be 0..1`);
+}
+
+const fermentationIds = new Set((knowledge.fermentationMethods || []).map((x) => x.id));
+const processFamilyIds = new Set((knowledge.processFamilies || []).map((x) => x.id));
+for (const [index, record] of ensureArray('processDetails').entries()) {
+  if (record.baseProcessId && !processFamilyIds.has(record.baseProcessId)) fail(`processDetails[${index}] missing baseProcessId ${record.baseProcessId}`);
+  if (record.fermentationId && !fermentationIds.has(record.fermentationId)) fail(`processDetails[${index}] missing fermentationId ${record.fermentationId}`);
 }
 
 for (const [index, rel] of ensureArray('temporalRelations').entries()) {
   if (!rel.subject || !rel.object || !rel.relationType) fail(`temporalRelations[${index}] missing subject/object/relationType`);
-  const confidence = Number(rel.confidence);
-  if (!Number.isFinite(confidence) || confidence < 0 || confidence > 1) fail(`temporalRelations[${index}] confidence must be 0..1`);
+  if (!validConfidence(rel.confidence)) fail(`temporalRelations[${index}] confidence must be 0..1`);
 }
 
 const summary = {
   species: knowledge.species?.length || 0,
+  geoDetails: knowledge.geoDetails?.length || 0,
+  entityDetails: knowledge.entityDetails?.length || 0,
+  varietyDetails: knowledge.varietyDetails?.length || 0,
+  processDetails: knowledge.processDetails?.length || 0,
   processFamilies: knowledge.processFamilies?.length || 0,
+  fermentationMethods: knowledge.fermentationMethods?.length || 0,
   sources: registry.sources?.length || 0,
   localizedNames: knowledge.localizedNames?.length || 0,
   localizedAliases: knowledge.localizedAliases?.length || 0,
