@@ -1,0 +1,67 @@
+{
+  "_format": "coffee-variety-knowledge-module",
+  "_schemaVersion": 1,
+  "version": "1.0.0",
+  "updatedAt": "2026-09-02",
+  "compatibility": {
+    "coreCodebook": "../../coffee-qr-codebook/coffee_qr_codebook_v6.json",
+    "changesQrIndex": false,
+    "purpose": "Materialize the 22 v6 variety rows not present in coffee_origin_knowledge_v1.json."
+  },
+  "species": [
+    {
+      "id": "SP-LIBERICA",
+      "scientificName": "Coffea liberica",
+      "names": [
+        {"language":"zh-Hans","name":"利比里卡咖啡","nameType":"canonical"},
+        {"language":"en","name":"Liberica coffee","nameType":"canonical"}
+      ],
+      "sourceRefs": ["SRC-KEW-COFFEA-TAXONOMY"],
+      "confidence": 1.0
+    },
+    {
+      "id": "SP-DEWEVREI",
+      "scientificName": "Coffea dewevrei",
+      "names": [
+        {"language":"zh-Hans","name":"德韦弗雷咖啡 / Excelsa","nameType":"canonical"},
+        {"language":"en","name":"Coffea dewevrei / Excelsa","nameType":"canonical"}
+      ],
+      "sourceRefs": ["SRC-KEW-COFFEA-TAXONOMY"],
+      "confidence": 1.0
+    }
+  ],
+  "varietyDetails": [
+    {"id":"VD-VA-ARM","coreCode":"VA-ARM","recordType":"interspecific_hybrid_legacy_germplasm_label","canonicalNameZh":"Aramosa","canonicalNameEn":"Aramosa","evidenceStatus":"taxonomy_and_parentage_require_accession_level_evidence","classificationNote":"IAC research warns that nomenclature/genetic identity can be inconsistent for interspecific germplasm including Aramosa; do not force it into a simple C. arabica cultivar category.","sourceRefs":["SRC-IAC-INTERSPECIFIC"],"confidence":0.8},
+    {"id":"VD-VA-ARU","coreCode":"VA-ARU","recordType":"legacy_or_regional_variety_name","canonicalNameZh":"阿鲁沙","canonicalNameEn":"Arusha","evidenceStatus":"pending_authoritative_cultivar_identity","classificationNote":"Trade usage exists, but an authoritative breeding/accession identity was not established in this audit. Geographic-name ambiguity is high.","confidence":0.5},
+    {"id":"VD-VA-BM","coreCode":"VA-BM","recordType":"legacy_umbrella_label","canonicalNameZh":"波旁 Mayagüez","canonicalNameEn":"Bourbon Mayagüez","speciesId":"SP-ARABICA","knownSubentries":["Bourbon Mayaguez 71","Bourbon Mayaguez 139"],"classificationNote":"WCR catalogs BM71 and BM139 separately; the generic core label is not an atomic cultivar identifier.","sourceRefs":["SRC-WCR-CATALOG"],"confidence":1.0},
+    {"id":"VD-VA-CAS","coreCode":"VA-CAS","recordType":"composite_rust_resistant_cultivar","canonicalNameZh":"卡斯蒂略","canonicalNameEn":"Castillo","speciesId":"SP-ARABICA","geneticContext":"Caturra × Timor Hybrid-derived breeding population/composite","breeder":"Cenicafé","releaseCountry":"Colombia","sourceRefs":["SRC-CENICAFE-CASTILLO"],"confidence":1.0},
+    {"id":"VD-VA-CEN1","coreCode":"VA-CEN1","recordType":"composite_rust_resistant_cultivar","canonicalNameZh":"Cenicafé 1","canonicalNameEn":"Cenicafé 1","speciesId":"SP-ARABICA","geneticContext":"Advanced progenies from Caturra × Timor Hybrid 1343","breeder":"Cenicafé","releaseCountry":"Colombia","releaseYear":2016,"sourceRefs":["SRC-CENICAFE-CENICAFE1"],"confidence":1.0},
+    {"id":"VD-VA-CTCA","coreCode":"VA-CTCA","recordType":"introgressed_cultivar_group","canonicalNameZh":"Catucaí","canonicalNameEn":"Catucaí","speciesId":"SP-ARABICA","geneticContext":"Brazilian breeding group with Icatu × Catuaí ancestry; multiple named selections exist","sourceRefs":["SRC-EMBRAPA-CATUCAI"],"confidence":0.95},
+    {"id":"VD-VA-EXC","coreCode":"VA-EXC","recordType":"species_market_label_legacy_taxonomy","canonicalNameZh":"埃克塞尔萨 / 德韦弗雷咖啡","canonicalNameEn":"Excelsa / Coffea dewevrei","speciesId":"SP-DEWEVREI","acceptedTaxon":"Coffea dewevrei De Wild. & T.Durand","classificationNote":"Kew accepts C. dewevrei and treats C. excelsa and C. liberica var. dewevrei as synonyms; old QR wording remains frozen for compatibility.","sourceRefs":["SRC-KEW-COFFEA-TAXONOMY"],"confidence":1.0},
+    {"id":"VD-VA-ICA","coreCode":"VA-ICA","recordType":"introgressed_cultivar_group","canonicalNameZh":"伊卡图","canonicalNameEn":"Icatu","speciesId":"SP-ARABICA","classificationNote":"IAC maintains multiple Icatu cultivars/lines; generic Icatu is an umbrella rather than one accession.","sourceRefs":["SRC-IAC-COFFEE-CULTIVARS"],"confidence":1.0},
+    {"id":"VD-VA-JA10","coreCode":"VA-JA10","recordType":"released_ethiopian_selection","canonicalNameZh":"JARC 74110","canonicalNameEn":"JARC 74110","speciesId":"SP-ARABICA","breedingProgram":"Jimma Agricultural Research Center / EIAR","classificationNote":"Released Ethiopian selection; parentage intentionally not inferred.","sourceRefs":["SRC-WCR-ETHIOPIA","SRC-CABI-ETHIOPIA-CULTIVARS"],"confidence":0.9},
+    {"id":"VD-VA-JA12","coreCode":"VA-JA12","recordType":"released_ethiopian_selection","canonicalNameZh":"JARC 74112","canonicalNameEn":"JARC 74112","speciesId":"SP-ARABICA","breedingProgram":"Jimma Agricultural Research Center / EIAR","classificationNote":"Released Ethiopian selection; parentage intentionally not inferred.","sourceRefs":["SRC-WCR-ETHIOPIA","SRC-CABI-ETHIOPIA-CULTIVARS"],"confidence":0.9},
+    {"id":"VD-VA-JA58","coreCode":"VA-JA58","recordType":"released_ethiopian_selection","canonicalNameZh":"JARC 74158","canonicalNameEn":"JARC 74158","speciesId":"SP-ARABICA","breedingProgram":"Jimma Agricultural Research Center / EIAR","classificationNote":"Released Ethiopian selection; parentage intentionally not inferred.","sourceRefs":["SRC-WCR-ETHIOPIA","SRC-CABI-ETHIOPIA-CULTIVARS"],"confidence":0.9},
+    {"id":"VD-VA-LAUR","coreCode":"VA-LAUR","recordType":"natural_mutation_selection","canonicalNameZh":"劳瑞娜 / 尖身波旁","canonicalNameEn":"Laurina / Bourbon Pointu","speciesId":"SP-ARABICA","lineage":"Natural mutant of Bourbon","origin":"Réunion Island","sourceRefs":["SRC-CIRAD-LAURINA"],"confidence":1.0},
+    {"id":"VD-VA-LIB","coreCode":"VA-LIB","recordType":"species_market_label","canonicalNameZh":"利比里卡咖啡","canonicalNameEn":"Liberica / Coffea liberica","speciesId":"SP-LIBERICA","acceptedTaxon":"Coffea liberica W.Bull ex Hiern","classificationNote":"Species/market label, not one cultivar.","sourceRefs":["SRC-KEW-COFFEA-TAXONOMY"],"confidence":1.0},
+    {"id":"VD-VA-MARSE","coreCode":"VA-MARSE","recordType":"market_cultivar_name_probable_alias_or_local_spelling","canonicalNameZh":"Marseillaise","canonicalNameEn":"Marseillaise","speciesId":"SP-ARABICA","possibleCanonicalRelation":"VA-MARSA","evidenceStatus":"pending_accession_level_identity_before_merge","classificationNote":"Published use of Marseillaise exists, while WCR/CIRAD use Marsellesa for a defined CIRAD-ECOM line. Accession-level evidence is insufficient to auto-merge them.","sourceRefs":["SRC-WCR-CATALOG"],"confidence":0.55},
+    {"id":"VD-VA-MOK","coreCode":"VA-MOK","recordType":"historical_or_market_variety_label","canonicalNameZh":"摩卡","canonicalNameEn":"Mokka","speciesId":"SP-ARABICA","evidenceStatus":"pending_authoritative_accession_identity","classificationNote":"Mokka/Mocha is used as historical, geographic/style and varietal terminology; no specific accession identity is asserted.","confidence":0.5},
+    {"id":"VD-VA-PB","coreCode":"VA-PB","recordType":"market_cultivar_name_genetics_unresolved","canonicalNameZh":"粉红波旁","canonicalNameEn":"Pink Bourbon","speciesId":"SP-ARABICA","evidenceStatus":"pending_authoritative_genetic_identity","classificationNote":"Do not infer Bourbon pedigree from the market name alone.","confidence":0.6},
+    {"id":"VD-VA-RB","coreCode":"VA-RB","recordType":"bourbon_color_selection_umbrella","canonicalNameZh":"红波旁","canonicalNameEn":"Red Bourbon","speciesId":"SP-ARABICA","geneticGroup":"Bourbon-related","classificationNote":"IAC registers specific Red Bourbon material; generic Red Bourbon is a color/market umbrella, not one accession.","sourceRefs":["SRC-IAC-COFFEE-CULTIVARS"],"confidence":0.95},
+    {"id":"VD-VA-SID","coreCode":"VA-SID","recordType":"market_cultivar_name_genetics_unresolved","canonicalNameZh":"西德拉 / Sidra","canonicalNameEn":"Sidra","speciesId":"SP-ARABICA","evidenceStatus":"pending_authoritative_genetic_identity","classificationNote":"Public market descriptions conflict on origin/parentage; no pedigree is encoded without an authoritative genetic/accession source.","confidence":0.6},
+    {"id":"VD-VA-SR","coreCode":"VA-SR","recordType":"ethiopian_sudan_landrace_selection","canonicalNameZh":"苏丹汝美","canonicalNameEn":"Rume Sudan / Sudan Rume","speciesId":"SP-ARABICA","geneticGroup":"Ethiopian landrace","classificationNote":"Rume Sudan is a defined landrace parent in WCR pedigrees; Sudan Rume remains a market alias/order variant.","sourceRefs":["SRC-WCR-CATALOG"],"confidence":1.0},
+    {"id":"VD-VA-TAB","coreCode":"VA-TAB","recordType":"composite_rust_resistant_cultivar","canonicalNameZh":"Tabi","canonicalNameEn":"Tabi","speciesId":"SP-ARABICA","breeder":"Cenicafé","releaseCountry":"Colombia","releaseYear":2002,"geneticContext":"Progeny mixture from Timor Hybrid crossed with Typica/Bourbon-related material","sourceRefs":["SRC-CENICAFE-VARIETIES"],"confidence":1.0},
+    {"id":"VD-VA-WUS","coreCode":"VA-WUS","recordType":"ethiopian_cultivar_or_landrace_selection","canonicalNameZh":"Wush Wush","canonicalNameEn":"Wush Wush","speciesId":"SP-ARABICA","originCountry":"Ethiopia","evidenceStatus":"recognized_name_parentage_pending","classificationNote":"Recognized Ethiopian/specialty variety name; exact pedigree/accession details are not asserted from the currently registered primary sources.","sourceRefs":["SRC-WCR-ETHIOPIA"],"confidence":0.7},
+    {"id":"VD-VA-YB","coreCode":"VA-YB","recordType":"bourbon_color_selection_umbrella","canonicalNameZh":"黄波旁","canonicalNameEn":"Yellow Bourbon","speciesId":"SP-ARABICA","geneticGroup":"Bourbon-related","classificationNote":"IAC maintains specific Yellow Bourbon accessions/lines; generic Yellow Bourbon is a color/market umbrella, not one accession.","sourceRefs":["SRC-IAC-COFFEE-CULTIVARS"],"confidence":0.95}
+  ],
+  "localizedNames": [
+    {"targetCode":"VA-CEN1","language":"es","name":"Cenicafé 1","nameType":"official","sourceRefs":["SRC-CENICAFE-CENICAFE1"],"confidence":1.0},
+    {"targetCode":"VA-LAUR","language":"fr","name":"Bourbon Pointu","nameType":"market_verified","sourceRefs":["SRC-CIRAD-LAURINA"],"confidence":1.0},
+    {"targetCode":"VA-SR","language":"en","name":"Rume Sudan","nameType":"canonical","sourceRefs":["SRC-WCR-CATALOG"],"confidence":1.0}
+  ],
+  "localizedAliases": [
+    {"targetCode":"VA-LAUR","language":"en","alias":"Bourbon Pointu","nameType":"common","sourceRefs":["SRC-CIRAD-LAURINA"],"confidence":1.0},
+    {"targetCode":"VA-SR","language":"en","alias":"Sudan Rume","nameType":"common","sourceRefs":["SRC-WCR-CATALOG"],"confidence":1.0},
+    {"targetCode":"VA-EXC","language":"en","alias":"Excelsa","nameType":"common","sourceRefs":["SRC-KEW-COFFEA-TAXONOMY"],"confidence":1.0}
+  ]
+}
