@@ -8,6 +8,9 @@
     "defaultReviewStatus": "pending_market_verification",
     "promotionRule": "AI-generated aliases may be used as low-risk fuzzy-search candidates but require market/official evidence before promotion to market_verified or official."
   },
+  "species": [],
+  "varietyDetails": [],
+  "localizedNames": [],
   "localizedAliases": [
     {"targetCode":"VA-GE","language":"ja","alias":"ゲイシャ","nameType":"ai_transliterated","confidence":0.8,"reviewStatus":"pending_market_verification"},
     {"targetCode":"VA-GE","language":"ko","alias":"게이샤","nameType":"ai_transliterated","confidence":0.8,"reviewStatus":"pending_market_verification"},
@@ -27,7 +30,6 @@
     {"targetCode":"VA-BAT","language":"ko","alias":"바티안","nameType":"ai_transliterated","confidence":0.7,"reviewStatus":"pending_market_verification"},
     {"targetCode":"VA-RU11","language":"ja","alias":"ルイル11","nameType":"ai_transliterated","confidence":0.7,"reviewStatus":"pending_market_verification"},
     {"targetCode":"VA-RU11","language":"ko","alias":"루이루 11","nameType":"ai_transliterated","confidence":0.7,"reviewStatus":"pending_market_verification"},
-
     {"targetCode":"PR-NA","language":"ja","alias":"ナチュラル","nameType":"ai_transliterated","confidence":0.85,"reviewStatus":"pending_market_verification"},
     {"targetCode":"PR-NA","language":"ko","alias":"내추럴","nameType":"ai_transliterated","confidence":0.85,"reviewStatus":"pending_market_verification"},
     {"targetCode":"PR-WA","language":"ja","alias":"ウォッシュド","nameType":"ai_transliterated","confidence":0.85,"reviewStatus":"pending_market_verification"},
@@ -42,7 +44,6 @@
     {"targetCode":"PR-CM","language":"ko","alias":"카보닉 메서레이션","nameType":"ai_transliterated","confidence":0.75,"reviewStatus":"pending_market_verification"},
     {"targetCode":"PR-YEAST","language":"ja","alias":"イースト発酵","nameType":"ai_translated","confidence":0.7,"reviewStatus":"pending_market_verification"},
     {"targetCode":"PR-YEAST","language":"ko","alias":"효모 발효","nameType":"ai_translated","confidence":0.7,"reviewStatus":"pending_market_verification"},
-
     {"targetCode":"CO-EA","language":"ja","alias":"エチオピア","nameType":"ai_transliterated","confidence":0.9,"reviewStatus":"pending_market_verification"},
     {"targetCode":"CO-EA","language":"ko","alias":"에티오피아","nameType":"ai_transliterated","confidence":0.9,"reviewStatus":"pending_market_verification"},
     {"targetCode":"CO-KE","language":"ja","alias":"ケニア","nameType":"ai_transliterated","confidence":0.9,"reviewStatus":"pending_market_verification"},
@@ -53,7 +54,6 @@
     {"targetCode":"CO-CO","language":"ko","alias":"콜롬비아","nameType":"ai_transliterated","confidence":0.9,"reviewStatus":"pending_market_verification"},
     {"targetCode":"CO-BR","language":"ja","alias":"ブラジル","nameType":"ai_transliterated","confidence":0.9,"reviewStatus":"pending_market_verification"},
     {"targetCode":"CO-BR","language":"ko","alias":"브라질","nameType":"ai_transliterated","confidence":0.9,"reviewStatus":"pending_market_verification"},
-
     {"targetCode":"RG-EA-YIR","language":"ja","alias":"イルガチェフェ","nameType":"ai_transliterated","confidence":0.75,"reviewStatus":"pending_market_verification"},
     {"targetCode":"RG-EA-YIR","language":"ko","alias":"예가체프","nameType":"ai_transliterated","confidence":0.8,"reviewStatus":"pending_market_verification"},
     {"targetCode":"RG-EA-SID","language":"ja","alias":"シダマ","nameType":"ai_transliterated","confidence":0.8,"reviewStatus":"pending_market_verification"},
