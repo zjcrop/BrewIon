@@ -2,7 +2,7 @@
   "_format": "coffee-knowledge-source-manifest",
   "_schemaVersion": 1,
   "contract": "coffee-knowledge/1.0",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0-alpha.6",
   "updatedAt": "2026-09-02",
   "coreCodebook": "../coffee-qr-codebook/coffee_qr_codebook_v6.json",
   "mainKnowledge": "coffee_origin_knowledge_v1.json",
@@ -11,7 +11,8 @@
     "catalog/v6_variety_details_remaining_v1.json",
     "catalog/localized_aliases_seed_v1.json",
     "catalog/wcr_high_priority_varieties_v1.json",
-    "catalog/verified_named_candidate_entities_v1.json"
+    "catalog/verified_named_candidate_entities_v1.json",
+    "catalog/verified_named_candidate_entities_v2.json"
   ],
   "entityIdentityModule": "catalog/entity_identity_groups_v1.json",
   "geoIdentityModule": "catalog/geo_identity_groups_v1.json",
@@ -26,6 +27,7 @@
     "enrichment": "Verified knowledge records overlay the baseline by stable coreCode; unverified legacy rows remain queryable with legacy_core evidence status.",
     "knowledgeOnlyCandidates": "Authoritatively sourced knowledge nodes may exist without a QR coreCode; this does not grant QR append approval.",
     "verifiedLegacyCandidates": "Source-verified legacy candidate rows may receive knowledge enrichment without changing their frozen v6 QR row, code, entityType or status.",
+    "ambiguity": "Same-name ambiguity, source geography conflicts and likely type/taxonomy errors remain audit findings and are not materialized as verified entity knowledge.",
     "identity": "Confirmed duplicate entity and geography core codes remain permanently decodable and may resolve to canonical identity IDs for search/display deduplication.",
     "localization": "AI-translated/transliterated names remain explicitly typed and pending market verification; they never replace official/canonical names automatically.",
     "compatibility": "Knowledge release must never change QR row indexes.",
