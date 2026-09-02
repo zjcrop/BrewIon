@@ -1,0 +1,54 @@
+{
+  "_format": "coffee-knowledge-audit-batch",
+  "_schemaVersion": 1,
+  "batchId": "v6-entities-batch1",
+  "createdAt": "2026-09-02",
+  "scope": "Existing v6 entity semantics and high-risk matching rules. No QR index changes.",
+  "records": [
+    {
+      "countryCode": "CO-KE",
+      "entityTypeRule": "factory",
+      "finding": "Kenyan 'Factory' is a recognized smallholder coffee processing/collection unit within the cooperative system. It must not be normalized to estate/farm merely because retail labels use the word factory loosely.",
+      "sourceId": "SRC-KENYA-AFA-YEARBOOK",
+      "confidence": 1.0
+    },
+    {
+      "coreEntityEnglishName": "Gatomboya Factory",
+      "countryCode": "CO-KE",
+      "classification": "factory",
+      "finding": "Retain as a factory-type origin entity. Do not merge automatically with similarly spelled entities without cooperative/county evidence.",
+      "sourceId": "SRC-KENYA-AFA-YEARBOOK",
+      "confidence": 0.9
+    },
+    {
+      "coreEntityEnglishName": "Thiriku Factory",
+      "countryCode": "CO-KE",
+      "classification": "factory",
+      "finding": "Retain factory terminology in English and use Chinese '处理厂/咖啡厂' only as display translation; entity role remains factory.",
+      "sourceId": "SRC-KENYA-AFA-YEARBOOK",
+      "confidence": 0.8
+    },
+    {
+      "coreEntityEnglishName": "Kieni Factory",
+      "countryCode": "CO-KE",
+      "classification": "factory_candidate",
+      "finding": "Do not equate Kieni with similarly named Kie/Kiini/Kianjogu-like factory names from registry or yearbook text without exact location/cooperative evidence. Similar spelling is not sufficient for merge.",
+      "sourceId": "SRC-KENYA-AFA-YEARBOOK",
+      "confidence": 0.7
+    },
+    {
+      "countryCode": "CO-RW",
+      "entityTypeRule": "washing_station",
+      "finding": "Rwanda CWS status is operational-year dependent. A station observed active in 2024 should be recorded with temporal evidence rather than a permanent 'active forever' attribute.",
+      "sourceId": "SRC-NAEB-RWANDA",
+      "confidence": 1.0
+    }
+  ],
+  "matchingGuardrails": [
+    "Never merge entities by normalized name alone.",
+    "Require country plus at least one of region/county/district/cooperative/operator or authoritative exact identity.",
+    "Preserve original-language/official English names alongside Chinese display translations.",
+    "AI may propose matches but cannot promote a fuzzy entity match to canonical without rule/source confirmation.",
+    "Ownership, cooperative membership and operator relations must support validFrom/validTo or observedAt when derived from annual sources."
+  ]
+}
