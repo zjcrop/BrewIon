@@ -15,6 +15,7 @@ const MIN_COLS = {
   aliases: 2,
   flavors: 9,
 };
+const QUALITATIVE_CONFIDENCE = new Set(['high', 'medium', 'low']);
 
 function arg(name, fallback = null) {
   const prefix = `--${name}=`;
@@ -73,6 +74,13 @@ function buildCodeIndex(book, errors) {
   return { allCodes, tableCodes };
 }
 
+function validConfidence(value) {
+  const text = String(value ?? '').trim().toLowerCase();
+  if (QUALITATIVE_CONFIDENCE.has(text)) return true;
+  const number = Number(text);
+  return Number.isFinite(number) && number >= 0 && number <= 1;
+}
+
 function validateReferences(book, indexes, errors, warnings) {
   const countries = indexes.tableCodes.countries || new Set();
   (book.regions || []).forEach((row, i) => {
@@ -87,10 +95,7 @@ function validateReferences(book, indexes, errors, warnings) {
     const child = String(row[1] || '');
     if (!indexes.allCodes.has(parent)) fail(errors, `relations[${i}] missing parent code ${parent}`);
     if (!indexes.allCodes.has(child)) fail(errors, `relations[${i}] missing child code ${child}`);
-    const confidence = Number(row[3]);
-    if (!Number.isFinite(confidence) || confidence < 0 || confidence > 1) {
-      fail(errors, `relations[${i}] confidence must be 0..1`);
-    }
+    if (!validConfidence(row[3])) fail(errors, `relations[${i}] confidence must be high/medium/low or numeric 0..1`);
   });
 
   (book.aliases || []).forEach((row, i) => {
