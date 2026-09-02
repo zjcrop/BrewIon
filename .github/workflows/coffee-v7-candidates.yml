@@ -25,12 +25,12 @@ jobs:
       - name: Syntax
         run: node --check scripts/coffee-db/build-v7-candidates.mjs
       - name: Build deterministic candidate set
-        run: node scripts/coffee-db/build-v7-candidates.mjs --output=.coffee-v7-candidates
+        run: node scripts/coffee-db/build-v7-candidates.mjs --output=coffee-v7-candidates
       - name: Enforce candidate-only safety
         run: |
           node - <<'NODE'
           const fs=require('fs');
-          const j=JSON.parse(fs.readFileSync('.coffee-v7-candidates/v7_variety_candidates.json','utf8'));
+          const j=JSON.parse(fs.readFileSync('coffee-v7-candidates/v7_variety_candidates.json','utf8'));
           if ((j.candidates||[]).some(x=>x.readyForCoreAppend===true)) throw new Error('Candidate generator must never auto-approve core append.');
           const codes=new Set();
           for (const x of j.candidates||[]) {
@@ -44,5 +44,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coffee-v7-candidates-${{ github.run_id }}
-          path: .coffee-v7-candidates/
+          path: coffee-v7-candidates/
+          if-no-files-found: error
           retention-days: 30
