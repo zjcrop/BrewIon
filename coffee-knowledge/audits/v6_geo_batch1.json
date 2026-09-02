@@ -1,0 +1,78 @@
+{
+  "_format": "coffee-knowledge-audit-batch",
+  "_schemaVersion": 1,
+  "batchId": "v6-geo-batch1",
+  "createdAt": "2026-09-02",
+  "scope": "High-impact country/region hierarchy audit. No QR index changes.",
+  "records": [
+    {
+      "coreCode": "CO-US",
+      "currentNameZh": "美国夏威夷",
+      "currentNameEn": "United States / Hawaii",
+      "issueType": "country_state_conflation",
+      "finding": "The current core row combines the country (United States) and the state/coffee origin context (Hawaii). Hawaii Coffee Association describes coffee as grown across multiple Hawaiian islands and major growing regions; Hawaii should be modeled below the country level in the knowledge graph.",
+      "recommendedKnowledgeModel": [
+        "CO-US -> country: United States",
+        "new knowledge geo node -> state: Hawaiʻi",
+        "Hawaiʻi -> coffee growing regions such as Kona, Kaʻū, Hāmākua, Maui, Molokaʻi, Oʻahu and Kauaʻi"
+      ],
+      "coreDisposition": "review_display_name_only_do_not_change_code_or_row_position",
+      "sourceUrls": [
+        "https://www.hawaiicoffeeassoc.org/History",
+        "https://hawaiigrown.coffee/hawaii-coffee/hawaii-coffee-growing-regions/"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "coreCodes": ["RG-CN-XIS", "RG-CN-XSB"],
+      "currentEnglishNames": ["Xishuangbanna, Yunnan", "Xishuangbanna, Yunnan"],
+      "issueType": "probable_duplicate_region",
+      "finding": "Two indexed rows use the same English geographic name while differing only in Chinese display/short form. Because indexed rows cannot be deleted, the duplicate must be resolved by canonical/deprecated mapping rather than physical removal.",
+      "recommendedDisposition": "retain_both_rows_choose_one_canonical_after_source_review_add_superseded_by_relation",
+      "evidenceType": "internal_exact_name_collision",
+      "confidence": 0.95
+    },
+    {
+      "coreCode": "RG-CR-LS",
+      "currentNameEn": "Los Santos",
+      "issueType": "mixed_geography_taxonomy",
+      "finding": "ICAFE's official coffee-production geography defines eight producing regions: Brunca, Turrialba, Tres Ríos, Orosi, Tarrazú, Central Valley, West Valley and Guanacaste. ICAFE separately lists Los Santos among seven electoral regions. The v6 production-region list currently contains both Tarrazú and Los Santos, mixing two official classification systems.",
+      "recommendedDisposition": "preserve_legacy_row_but_classify_as_secondary_or_electoral_geography_not_canonical_production_region",
+      "sourceUrls": [
+        "https://www.icafe.cr/nuestro-cafe/regiones-cafetaleras/las-8-regiones-cafetaleras/",
+        "https://www.icafe.cr/transparencia-institucional-icafe/acceso-a-la-informacion/preguntas-frecuentes/"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "countryCode": "CO-GT",
+      "issueType": "production_region_vs_microregion",
+      "finding": "Anacafé maintains eight Guatemalan Coffees origins, while its microregionalization strategy adds smaller differentiated microregions. These must be modeled as different geo types rather than appended as peers without hierarchy.",
+      "canonicalProductionRegions": [
+        "Acatenango Valley",
+        "Antigua Coffee",
+        "Traditional Atitlán",
+        "Rainforest Cobán",
+        "Fraijanes Plateau",
+        "Highland Huehue",
+        "New Oriente",
+        "Volcanic San Marcos"
+      ],
+      "recommendedDisposition": "keep_eight_core_origins_and_add_microregions_in_knowledge_layer_with_parent_or_overlap_relations",
+      "sourceUrl": "https://www.anacafe.org/articles/estrategia-de-microregionalizacion-a-rainbow-of-choices/",
+      "confidence": 1.0
+    },
+    {
+      "countryCode": "CO-BR",
+      "exampleCoreCodes": ["RG-BR-CER", "RG-BR-MAT"],
+      "issueType": "production_region_and_geographical_indication_overlap",
+      "finding": "Brazilian coffee geography includes production regions and legally recognized geographical indications. Existing v6 rows such as Cerrado Mineiro and Matas de Minas can be valid user-facing origins, but the knowledge layer must separately record whether a node is a production region, Indicação de Procedência, Denominação de Origem or other GI type.",
+      "recommendedDisposition": "keep_core_origin_names_add_geo_type_and_gi_relations_in_knowledge_layer",
+      "sourceUrls": [
+        "https://www.gov.br/agricultura/pt-br/assuntos/sustentabilidade/indicacao-geografica/arquivos-publicacoes-ig/catalogo-cafes-brasileiros-com-indicacao-geografica/view",
+        "https://www.gov.br/inpi/pt-br/servicos/indicacoes-geograficas/cadernos-de-especificacoes-tecnicas-das-indicacoes-geograficas"
+      ],
+      "confidence": 1.0
+    }
+  ]
+}
