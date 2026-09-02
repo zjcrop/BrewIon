@@ -1,7 +1,7 @@
 {
   "_format": "coffee-knowledge-source-registry",
   "_schemaVersion": 1,
-  "version": "1.0.0-alpha.4",
+  "version": "1.0.0-alpha.5",
   "updatedAt": "2026-09-02",
   "policy": {
     "cashCostDefault": 0,
@@ -24,6 +24,7 @@
     {"id":"SRC-IAC-COFFEE-CULTIVARS","publisher":"Instituto Agronômico de Campinas (IAC)","authorityLevel":"A","sourceType":"government_research_cultivar_registry","url":"https://www.iac.sp.gov.br/produtoseservicos/orgulhonacional/programa_cafe.php?lang=en","scope":["Brazil_cultivars","Icatu","Bourbon_color_lines","Caturra","Catuai","Obata"],"languages":["en","pt"],"checkStrategy":"content_hash","enabled":true},
     {"id":"SRC-IAC-INTERSPECIFIC","publisher":"Instituto Agronômico de Campinas (IAC)","authorityLevel":"A","sourceType":"research_publication","url":"https://www.iac.sp.gov.br/media/publicacoes/iacdoc119.pdf","scope":["Aramosa","interspecific_hybrids","taxonomy_caution"],"languages":["pt","en"],"checkStrategy":"content_hash","enabled":true},
     {"id":"SRC-EMBRAPA-CATUCAI","publisher":"Embrapa Café","authorityLevel":"A","sourceType":"government_research_cultivar_catalog","url":"https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/1145722/1/v18-09-09-22-Embrapa-Cafe-Documentos-16.pdf","scope":["Catucai","Brazil_cultivars","breeding_origin"],"languages":["pt"],"checkStrategy":"content_hash","enabled":true},
+    {"id":"SRC-CIRAD-LAURINA","publisher":"CIRAD","authorityLevel":"A","sourceType":"research_publication","url":"https://publications.cirad.fr/une_notice.php?dk=550835","scope":["Laurina","Bourbon_Pointu","Bourbon_mutation","Coffea_arabica"],"languages":["en"],"checkStrategy":"content_hash","enabled":true},
     {"id":"SRC-KEW-COFFEA-TAXONOMY","publisher":"Royal Botanic Gardens, Kew - Plants of the World Online","authorityLevel":"A","sourceType":"taxonomic_backbone","url":"https://powo.science.kew.org/taxon/325985-2","scope":["Coffea_species","Liberica","Dewevrei","Excelsa_taxonomy"],"languages":["en"],"checkStrategy":"content_hash","enabled":true},
     {"id":"SRC-CABI-ETHIOPIA-CULTIVARS","publisher":"CABI Digital Library","authorityLevel":"B","sourceType":"scientific_publication","url":"https://www.cabidigitallibrary.org/doi/pdf/10.5555/20143268306","scope":["Ethiopia_released_cultivars","74110","74112","74158","disease_status"],"languages":["en"],"checkStrategy":"content_hash","enabled":true},
     {"id":"SRC-ANACAFE","publisher":"Anacafé","authorityLevel":"A","sourceType":"national_coffee_association","url":"https://www.anacafe.org/","scope":["guatemala_region","variety","producer","competition_lot"],"languages":["es"],"checkStrategy":"content_hash","enabled":true},
