@@ -1,0 +1,122 @@
+{
+  "_format": "coffee-entity-resolution-issues",
+  "_schemaVersion": 1,
+  "version": "1.0.0",
+  "updatedAt": "2026-09-02",
+  "policy": {
+    "purpose": "Expose legacy core entities that have already been researched but cannot be safely resolved from the frozen name/country fields alone.",
+    "coreMutation": false,
+    "qrIndexChanged": false,
+    "defaultConsumerAction": "manual_confirmation_required",
+    "matchingRule": "A blocked entity must not be selected automatically from name-only OCR or alias matching. Consumers may preserve a historical decoded coreCode, but new recognition requires the listed contextual discriminators or explicit user confirmation.",
+    "geographyRule": "Source geography labels are recorded for database-quality control only; this module does not adjudicate sovereignty or alter frozen v6 country codes."
+  },
+  "issues": [
+    {
+      "id": "ERI-ST-CN-ZHU",
+      "coreCode": "ST-CN-ZHU@深度研究",
+      "legacyNameEn": "Zhuo Wu Mountain Coffee Farm",
+      "legacyNameZh": "卓武山咖啡农场",
+      "issueClass": "source_geography_conflict",
+      "resolutionStatus": "blocked_pending_taxonomy_review",
+      "blockAutomaticEntityResolution": true,
+      "automaticRecognitionPolicy": "manual_confirmation_required",
+      "requiredContext": ["source_geography", "producer_or_official_entity_reference"],
+      "legacyProvenance": {
+        "relationType": "country_has_estate_station_from_user_list",
+        "relationConfidence": "low"
+      },
+      "finding": "The frozen core assigns CO-CN, while Taiwan PCA records identify Zhuo Wu Mountain Coffee Farm in Chiayi County and the farm's own site gives a Chiayi address. Preserve the historical core row but do not auto-resolve a new observation until the geographic taxonomy is explicitly reconciled.",
+      "sourceUrls": [
+        "https://twn.coffee/2021/lots-single01.html",
+        "https://twn.coffee/2022/lr03.html",
+        "https://www.zhuowucafe.com/en/"
+      ]
+    },
+    {
+      "id": "ERI-ST-CO-JOS",
+      "coreCode": "ST-CO-JOS@深度研究",
+      "legacyNameEn": "Finca San Jose",
+      "legacyNameZh": "圣何塞庄园",
+      "issueClass": "same_name_identity_ambiguous",
+      "resolutionStatus": "blocked_pending_disambiguation",
+      "blockAutomaticEntityResolution": true,
+      "automaticRecognitionPolicy": "require_context",
+      "requiredContext": ["producer", "region_or_municipality"],
+      "legacyProvenance": {
+        "relationType": "country_has_estate_station_from_user_list",
+        "relationConfidence": "low"
+      },
+      "finding": "Multiple distinct Colombian coffee farms use the San José name. The frozen row lacks producer and municipality fields needed to select one physical entity.",
+      "sourceUrls": [
+        "https://allianceforcoffeeexcellence.org/farm-directory/84-16/",
+        "https://upra.gov.co/en/press-room/news/upra-constructs-agropecuary-landscapes-catalog-huila-producers"
+      ]
+    },
+    {
+      "id": "ERI-ST-CO-MIR",
+      "coreCode": "ST-CO-MIR@深度研究",
+      "legacyNameEn": "Finca El Mirador",
+      "legacyNameZh": "米拉多庄园",
+      "issueClass": "same_name_identity_ambiguous",
+      "resolutionStatus": "blocked_pending_disambiguation",
+      "blockAutomaticEntityResolution": true,
+      "automaticRecognitionPolicy": "require_context",
+      "requiredContext": ["producer", "region_or_municipality"],
+      "legacyProvenance": {
+        "relationType": "country_has_estate_station_from_user_list",
+        "relationConfidence": "low"
+      },
+      "finding": "Multiple distinct Colombian farms named El Mirador are documented under different producers. Name plus country is not a unique entity key.",
+      "sourceUrls": [
+        "https://www.touton-specialty-coffee.com/en/p11453",
+        "https://www.seycoffee.com/products/el-mirador",
+        "https://sucafina.com/emea/?sourceUrl=%2Fna%2Fofferings%2Falonso-bustos-el-mirador-anaerobic-natural",
+        "https://www.allycoffee.com/coffees/mirador-washed/"
+      ]
+    },
+    {
+      "id": "ERI-ST-CO-DIV",
+      "coreCode": "ST-CO-DIV@深度研究",
+      "legacyNameEn": "Finca El Diviso",
+      "legacyNameZh": "迪维索庄园",
+      "issueClass": "same_name_identity_ambiguous",
+      "resolutionStatus": "blocked_pending_disambiguation",
+      "blockAutomaticEntityResolution": true,
+      "automaticRecognitionPolicy": "require_context",
+      "requiredContext": ["producer", "region_or_municipality", "source_or_vintage_context"],
+      "legacyProvenance": {
+        "relationType": "country_has_estate_station_from_user_list",
+        "relationConfidence": "low"
+      },
+      "finding": "Alliance for Coffee Excellence documents a 2005 El Diviso associated with Henry Cuellar Rojas in Oporapa, while current specialty-coffee sources identify Néstor Lasso's different El Diviso operation near Pitalito. The frozen row cannot select between them.",
+      "sourceUrls": [
+        "https://cupofexcellence.org/colombia-north-2005/",
+        "https://kolibricoffee.com/product/el-diviso/",
+        "https://ineffablecoffee.com/blogs/aprendizaje-y-cultura-cafetera/nestor-lasso"
+      ]
+    },
+    {
+      "id": "ERI-ST-PE-HUA",
+      "coreCode": "ST-PE-HUA@深度研究",
+      "legacyNameEn": "Finca El Huabo",
+      "legacyNameZh": "瓦博庄园",
+      "issueClass": "likely_taxonomy_misclassification",
+      "resolutionStatus": "blocked_pending_entity_type_review",
+      "blockAutomaticEntityResolution": true,
+      "automaticRecognitionPolicy": "manual_confirmation_required",
+      "requiredContext": ["producer", "physical_farm_name", "region_or_locality"],
+      "legacyProvenance": {
+        "relationType": "country_has_estate_station_from_user_list",
+        "relationConfidence": "low"
+      },
+      "finding": "Current supply-chain evidence repeatedly uses El Huabo as a locality/community in San Ignacio, Cajamarca containing multiple different farms. No sufficiently strong evidence establishes one physical farm named Finca El Huabo corresponding to the frozen row.",
+      "sourceUrls": [
+        "https://sucafina.com/apac/offerings/cafe-garmas-maximiliano-garcia-esperanza-armijos-bourbon-washed",
+        "https://sucafina.com/na/offerings/orlando-jimenez-el-cedro-bourbon-fw-organic",
+        "https://49thcoffee.com/collections/single-origin/products/peru-san-ignacio-filter-roast-coffee",
+        "https://allianceforcoffeeexcellence.org/farm-directory/88-75-8/"
+      ]
+    }
+  ]
+}
