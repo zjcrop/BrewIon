@@ -2,7 +2,7 @@
   "_format": "coffee-origin-knowledge",
   "_schemaVersion": 1,
   "_description": "BrewIon 咖啡知识扩展层。与二维码核心编码表分离，不参与二维码数组行号编码。",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "updatedAt": "2026-09-02",
   "compatibility": {
     "coreCodebook": "../coffee-qr-codebook/coffee_qr_codebook_v6.json",
@@ -31,6 +31,7 @@
     "estate",
     "producer",
     "cooperative",
+    "factory",
     "washing_station",
     "wet_mill",
     "dry_mill",
