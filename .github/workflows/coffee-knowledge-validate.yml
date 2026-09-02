@@ -1,0 +1,42 @@
+name: Coffee Knowledge Validate
+
+on:
+  pull_request:
+    paths:
+      - 'coffee-knowledge/**'
+      - 'coffee-qr-codebook/**'
+      - 'scripts/coffee-db/**'
+      - '.github/workflows/coffee-knowledge-*.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'coffee-knowledge/**'
+      - 'coffee-qr-codebook/**'
+      - 'scripts/coffee-db/**'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: JavaScript syntax
+        run: |
+          node --check scripts/coffee-db/validate-codebook.mjs
+          node --check scripts/coffee-db/validate-knowledge.mjs
+          node --check scripts/coffee-db/weekly-maintainer.mjs
+
+      - name: Core codebook contract
+        run: node scripts/coffee-db/validate-codebook.mjs
+
+      - name: Knowledge contract
+        run: node scripts/coffee-db/validate-knowledge.mjs
