@@ -1,0 +1,56 @@
+{
+  "_format": "coffee-geo-identity-groups",
+  "_schemaVersion": 1,
+  "version": "1.0.0",
+  "updatedAt": "2026-09-02",
+  "policy": {
+    "qrCompatibility": "All grouped coreCodes remain permanently decodable at their original QR indexes.",
+    "uiBehavior": "Consumers may deduplicate search/display by canonicalGeoIdentityId while decoded historical records retain the original coreCode.",
+    "noPhysicalDeletion": true
+  },
+  "identityGroups": [
+    {
+      "canonicalGeoIdentityId": "GEO-CN-XISHUANGBANNA",
+      "countryCode": "CO-CN",
+      "geoType": "coffee_region",
+      "canonicalNameZh": "西双版纳",
+      "canonicalNameEn": "Xishuangbanna, Yunnan",
+      "coreCodes": ["RG-CN-XIS", "RG-CN-XSB"],
+      "resolution": "same_region_confirmed",
+      "evidence": "Both v6 rows have the same country and English geographic identity. Yunnan provincial government identifies Xishuangbanna Dai Autonomous Prefecture as one prefecture in southern Yunnan; keeping two QR rows is a legacy compatibility requirement, not evidence for two separate regions.",
+      "sourceUrls": [
+        "https://www.yn.gov.cn/yngk/szmp/xsbnz/201902/t20190227_99300.html",
+        "https://ynmz.yn.gov.cn/cms/xingzhengquhuashezhi.html"
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "hierarchyCorrections": [
+    {
+      "id": "GEO-CORR-US-HAWAII",
+      "coreCode": "CO-US",
+      "canonicalCoreType": "country",
+      "canonicalNameZh": "美国",
+      "canonicalNameEn": "United States",
+      "legacyDisplay": {
+        "nameZh": "美国夏威夷",
+        "nameEn": "United States / Hawaii"
+      },
+      "childGeoNodes": [
+        {
+          "id": "GEO-US-HI",
+          "geoType": "state_province",
+          "canonicalNameZh": "夏威夷州",
+          "canonicalNameEn": "Hawaiʻi",
+          "parentCoreCode": "CO-US"
+        }
+      ],
+      "resolution": "country_state_conflation_corrected_in_knowledge_layer",
+      "sourceUrls": [
+        "https://www.hawaiicoffeeassoc.org/History"
+      ],
+      "confidence": 1.0,
+      "note": "The v6 core row remains unchanged for QR compatibility. Consumers should display the knowledge-layer canonical country name and treat Hawaiʻi as a child geography."
+    }
+  ]
+}
