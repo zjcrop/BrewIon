@@ -1,0 +1,61 @@
+name: Coffee Verified Entity Catalog
+
+on:
+  pull_request:
+    paths:
+      - 'coffee-knowledge/catalog/verified_named_candidate_entities_v1.json'
+      - 'coffee-knowledge/knowledge-manifest_v1.json'
+      - 'scripts/coffee-db/build-knowledge-bundle.mjs'
+      - 'scripts/coffee-db/validate-verified-entity-module.mjs'
+      - '.github/workflows/coffee-verified-entity-catalog.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'coffee-knowledge/catalog/verified_named_candidate_entities_v1.json'
+      - 'coffee-knowledge/knowledge-manifest_v1.json'
+      - 'scripts/coffee-db/build-knowledge-bundle.mjs'
+      - 'scripts/coffee-db/validate-verified-entity-module.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Syntax
+        run: |
+          node --check scripts/coffee-db/build-knowledge-bundle.mjs
+          node --check scripts/coffee-db/validate-verified-entity-module.mjs
+      - name: Validate verified entity module
+        run: node scripts/coffee-db/validate-verified-entity-module.mjs
+      - name: Build candidate knowledge release
+        run: node scripts/coffee-db/build-knowledge-bundle.mjs --output=coffee-verified-entity-build
+      - name: Enforce core compatibility and materialization
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const manifest=JSON.parse(fs.readFileSync('coffee-verified-entity-build/latest.json','utf8'));
+          const artifact=JSON.parse(fs.readFileSync(`coffee-verified-entity-build/${manifest.artifact.name}`,'utf8'));
+          if (manifest.compatibility?.qrIndexesChanged!==false) throw new Error('QR indexes changed.');
+          if (artifact.counts?.entities!==460) throw new Error(`Entity count changed: ${artifact.counts?.entities}`);
+          if (artifact.counts?.enrichedEntities!==17) throw new Error(`Expected 17 enriched entities, got ${artifact.counts?.enrichedEntities}`);
+          const required=['ST-CO-CAM@深度研究','ST-CO-RIV@深度研究','ST-CO-ROS@深度研究','ST-CO-MAR@深度研究','ST-CO-POT@深度研究','ST-CR-MIN@深度研究','ST-CR-SUM@深度研究','ST-HN-JER@深度研究','ST-PA-MUL@深度研究','ST-PA-ABU@深度研究','ST-PA-NIN@深度研究','ST-PA-MIF@深度研究','ST-PA-ALT@深度研究','ST-SV-PIR@深度研究'];
+          const byCode=new Map((artifact.entities||[]).map(x=>[x.code,x]));
+          for(const code of required) if(!byCode.get(code)?.knowledge) throw new Error(`Verified entity not materialized: ${code}`);
+          console.log({entities:artifact.counts.entities,enrichedEntities:artifact.counts.enrichedEntities,qrIndexesChanged:manifest.compatibility.qrIndexesChanged});
+          NODE
+      - name: Upload candidate release
+        uses: actions/upload-artifact@v4
+        with:
+          name: coffee-verified-entity-candidate-${{ github.run_id }}
+          path: coffee-verified-entity-build/
+          retention-days: 30
+          if-no-files-found: error
