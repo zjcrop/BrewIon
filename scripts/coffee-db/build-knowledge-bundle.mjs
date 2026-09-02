@@ -64,6 +64,9 @@ const supplementalModels = (manifest.supplementalModels || []).map((modulePath) 
 const entityIdentity = manifest.entityIdentityModule
   ? readRelative(knowledgeDir, manifest.entityIdentityModule)
   : { groups: [] };
+const geoIdentity = manifest.geoIdentityModule
+  ? readRelative(knowledgeDir, manifest.geoIdentityModule)
+  : { identityGroups: [], hierarchyCorrections: [] };
 
 const moduleSpecies = catalogs.flatMap((x) => x.data.species || []);
 const moduleVarieties = catalogs.flatMap((x) => x.data.varietyDetails || []);
@@ -102,6 +105,36 @@ for (const group of entityIdentity.groups || []) {
   }
 }
 
+const coreRegionRows = (core.regions || []).map((row, index) => ({ ...rowToObject(core._columns.regions, row), qrIndex: index + 1 }));
+const coreRegionByCode = new Map(coreRegionRows.map((x) => [x.code, x]));
+const geoIdentityIds = new Set();
+const geoIdentityByCore = new Map();
+for (const group of geoIdentity.identityGroups || []) {
+  const canonicalGeoIdentityId = String(group.canonicalGeoIdentityId || '').trim();
+  if (!canonicalGeoIdentityId) throw new Error('Geo identity group is missing canonicalGeoIdentityId.');
+  if (geoIdentityIds.has(canonicalGeoIdentityId)) throw new Error(`Duplicate canonicalGeoIdentityId ${canonicalGeoIdentityId}`);
+  geoIdentityIds.add(canonicalGeoIdentityId);
+  if (!Array.isArray(group.coreCodes) || group.coreCodes.length < 2) throw new Error(`${canonicalGeoIdentityId} must group at least two core region codes.`);
+  for (const coreCode of group.coreCodes) {
+    const coreRegion = coreRegionByCode.get(coreCode);
+    if (!coreRegion) throw new Error(`${canonicalGeoIdentityId} references missing region coreCode ${coreCode}`);
+    if (group.countryCode && group.countryCode !== coreRegion.countryCode) {
+      throw new Error(`${canonicalGeoIdentityId} country mismatch for ${coreCode}: ${group.countryCode} != ${coreRegion.countryCode}`);
+    }
+    if (geoIdentityByCore.has(coreCode)) throw new Error(`Region coreCode ${coreCode} belongs to multiple canonical geo identity groups.`);
+    geoIdentityByCore.set(coreCode, group);
+  }
+}
+
+const countryCodes = new Set((core.countries || []).map((row) => String(row?.[0] || '')));
+const geoCorrectionByCore = new Map();
+for (const correction of geoIdentity.hierarchyCorrections || []) {
+  const coreCode = String(correction.coreCode || '').trim();
+  if (!coreCode || !countryCodes.has(coreCode)) throw new Error(`Geo hierarchy correction references missing/non-country coreCode ${coreCode}`);
+  if (geoCorrectionByCore.has(coreCode)) throw new Error(`Duplicate geo hierarchy correction for ${coreCode}`);
+  geoCorrectionByCore.set(coreCode, correction);
+}
+
 function materialize(tableName, enrichmentMap = null) {
   const columns = core._columns?.[tableName];
   if (!Array.isArray(columns)) throw new Error(`Missing core columns for ${tableName}`);
@@ -109,6 +142,8 @@ function materialize(tableName, enrichmentMap = null) {
     const base = rowToObject(columns, row);
     const enrichment = enrichmentMap?.get(base.code) || null;
     const identityGroup = tableName === 'entities' ? entityIdentityByCore.get(base.code) || null : null;
+    const geoGroup = tableName === 'regions' ? geoIdentityByCore.get(base.code) || null : null;
+    const geoCorrection = tableName === 'countries' ? geoCorrectionByCore.get(base.code) || null : null;
     return {
       ...base,
       qrIndex: index + 1,
@@ -121,6 +156,26 @@ function materialize(tableName, enrichmentMap = null) {
           canonicalNameEn: identityGroup.canonicalNameEn || null,
           resolution: identityGroup.resolution || null,
           confidence: identityGroup.confidence ?? null,
+        },
+      } : {}),
+      ...(geoGroup ? {
+        canonicalGeoIdentityId: geoGroup.canonicalGeoIdentityId,
+        canonicalGeoIdentity: {
+          canonicalNameZh: geoGroup.canonicalNameZh || null,
+          canonicalNameEn: geoGroup.canonicalNameEn || null,
+          geoType: geoGroup.geoType || null,
+          resolution: geoGroup.resolution || null,
+          confidence: geoGroup.confidence ?? null,
+        },
+      } : {}),
+      ...(geoCorrection ? {
+        canonicalGeo: {
+          canonicalType: geoCorrection.canonicalCoreType || null,
+          canonicalNameZh: geoCorrection.canonicalNameZh || null,
+          canonicalNameEn: geoCorrection.canonicalNameEn || null,
+          resolution: geoCorrection.resolution || null,
+          confidence: geoCorrection.confidence ?? null,
+          childGeoNodes: geoCorrection.childGeoNodes || [],
         },
       } : {}),
     };
@@ -182,6 +237,9 @@ const bundle = {
     relations: relations.length,
     aliases: aliases.length,
     species: species.length,
+    localizedNames: localizedNames.length,
+    localizedAliases: localizedAliases.length,
+    pendingLocalizedAliases: localizedAliases.filter((x) => String(x.reviewStatus || '').startsWith('pending')).length,
     enrichedCountries: countries.filter((x) => x.knowledge).length,
     enrichedRegions: regions.filter((x) => x.knowledge).length,
     enrichedEntities: entities.filter((x) => x.knowledge).length,
@@ -189,6 +247,9 @@ const bundle = {
     enrichedProcesses: processes.filter((x) => x.knowledge).length,
     canonicalEntityIdentityGroups: entityIdentityIds.size,
     groupedEntityCoreCodes: entityIdentityByCore.size,
+    canonicalGeoIdentityGroups: geoIdentityIds.size,
+    groupedRegionCoreCodes: geoIdentityByCore.size,
+    geoHierarchyCorrections: geoCorrectionByCore.size,
   },
   countries,
   regions,
@@ -200,6 +261,8 @@ const bundle = {
   aliases,
   species,
   entityIdentityGroups: entityIdentity.groups || [],
+  geoIdentityGroups: geoIdentity.identityGroups || [],
+  geoHierarchyCorrections: geoIdentity.hierarchyCorrections || [],
   processFamilies: knowledge.processFamilies || [],
   fermentationMethods: knowledge.fermentationMethods || [],
   dryingMethods: knowledge.dryingMethods || [],
@@ -254,6 +317,8 @@ const releaseManifest = {
     qrIndexesChanged: false,
     baselinePolicy: 'materialize-core-then-overlay-knowledge',
     canonicalEntityIdentityPolicy: 'deduplicate-display-preserve-core-code',
+    canonicalGeoIdentityPolicy: 'deduplicate-display-preserve-core-code',
+    localizationPolicy: 'ai-candidates-never-overwrite-official-names',
   },
 };
 fs.writeFileSync(path.join(releaseDir, 'latest.json'), stableJson(releaseManifest), 'utf8');

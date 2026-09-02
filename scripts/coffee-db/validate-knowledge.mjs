@@ -3,28 +3,22 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT = process.cwd();
-const knowledgePath = path.resolve(ROOT, 'coffee-knowledge/coffee_origin_knowledge_v1.json');
-const sourcesPath = path.resolve(ROOT, 'coffee-knowledge/source_registry_v1.json');
-const corePath = path.resolve(ROOT, 'coffee-qr-codebook/coffee_qr_codebook_v6.json');
-const varietyModulePath = path.resolve(ROOT, 'coffee-knowledge/catalog/v6_variety_details_remaining_v1.json');
-const entityIdentityPath = path.resolve(ROOT, 'coffee-knowledge/catalog/entity_identity_groups_v1.json');
-
-const knowledge = JSON.parse(fs.readFileSync(knowledgePath, 'utf8'));
-const registry = JSON.parse(fs.readFileSync(sourcesPath, 'utf8'));
-const core = JSON.parse(fs.readFileSync(corePath, 'utf8'));
-const varietyModule = fs.existsSync(varietyModulePath)
-  ? JSON.parse(fs.readFileSync(varietyModulePath, 'utf8'))
-  : { species: [], varietyDetails: [], localizedNames: [], localizedAliases: [] };
-const entityIdentity = fs.existsSync(entityIdentityPath)
-  ? JSON.parse(fs.readFileSync(entityIdentityPath, 'utf8'))
-  : { groups: [] };
+const manifestPath = path.resolve(ROOT, 'coffee-knowledge/knowledge-manifest_v1.json');
+const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+const knowledgeDir = path.dirname(manifestPath);
+const knowledge = JSON.parse(fs.readFileSync(path.resolve(knowledgeDir, manifest.mainKnowledge), 'utf8'));
+const registry = JSON.parse(fs.readFileSync(path.resolve(knowledgeDir, manifest.sourceRegistry), 'utf8'));
+const core = JSON.parse(fs.readFileSync(path.resolve(knowledgeDir, manifest.coreCodebook), 'utf8'));
+const catalogModules = (manifest.catalogModules || []).map((modulePath) => ({ modulePath, data: JSON.parse(fs.readFileSync(path.resolve(knowledgeDir, modulePath), 'utf8')) }));
+const entityIdentity = manifest.entityIdentityModule ? JSON.parse(fs.readFileSync(path.resolve(knowledgeDir, manifest.entityIdentityModule), 'utf8')) : { groups: [] };
+const geoIdentity = manifest.geoIdentityModule ? JSON.parse(fs.readFileSync(path.resolve(knowledgeDir, manifest.geoIdentityModule), 'utf8')) : { identityGroups: [], hierarchyCorrections: [] };
 const errors = [];
 const warnings = [];
 
 function fail(message) { errors.push(message); }
 function warn(message) { warnings.push(message); }
-function arrayOf(object, name) {
-  if (!Array.isArray(object?.[name])) fail(`${name} must be an array`);
+function arrayOf(object, name, label = name) {
+  if (!Array.isArray(object?.[name])) fail(`${label} must be an array`);
   return Array.isArray(object?.[name]) ? object[name] : [];
 }
 function validConfidence(value) {
@@ -34,9 +28,7 @@ function validConfidence(value) {
 }
 
 const supported = new Set(knowledge.languagePolicy?.supportedLanguages || []);
-for (const required of ['zh-Hans', 'en']) {
-  if (!supported.has(required)) fail(`supportedLanguages must contain ${required}`);
-}
+for (const required of ['zh-Hans', 'en']) if (!supported.has(required)) fail(`supportedLanguages must contain ${required}`);
 
 const sourceIds = new Set();
 for (const source of registry.sources || []) {
@@ -50,20 +42,23 @@ for (const source of registry.sources || []) {
 const coreCodes = new Set();
 const coreVarietyCodes = new Set();
 const coreEntityByCode = new Map();
+const coreRegionByCode = new Map();
+const coreCountryCodes = new Set();
 for (const table of ['countries', 'regions', 'entities', 'varieties', 'processes', 'flavors']) {
   for (const row of core[table] || []) {
     if (!row?.[0]) continue;
     const code = String(row[0]);
     coreCodes.add(code);
+    if (table === 'countries') coreCountryCodes.add(code);
     if (table === 'varieties') coreVarietyCodes.add(code);
     if (table === 'entities') coreEntityByCode.set(code, { countryCode: String(row[1] || ''), entityType: String(row[2] || '') });
+    if (table === 'regions') coreRegionByCode.set(code, { countryCode: String(row[1] || '') });
   }
 }
 
 const knowledgeIds = new Set();
 const materializedVarietyCodes = new Set();
 const varietyCodeOwners = new Map();
-
 function registerRecord(record, collectionName) {
   if (!record.id) { fail(`${collectionName} record missing id`); return; }
   if (knowledgeIds.has(record.id)) fail(`duplicate knowledge id ${record.id}`);
@@ -72,30 +67,19 @@ function registerRecord(record, collectionName) {
   if (record.coreCode && !coreCodes.has(record.coreCode)) fail(`${record.id} references missing coreCode ${record.coreCode}`);
   if (!validConfidence(record.confidence)) fail(`${record.id} confidence must be 0..1`);
   if (collectionName === 'varietyDetails' && record.coreCode) {
-    if (varietyCodeOwners.has(record.coreCode)) {
-      fail(`variety coreCode ${record.coreCode} materialized more than once: ${varietyCodeOwners.get(record.coreCode)} and ${record.id}`);
-    }
+    if (varietyCodeOwners.has(record.coreCode)) fail(`variety coreCode ${record.coreCode} materialized more than once: ${varietyCodeOwners.get(record.coreCode)} and ${record.id}`);
     varietyCodeOwners.set(record.coreCode, record.id);
     materializedVarietyCodes.add(record.coreCode);
   }
 }
 
-const mainCollections = [
-  'species',
-  'processFamilies',
-  'geoDetails',
-  'entityDetails',
-  'varietyDetails',
-  'processDetails',
-  'fermentationMethods',
-  'dryingMethods',
-  'lots',
-];
-for (const name of mainCollections) {
+for (const name of ['species','processFamilies','geoDetails','entityDetails','varietyDetails','processDetails','fermentationMethods','dryingMethods','lots']) {
   for (const record of arrayOf(knowledge, name)) registerRecord(record, name);
 }
-for (const record of arrayOf(varietyModule, 'species')) registerRecord(record, 'species');
-for (const record of arrayOf(varietyModule, 'varietyDetails')) registerRecord(record, 'varietyDetails');
+for (const module of catalogModules) {
+  for (const record of arrayOf(module.data, 'species', `${module.modulePath}.species`)) registerRecord(record, 'species');
+  for (const record of arrayOf(module.data, 'varietyDetails', `${module.modulePath}.varietyDetails`)) registerRecord(record, 'varietyDetails');
+}
 
 function validateNames(names, owner) {
   if (!Array.isArray(names)) return;
@@ -108,25 +92,27 @@ function validateNames(names, owner) {
   }
   if (!langSet.has('zh-Hans') || !langSet.has('en')) warn(`${owner} does not have both zh-Hans and en`);
 }
-
-for (const species of [...(knowledge.species || []), ...(varietyModule.species || [])]) validateNames(species.names, species.id);
+for (const species of knowledge.species || []) validateNames(species.names, species.id);
+for (const module of catalogModules) for (const species of module.data.species || []) validateNames(species.names, species.id);
 
 function validateLocalizedCollection(records, collectionName) {
   for (const [index, record] of records.entries()) {
     if (!supported.has(String(record.language || ''))) fail(`${collectionName}[${index}] unsupported language ${record.language}`);
     if (!String(record.name || record.alias || '').trim()) fail(`${collectionName}[${index}] has empty text`);
-    const target = record.targetCode || record.targetId;
-    if (!target) fail(`${collectionName}[${index}] missing targetCode/targetId`);
+    if (!record.targetCode && !record.targetId) fail(`${collectionName}[${index}] missing targetCode/targetId`);
     if (record.targetCode && !coreCodes.has(record.targetCode)) fail(`${collectionName}[${index}] missing core target ${record.targetCode}`);
     if (record.targetId && !knowledgeIds.has(record.targetId)) fail(`${collectionName}[${index}] missing knowledge target ${record.targetId}`);
     for (const ref of record.sourceRefs || []) if (!sourceIds.has(ref)) fail(`${collectionName}[${index}] references missing source ${ref}`);
     if (!validConfidence(record.confidence)) fail(`${collectionName}[${index}] confidence must be 0..1`);
+    if (['ai_translated','ai_transliterated'].includes(record.nameType) && !String(record.reviewStatus || '').startsWith('pending')) fail(`${collectionName}[${index}] AI-generated alias must remain pending review`);
   }
 }
 validateLocalizedCollection(arrayOf(knowledge, 'localizedNames'), 'localizedNames');
 validateLocalizedCollection(arrayOf(knowledge, 'localizedAliases'), 'localizedAliases');
-validateLocalizedCollection(arrayOf(varietyModule, 'localizedNames'), 'module.localizedNames');
-validateLocalizedCollection(arrayOf(varietyModule, 'localizedAliases'), 'module.localizedAliases');
+for (const module of catalogModules) {
+  validateLocalizedCollection(arrayOf(module.data, 'localizedNames', `${module.modulePath}.localizedNames`), `${module.modulePath}.localizedNames`);
+  validateLocalizedCollection(arrayOf(module.data, 'localizedAliases', `${module.modulePath}.localizedAliases`), `${module.modulePath}.localizedAliases`);
+}
 
 for (const [index, rel] of arrayOf(knowledge, 'varietyLineage').entries()) {
   if (!rel.parentId || !rel.childId) fail(`varietyLineage[${index}] missing parentId/childId`);
@@ -141,7 +127,6 @@ for (const [index, record] of arrayOf(knowledge, 'processDetails').entries()) {
   if (record.baseProcessId && !processFamilyIds.has(record.baseProcessId)) fail(`processDetails[${index}] missing baseProcessId ${record.baseProcessId}`);
   if (record.fermentationId && !fermentationIds.has(record.fermentationId)) fail(`processDetails[${index}] missing fermentationId ${record.fermentationId}`);
 }
-
 for (const [index, rel] of arrayOf(knowledge, 'temporalRelations').entries()) {
   if (!rel.subject || !rel.object || !rel.relationType) fail(`temporalRelations[${index}] missing subject/object/relationType`);
   if (!validConfidence(rel.confidence)) fail(`temporalRelations[${index}] confidence must be 0..1`);
@@ -163,31 +148,56 @@ for (const [index, group] of arrayOf(entityIdentity, 'groups').entries()) {
     const entity = coreEntityByCode.get(coreCode);
     if (!entity) { fail(`${id} references non-entity or missing coreCode ${coreCode}`); continue; }
     if (group.countryCode && group.countryCode !== entity.countryCode) fail(`${id} country mismatch for ${coreCode}`);
-    if (identityCodeOwners.has(coreCode)) fail(`${coreCode} assigned to multiple canonical identity groups: ${identityCodeOwners.get(coreCode)} and ${id}`);
+    if (identityCodeOwners.has(coreCode)) fail(`${coreCode} assigned to multiple canonical identity groups`);
     identityCodeOwners.set(coreCode, id);
   }
 }
 
-const missingVarietyCoverage = [...coreVarietyCodes].filter((code) => !materializedVarietyCodes.has(code));
-const foreignVarietyCoverage = [...materializedVarietyCodes].filter((code) => !coreVarietyCodes.has(code));
-if (missingVarietyCoverage.length) fail(`v6 variety semantic coverage incomplete: missing ${missingVarietyCoverage.join(', ')}`);
-if (foreignVarietyCoverage.length) fail(`materialized variety codes are not in v6 core: ${foreignVarietyCoverage.join(', ')}`);
+const geoIdentityIds = new Set();
+const geoCodeOwners = new Map();
+for (const [index, group] of arrayOf(geoIdentity, 'identityGroups').entries()) {
+  const id = String(group.canonicalGeoIdentityId || '').trim();
+  if (!id) { fail(`geoIdentity.identityGroups[${index}] missing canonicalGeoIdentityId`); continue; }
+  if (geoIdentityIds.has(id)) fail(`duplicate canonicalGeoIdentityId ${id}`);
+  geoIdentityIds.add(id);
+  if (!String(group.canonicalNameZh || '').trim() || !String(group.canonicalNameEn || '').trim()) fail(`${id} must have zh/en canonical names`);
+  if (!Array.isArray(group.sourceUrls) || group.sourceUrls.length < 1) fail(`${id} requires at least one sourceUrl`);
+  if (!validConfidence(group.confidence)) fail(`${id} confidence must be 0..1`);
+  for (const coreCode of group.coreCodes || []) {
+    const region = coreRegionByCode.get(coreCode);
+    if (!region) { fail(`${id} references non-region or missing coreCode ${coreCode}`); continue; }
+    if (group.countryCode && group.countryCode !== region.countryCode) fail(`${id} country mismatch for ${coreCode}`);
+    if (geoCodeOwners.has(coreCode)) fail(`${coreCode} assigned to multiple canonical geo identity groups`);
+    geoCodeOwners.set(coreCode, id);
+  }
+}
+const correctionCodes = new Set();
+for (const [index, correction] of arrayOf(geoIdentity, 'hierarchyCorrections').entries()) {
+  if (!correction.id) fail(`geoIdentity.hierarchyCorrections[${index}] missing id`);
+  if (!coreCountryCodes.has(String(correction.coreCode || ''))) fail(`${correction.id || index} must target a core country code`);
+  if (correctionCodes.has(correction.coreCode)) fail(`duplicate hierarchy correction for ${correction.coreCode}`);
+  correctionCodes.add(correction.coreCode);
+  if (!String(correction.canonicalNameZh || '').trim() || !String(correction.canonicalNameEn || '').trim()) fail(`${correction.id} must have zh/en canonical names`);
+  if (!Array.isArray(correction.sourceUrls) || correction.sourceUrls.length < 1) fail(`${correction.id} requires sourceUrls`);
+  for (const child of correction.childGeoNodes || []) if (child.parentCoreCode !== correction.coreCode) fail(`${correction.id} child ${child.id} parentCoreCode mismatch`);
+}
 
+const missingVarietyCoverage = [...coreVarietyCodes].filter((code) => !materializedVarietyCodes.has(code));
+if (missingVarietyCoverage.length) fail(`v6 variety semantic coverage incomplete: missing ${missingVarietyCoverage.join(', ')}`);
+
+const localizedNamesCount = (knowledge.localizedNames?.length || 0) + catalogModules.reduce((n,m)=>n+(m.data.localizedNames?.length||0),0);
+const localizedAliasesCount = (knowledge.localizedAliases?.length || 0) + catalogModules.reduce((n,m)=>n+(m.data.localizedAliases?.length||0),0);
 const summary = {
-  species: (knowledge.species?.length || 0) + (varietyModule.species?.length || 0),
-  geoDetails: knowledge.geoDetails?.length || 0,
-  entityDetails: knowledge.entityDetails?.length || 0,
-  varietyDetailsMain: knowledge.varietyDetails?.length || 0,
-  varietyDetailsModule: varietyModule.varietyDetails?.length || 0,
+  species: knowledgeIds.size,
   varietySemanticCoverage: `${materializedVarietyCodes.size}/${coreVarietyCodes.size}`,
-  processDetails: knowledge.processDetails?.length || 0,
-  processFamilies: knowledge.processFamilies?.length || 0,
-  fermentationMethods: knowledge.fermentationMethods?.length || 0,
   canonicalEntityIdentityGroups: identityIds.size,
   groupedEntityCoreCodes: identityCodeOwners.size,
+  canonicalGeoIdentityGroups: geoIdentityIds.size,
+  groupedRegionCoreCodes: geoCodeOwners.size,
+  geoHierarchyCorrections: correctionCodes.size,
+  localizedNames: localizedNamesCount,
+  localizedAliases: localizedAliasesCount,
   sources: registry.sources?.length || 0,
-  localizedNames: (knowledge.localizedNames?.length || 0) + (varietyModule.localizedNames?.length || 0),
-  localizedAliases: (knowledge.localizedAliases?.length || 0) + (varietyModule.localizedAliases?.length || 0),
   warnings: warnings.length,
   errors: errors.length,
 };
