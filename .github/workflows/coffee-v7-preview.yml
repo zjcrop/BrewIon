@@ -51,9 +51,12 @@ jobs:
             if (!blockers.has(blocker)) throw new Error(`Required v7 blocker missing: ${blocker}`);
           }
           const pins=audit.validatedConsumerPins||{};
-          if (!/^[0-9a-f]{40}$/i.test(String(pins.luckyBeanMainSha||'')) || !/^[0-9a-f]{40}$/i.test(String(pins.aromaSenseMainSha||''))) throw new Error('Consumer evidence is not pinned to immutable main SHAs.');
+          for (const key of ['luckyBeanCurrentMainShaAtValidation','luckyBeanValidatedConsumerSha','aromaSenseMainSha','aromaSenseDependencyLuckyBeanSha']) {
+            if (!/^[0-9a-f]{40}$/i.test(String(pins[key]||''))) throw new Error(`Consumer evidence SHA is invalid: ${key}`);
+          }
+          if (pins.aromaSenseDependencyLuckyBeanSha!==pins.luckyBeanValidatedConsumerSha) throw new Error('AromaSense dependency does not match the validated LuckyBean consumer SHA.');
           if (pins.luckyBeanPipelineVersion!=='1.24P-recognition-pipeline.3') throw new Error('Unexpected LuckyBean pipeline version in v7 evidence.');
-          console.log({v6:audit.v6VarietyCount,appended:audit.appendedVarietyCount,preview:audit.previewVarietyCount,oldQrIndexesChanged:audit.oldQrIndexesChanged,consumerRecognitionPathVerified:audit.consumerRecognitionPathVerified,realUsageOrOcrFrequencyEvidenceVerified:audit.realUsageOrOcrFrequencyEvidenceVerified,productionReady:audit.productionReady});
+          console.log({v6:audit.v6VarietyCount,appended:audit.appendedVarietyCount,preview:audit.previewVarietyCount,oldQrIndexesChanged:audit.oldQrIndexesChanged,consumerRecognitionPathVerified:audit.consumerRecognitionPathVerified,realUsageOrOcrFrequencyEvidenceVerified:audit.realUsageOrOcrFrequencyEvidenceVerified,productionReady:audit.productionReady,pins});
           NODE
       - name: Upload v7 preview audit artifact
         uses: actions/upload-artifact@v4
