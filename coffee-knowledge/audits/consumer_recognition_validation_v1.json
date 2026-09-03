@@ -1,0 +1,101 @@
+{
+  "_format": "coffee-consumer-recognition-validation",
+  "_schemaVersion": 1,
+  "version": "1.0.0",
+  "updatedAt": "2026-09-03",
+  "scope": "Synthetic contract and CI validation that BrewIon knowledge-only varieties can be consumed by LuckyBean and AromaSense without acquiring QR/core ownership.",
+  "consumerRecognitionPathVerified": true,
+  "syntheticValidationOnly": true,
+  "realUsageOrOcrFrequencyEvidenceVerified": false,
+  "productionApprovalEffect": "none",
+  "qrCoreMutationAllowed": false,
+  "automaticCoreAssignmentAllowed": false,
+  "luckyBean": {
+    "repository": "zjcrop/luckybean",
+    "mainSha": "84cd97b60bf87dd5aa41ee6374316e7a2413413b",
+    "validatedConsumerSha": "ae4486454e49d6f73e1e9b96c5cbe4077a199376",
+    "validatedPullRequest": 79,
+    "validatedPullRequestHeadSha": "e85a0775702e6e6c7af5bba988df288654eca036",
+    "pipelineVersion": "1.24P-recognition-pipeline.3",
+    "mainTests": {
+      "runId": 33719970373,
+      "runNumber": 1063,
+      "conclusion": "success"
+    },
+    "androidIntegration": {
+      "runId": 33719970360,
+      "runNumber": 232,
+      "conclusion": "success"
+    },
+    "runtimeRepresentatives": [
+      {
+        "knowledgeId": "WCR-HP-ANACAFE-14",
+        "input": "VARIETY: Anacafe 14",
+        "expectedCoreCode": null,
+        "manualConfirmationRequired": true
+      },
+      {
+        "knowledgeId": "WCR-HP-CATIMOR-129",
+        "inputs": ["VARIETY: Cat129", "VARIETY: Catimor 129"],
+        "expectedCoreCode": null,
+        "manualConfirmationRequired": true
+      }
+    ]
+  },
+  "aromaSense": {
+    "repository": "zjcrop/AromaSense",
+    "mainSha": "97984bc212cc73fb45ad272b18cb9e9d3e748b02",
+    "dependencyLuckyBeanSha": "ae4486454e49d6f73e1e9b96c5cbe4077a199376",
+    "validatedPullRequest": 3,
+    "validatedPullRequestHeadSha": "10a3dd57f2ab9a1aeec2d2bf1e96947e73fb9cea",
+    "ci": {
+      "runId": 33730776097,
+      "runNumber": 365,
+      "conclusion": "success"
+    },
+    "finalArtifactChecks": {
+      "webRecognitionBook": true,
+      "androidRecognitionBook": true,
+      "knowledgeVersion": "1.0.0-alpha.7",
+      "aliasesApplied": 63,
+      "blockedEntityResolutionIssues": 5,
+      "knowledgeOnlyVarieties": 16,
+      "pipelineVersion": "1.24P-recognition-pipeline.3",
+      "qrIndexesChanged": false
+    },
+    "runtimeRepresentative": {
+      "knowledgeId": "WCR-HP-ANACAFE-14",
+      "input": "VARIETY: Anacafe 14",
+      "expectedCoreCode": null,
+      "expectedKnowledgeOnly": true,
+      "expectedQrEligible": false,
+      "expectedProductionCoreApproved": false,
+      "manualConfirmationRequired": true
+    }
+  },
+  "knowledgeOnlySubset": {
+    "source": "coffee-knowledge/catalog/wcr_high_priority_varieties_v1.json",
+    "verifiedCount": 16,
+    "qrIndexesAssigned": 0,
+    "productionCoreApproved": 0
+  },
+  "runtimeRepresentativeKnowledgeIds": [
+    "WCR-HP-ANACAFE-14",
+    "WCR-HP-CATIMOR-129"
+  ],
+  "interpretation": {
+    "proves": [
+      "consumer_pipeline_supports_knowledge_only_variety_candidates",
+      "v6_core_matching_remains_higher_priority",
+      "knowledge_only_candidates_do_not_receive_qr_or_core_codes",
+      "manual_confirmation_remains_required",
+      "aromasense_web_and_android_outputs_preserve_v6_qr_prefixes"
+    ],
+    "doesNotProve": [
+      "real_user_frequency",
+      "real_ocr_frequency",
+      "market_name_acceptance",
+      "production_qr_v7_eligibility"
+    ]
+  }
+}
