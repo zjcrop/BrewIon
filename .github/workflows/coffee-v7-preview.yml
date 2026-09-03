@@ -5,12 +5,14 @@ on:
     paths:
       - 'coffee-qr-codebook/coffee_qr_codebook_v6.json'
       - 'coffee-knowledge/catalog/wcr_high_priority_varieties_v1.json'
+      - 'coffee-knowledge/audits/consumer_recognition_validation_v1.json'
       - 'scripts/coffee-db/build-v7-preview.mjs'
       - '.github/workflows/coffee-v7-preview.yml'
   pull_request:
     paths:
       - 'coffee-qr-codebook/coffee_qr_codebook_v6.json'
       - 'coffee-knowledge/catalog/wcr_high_priority_varieties_v1.json'
+      - 'coffee-knowledge/audits/consumer_recognition_validation_v1.json'
       - 'scripts/coffee-db/build-v7-preview.mjs'
       - '.github/workflows/coffee-v7-preview.yml'
   workflow_dispatch:
@@ -31,7 +33,7 @@ jobs:
         run: node --check scripts/coffee-db/build-v7-preview.mjs
       - name: Build append-only v7 preview
         run: node scripts/coffee-db/build-v7-preview.mjs --output=coffee-v7-preview
-      - name: Enforce non-production safety and prefix integrity
+      - name: Enforce non-production safety, consumer evidence boundaries and prefix integrity
         run: |
           node - <<'NODE'
           const fs=require('fs');
@@ -41,7 +43,17 @@ jobs:
           if (audit.oldQrIndexesChanged!==false || audit.indexedTablePrefixIntegrity!==true) throw new Error('v6 QR prefix integrity failed.');
           if (audit.appendedVarietyCount!==16) throw new Error(`Expected 16 appended preview candidates, got ${audit.appendedVarietyCount}`);
           if ((audit.appended||[]).some(x=>x.productionApproved===true)) throw new Error('Preview candidate must not be production-approved.');
-          console.log({v6:audit.v6VarietyCount,appended:audit.appendedVarietyCount,preview:audit.previewVarietyCount,oldQrIndexesChanged:audit.oldQrIndexesChanged});
+          if (audit.consumerRecognitionPathVerified!==true || audit.consumerValidationSyntheticOnly!==true) throw new Error('Consumer recognition path evidence was not validated as synthetic-only.');
+          if (audit.realUsageOrOcrFrequencyEvidenceVerified!==false) throw new Error('Synthetic consumer validation must not satisfy real usage/OCR frequency evidence.');
+          if (audit.productionApprovalEffect!=='none') throw new Error('Consumer validation must not authorize production QR promotion.');
+          const blockers=new Set(audit.blockers||[]);
+          for (const blocker of ['explicit_production_approval_required','real_usage_or_ocr_frequency_evidence_required','pending_market_verification_names_must_not_be_promoted_to_official_display_names']) {
+            if (!blockers.has(blocker)) throw new Error(`Required v7 blocker missing: ${blocker}`);
+          }
+          const pins=audit.validatedConsumerPins||{};
+          if (!/^[0-9a-f]{40}$/i.test(String(pins.luckyBeanMainSha||'')) || !/^[0-9a-f]{40}$/i.test(String(pins.aromaSenseMainSha||''))) throw new Error('Consumer evidence is not pinned to immutable main SHAs.');
+          if (pins.luckyBeanPipelineVersion!=='1.24P-recognition-pipeline.3') throw new Error('Unexpected LuckyBean pipeline version in v7 evidence.');
+          console.log({v6:audit.v6VarietyCount,appended:audit.appendedVarietyCount,preview:audit.previewVarietyCount,oldQrIndexesChanged:audit.oldQrIndexesChanged,consumerRecognitionPathVerified:audit.consumerRecognitionPathVerified,realUsageOrOcrFrequencyEvidenceVerified:audit.realUsageOrOcrFrequencyEvidenceVerified,productionReady:audit.productionReady});
           NODE
       - name: Upload v7 preview audit artifact
         uses: actions/upload-artifact@v4
