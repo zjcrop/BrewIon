@@ -5,11 +5,13 @@ import path from 'node:path';
 const ROOT = process.cwd();
 const corePath = path.resolve(ROOT, 'coffee-qr-codebook/coffee_qr_codebook_v6.json');
 const knowledgePath = path.resolve(ROOT, 'coffee-knowledge/catalog/wcr_high_priority_varieties_v1.json');
+const consumerValidationPath = path.resolve(ROOT, 'coffee-knowledge/audits/consumer_recognition_validation_v1.json');
 const outputArg = process.argv.slice(2).find((x) => x.startsWith('--output='));
 const outDir = outputArg ? path.resolve(outputArg.slice('--output='.length)) : path.resolve(ROOT, 'coffee-v7-preview');
 
 const v6 = JSON.parse(fs.readFileSync(corePath, 'utf8'));
 const knowledge = JSON.parse(fs.readFileSync(knowledgePath, 'utf8'));
+const consumerValidation = JSON.parse(fs.readFileSync(consumerValidationPath, 'utf8'));
 fs.mkdirSync(outDir, { recursive: true });
 
 const indexedTables = ['countries', 'regions', 'entities', 'varieties', 'processes', 'flavors'];
@@ -31,6 +33,42 @@ function preferredPreviewZh(detail) {
   return String(localized?.name || detail.canonicalNameEn || '').trim();
 }
 
+function validateConsumerRecognitionEvidence(value) {
+  if (value?._format !== 'coffee-consumer-recognition-validation' || Number(value?._schemaVersion) !== 1) {
+    throw new Error('Consumer recognition validation identity is invalid.');
+  }
+  if (value.consumerRecognitionPathVerified !== true) {
+    throw new Error('Consumer recognition path has not been verified.');
+  }
+  if (value.syntheticValidationOnly !== true || value.productionApprovalEffect !== 'none') {
+    throw new Error('Consumer recognition validation must remain non-production synthetic evidence.');
+  }
+  if (value.realUsageOrOcrFrequencyEvidenceVerified !== false) {
+    throw new Error('Synthetic consumer validation cannot claim real usage/OCR frequency evidence.');
+  }
+  if (value.qrCoreMutationAllowed !== false || value.automaticCoreAssignmentAllowed !== false) {
+    throw new Error('Consumer validation must not authorize QR/core mutation or automatic core assignment.');
+  }
+  if (String(value?.luckyBean?.pipelineVersion || '') !== '1.24P-recognition-pipeline.3') {
+    throw new Error('LuckyBean consumer validation pipeline version is not recognized.');
+  }
+  if (!/^[0-9a-f]{40}$/i.test(String(value?.luckyBean?.mainSha || '')) || !/^[0-9a-f]{40}$/i.test(String(value?.aromaSense?.mainSha || ''))) {
+    throw new Error('Consumer validation must pin immutable LuckyBean and AromaSense main SHAs.');
+  }
+  if (Number(value?.knowledgeOnlySubset?.verifiedCount || 0) < 16) {
+    throw new Error('Consumer validation does not cover the current 16-node knowledge-only subset.');
+  }
+  const representatives = Array.isArray(value?.runtimeRepresentativeKnowledgeIds)
+    ? value.runtimeRepresentativeKnowledgeIds
+    : [];
+  if (!representatives.includes('WCR-HP-ANACAFE-14') || !representatives.includes('WCR-HP-CATIMOR-129')) {
+    throw new Error('Consumer validation lacks required runtime representative knowledge IDs.');
+  }
+  return value;
+}
+
+validateConsumerRecognitionEvidence(consumerValidation);
+
 const preview = structuredClone(v6);
 preview.version = '7-preview';
 preview.updatedAt = new Date().toISOString().slice(0, 10);
@@ -38,8 +76,9 @@ preview._preview = {
   productionReady: false,
   sourceCoreVersion: String(v6.version),
   purpose: 'Append-only index migration proof for reviewed WCR high-priority knowledge nodes.',
-  warning: 'This file is a non-production preview. Candidate rows must not be used for QR encoding until explicit production approval and consumer/OCR usage review.',
-  generatedFrom: 'coffee-knowledge/catalog/wcr_high_priority_varieties_v1.json'
+  warning: 'This file is a non-production preview. Candidate rows must not be used for QR encoding until explicit production approval and real consumer/OCR frequency evidence are available.',
+  generatedFrom: 'coffee-knowledge/catalog/wcr_high_priority_varieties_v1.json',
+  consumerValidation: 'coffee-knowledge/audits/consumer_recognition_validation_v1.json'
 };
 
 const existingCodes = new Set((v6.varieties || []).map((row) => String(row?.[0] || '')));
@@ -85,7 +124,7 @@ for (const table of indexedTables) {
 const previewPath = path.join(outDir, 'coffee_qr_codebook_v7_preview.json');
 const audit = {
   _format: 'coffee-v7-preview-audit',
-  _schemaVersion: 1,
+  _schemaVersion: 2,
   generatedAt: new Date().toISOString(),
   productionReady: false,
   sourceCoreVersion: String(v6.version),
@@ -95,10 +134,19 @@ const audit = {
   appendedVarietyCount: appended.length,
   previewVarietyCount: (preview.varieties || []).length,
   oldQrIndexesChanged: false,
+  consumerRecognitionPathVerified: true,
+  consumerValidationSyntheticOnly: true,
+  realUsageOrOcrFrequencyEvidenceVerified: false,
+  productionApprovalEffect: 'none',
+  validatedConsumerPins: {
+    luckyBeanMainSha: consumerValidation.luckyBean.mainSha,
+    luckyBeanPipelineVersion: consumerValidation.luckyBean.pipelineVersion,
+    aromaSenseMainSha: consumerValidation.aromaSense.mainSha
+  },
   appended,
   blockers: [
     'explicit_production_approval_required',
-    'consumer_or_ocr_frequency_review_required',
+    'real_usage_or_ocr_frequency_evidence_required',
     'pending_market_verification_names_must_not_be_promoted_to_official_display_names'
   ]
 };
@@ -110,5 +158,7 @@ console.log(JSON.stringify({
   appended: audit.appendedVarietyCount,
   previewVarieties: audit.previewVarietyCount,
   oldQrIndexesChanged: false,
+  consumerRecognitionPathVerified: true,
+  realUsageOrOcrFrequencyEvidenceVerified: false,
   productionReady: false
 }, null, 2));
