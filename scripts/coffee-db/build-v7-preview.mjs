@@ -15,6 +15,7 @@ const consumerValidation = JSON.parse(fs.readFileSync(consumerValidationPath, 'u
 fs.mkdirSync(outDir, { recursive: true });
 
 const indexedTables = ['countries', 'regions', 'entities', 'varieties', 'processes', 'flavors'];
+const SHA40 = /^[0-9a-f]{40}$/i;
 
 function slug(value) {
   return String(value || '')
@@ -52,8 +53,15 @@ function validateConsumerRecognitionEvidence(value) {
   if (String(value?.luckyBean?.pipelineVersion || '') !== '1.24P-recognition-pipeline.3') {
     throw new Error('LuckyBean consumer validation pipeline version is not recognized.');
   }
-  if (!/^[0-9a-f]{40}$/i.test(String(value?.luckyBean?.mainSha || '')) || !/^[0-9a-f]{40}$/i.test(String(value?.aromaSense?.mainSha || ''))) {
-    throw new Error('Consumer validation must pin immutable LuckyBean and AromaSense main SHAs.');
+  const luckyMain = String(value?.luckyBean?.mainSha || '');
+  const luckyValidated = String(value?.luckyBean?.validatedConsumerSha || '');
+  const aromaMain = String(value?.aromaSense?.mainSha || '');
+  const aromaDependency = String(value?.aromaSense?.dependencyLuckyBeanSha || '');
+  if (![luckyMain, luckyValidated, aromaMain, aromaDependency].every((sha) => SHA40.test(sha))) {
+    throw new Error('Consumer validation must pin immutable current-main and validated dependency SHAs.');
+  }
+  if (aromaDependency !== luckyValidated) {
+    throw new Error('AromaSense dependency SHA must equal the LuckyBean SHA actually validated by the consumer CI.');
   }
   if (Number(value?.knowledgeOnlySubset?.verifiedCount || 0) < 16) {
     throw new Error('Consumer validation does not cover the current 16-node knowledge-only subset.');
@@ -139,9 +147,11 @@ const audit = {
   realUsageOrOcrFrequencyEvidenceVerified: false,
   productionApprovalEffect: 'none',
   validatedConsumerPins: {
-    luckyBeanMainSha: consumerValidation.luckyBean.mainSha,
+    luckyBeanCurrentMainShaAtValidation: consumerValidation.luckyBean.mainSha,
+    luckyBeanValidatedConsumerSha: consumerValidation.luckyBean.validatedConsumerSha,
     luckyBeanPipelineVersion: consumerValidation.luckyBean.pipelineVersion,
-    aromaSenseMainSha: consumerValidation.aromaSense.mainSha
+    aromaSenseMainSha: consumerValidation.aromaSense.mainSha,
+    aromaSenseDependencyLuckyBeanSha: consumerValidation.aromaSense.dependencyLuckyBeanSha
   },
   appended,
   blockers: [
