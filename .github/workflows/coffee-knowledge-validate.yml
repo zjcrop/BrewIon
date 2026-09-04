@@ -33,6 +33,8 @@ jobs:
         run: |
           node --check scripts/coffee-db/validate-codebook.mjs
           node --check scripts/coffee-db/validate-knowledge.mjs
+          node --check scripts/coffee-db/validate-label-lexicon.mjs
+          node --check scripts/coffee-db/validate-localized-aliases.mjs
           node --check scripts/coffee-db/weekly-maintainer.mjs
 
       - name: Core codebook contract
@@ -40,3 +42,9 @@ jobs:
 
       - name: Knowledge contract
         run: node scripts/coffee-db/validate-knowledge.mjs
+
+      - name: Multilingual label lexicon
+        run: node scripts/coffee-db/validate-label-lexicon.mjs
+
+      - name: Localized alias contract
+        run: node scripts/coffee-db/validate-localized-aliases.mjs
