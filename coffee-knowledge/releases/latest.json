@@ -2,9 +2,9 @@
   "_format": "coffee-knowledge-release-manifest",
   "_schemaVersion": 1,
   "artifact": {
-    "bytes": 770060,
+    "bytes": 771797,
     "name": "coffee-knowledge-1.0.0-alpha.7.json",
-    "sha256": "33190490e0190426c96be3511d8101238221ae5163b796837ed8c25cc7458ec4"
+    "sha256": "e9cbec1c47d9de28edaf813a72d57a9174a117063927529c774cf1de97c76cff"
   },
   "compatibility": {
     "baselinePolicy": "materialize-core-then-overlay-knowledge",
@@ -30,9 +30,9 @@
     "geoHierarchyCorrections": 1,
     "groupedEntityCoreCodes": 24,
     "groupedRegionCoreCodes": 2,
-    "localizedAliases": 60,
+    "localizedAliases": 68,
     "localizedNames": 25,
-    "pendingLocalizedAliases": 52,
+    "pendingLocalizedAliases": 60,
     "processes": 25,
     "regions": 247,
     "relations": 1105,

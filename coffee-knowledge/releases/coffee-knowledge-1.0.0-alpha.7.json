@@ -11086,9 +11086,9 @@
     "geoHierarchyCorrections": 1,
     "groupedEntityCoreCodes": 24,
     "groupedRegionCoreCodes": 2,
-    "localizedAliases": 60,
+    "localizedAliases": 68,
     "localizedNames": 25,
-    "pendingLocalizedAliases": 52,
+    "pendingLocalizedAliases": 60,
     "processes": 25,
     "regions": 247,
     "relations": 1105,
@@ -18932,6 +18932,70 @@
       "nameType": "ai_transliterated",
       "reviewStatus": "pending_market_verification",
       "targetCode": "VA-RU11"
+    },
+    {
+      "alias": "パカマラ",
+      "confidence": 0.8,
+      "language": "ja",
+      "nameType": "ai_transliterated",
+      "reviewStatus": "pending_market_verification",
+      "targetCode": "VA-PM"
+    },
+    {
+      "alias": "파카마라",
+      "confidence": 0.8,
+      "language": "ko",
+      "nameType": "ai_transliterated",
+      "reviewStatus": "pending_market_verification",
+      "targetCode": "VA-PM"
+    },
+    {
+      "alias": "ムンドノーボ",
+      "confidence": 0.8,
+      "language": "ja",
+      "nameType": "ai_transliterated",
+      "reviewStatus": "pending_market_verification",
+      "targetCode": "VA-MUN"
+    },
+    {
+      "alias": "문도 노보",
+      "confidence": 0.8,
+      "language": "ko",
+      "nameType": "ai_transliterated",
+      "reviewStatus": "pending_market_verification",
+      "targetCode": "VA-MUN"
+    },
+    {
+      "alias": "マラゴジッペ",
+      "confidence": 0.75,
+      "language": "ja",
+      "nameType": "ai_transliterated",
+      "reviewStatus": "pending_market_verification",
+      "targetCode": "VA-MAR"
+    },
+    {
+      "alias": "마라고지페",
+      "confidence": 0.75,
+      "language": "ko",
+      "nameType": "ai_transliterated",
+      "reviewStatus": "pending_market_verification",
+      "targetCode": "VA-MAR"
+    },
+    {
+      "alias": "カスティージョ",
+      "confidence": 0.8,
+      "language": "ja",
+      "nameType": "ai_transliterated",
+      "reviewStatus": "pending_market_verification",
+      "targetCode": "VA-CAS"
+    },
+    {
+      "alias": "카스티요",
+      "confidence": 0.8,
+      "language": "ko",
+      "nameType": "ai_transliterated",
+      "reviewStatus": "pending_market_verification",
+      "targetCode": "VA-CAS"
     },
     {
       "alias": "ナチュラル",
