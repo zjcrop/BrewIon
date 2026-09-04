@@ -1,0 +1,161 @@
+{
+  "schemaVersion": "coffee-foundation-candidate/1.0",
+  "contract": "coffee-foundation/1.0",
+  "releaseId": "coffee-foundation-1.0.2",
+  "artifacts": [
+    {
+      "kind": "foundation/foundation-manifest.json",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/foundation/foundation-manifest.json",
+      "mediaType": "application/json",
+      "bytes": 3620,
+      "sha256": "27a2e91ebdbb9e3eee7ba334943a97c8d37d41eb112eae52c9e342c67ae16d77"
+    },
+    {
+      "kind": "foundation/schemas/recognition-document-v1.1.schema.json",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/foundation/schemas/recognition-document-v1.1.schema.json",
+      "mediaType": "application/json",
+      "bytes": 4342,
+      "sha256": "a1ffc37707aa184bdbe79c612669e3431698b8716cf0f61a5e135cd9302308ca"
+    },
+    {
+      "kind": "foundation/schemas/coffee-canonical-record-v1.schema.json",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/foundation/schemas/coffee-canonical-record-v1.schema.json",
+      "mediaType": "application/json",
+      "bytes": 2775,
+      "sha256": "912142af89e50655be4809bef593f64190317bb3c28022876808e71d18da6802"
+    },
+    {
+      "kind": "foundation/schemas/ai-enrichment-result-v1.schema.json",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/foundation/schemas/ai-enrichment-result-v1.schema.json",
+      "mediaType": "application/json",
+      "bytes": 1830,
+      "sha256": "002dfdb3ce29b9110711a3468b5223dea5b0ae354f0998bdd2bcef6e546f4343"
+    },
+    {
+      "kind": "foundation/schemas/recognition-book-v1.schema.json",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/foundation/schemas/recognition-book-v1.schema.json",
+      "mediaType": "application/json",
+      "bytes": 2381,
+      "sha256": "e072837d5479a76715d39df7d35651d9b790105cdb56e4a51678e9f4d5d4a0df"
+    },
+    {
+      "kind": "foundation/schemas/coffee-field-decision-v1.schema.json",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/foundation/schemas/coffee-field-decision-v1.schema.json",
+      "mediaType": "application/json",
+      "bytes": 1766,
+      "sha256": "f6e28805b0ec01689a881374528d19ca65a178ebbdf4fe3820bfd6f9e7dc6001"
+    },
+    {
+      "kind": "foundation/schemas/foundation-candidate-v1.schema.json",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/foundation/schemas/foundation-candidate-v1.schema.json",
+      "mediaType": "application/json",
+      "bytes": 1045,
+      "sha256": "1e505ed1d2cb052097acdeecdb0cd67dbd62eb2a8fe9c9963116e837c6491132"
+    },
+    {
+      "kind": "foundation/schemas/sync-revision-v1.schema.json",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/foundation/schemas/sync-revision-v1.schema.json",
+      "mediaType": "application/json",
+      "bytes": 1136,
+      "sha256": "397a6031b5c8277aa502d1d21ee193e7cc8b2d4b2296b45bb3d5d303628d6add"
+    },
+    {
+      "kind": "foundation/schemas/coffee-archive-v1.schema.json",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/foundation/schemas/coffee-archive-v1.schema.json",
+      "mediaType": "application/json",
+      "bytes": 1225,
+      "sha256": "53677b20fb2aa0211f80a114c73602c8d9f9a0cb9d52b4fdfbfc78ec7b85b208"
+    },
+    {
+      "kind": "foundation/schemas/migration-result-v1.schema.json",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/foundation/schemas/migration-result-v1.schema.json",
+      "mediaType": "application/json",
+      "bytes": 859,
+      "sha256": "b04403e511e0d36c9f43d832b84a566d2458cc35c3343217b5b0748c6b2b940a"
+    },
+    {
+      "kind": "foundation/runtime/index.mjs",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/foundation/runtime/index.mjs",
+      "mediaType": "text/javascript",
+      "bytes": 205,
+      "sha256": "cb483d3ee4e71c03a81077ecc9dbbddc2bc249b64b6c5b7877e4e4100f2a0006"
+    },
+    {
+      "kind": "foundation/runtime/normalization-adapter.mjs",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/foundation/runtime/normalization-adapter.mjs",
+      "mediaType": "text/javascript",
+      "bytes": 2891,
+      "sha256": "82af8bb3260048d7629b3beae99291bbbf7188235185cc28d067f15b32368830"
+    },
+    {
+      "kind": "foundation/runtime/recognition-book.mjs",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/foundation/runtime/recognition-book.mjs",
+      "mediaType": "text/javascript",
+      "bytes": 7396,
+      "sha256": "4e0a99fb5508050bace37b408884e86d140f3b954a1e23f7dff8b37e632253ff"
+    },
+    {
+      "kind": "foundation/runtime/contract-adapter.mjs",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/foundation/runtime/contract-adapter.mjs",
+      "mediaType": "text/javascript",
+      "bytes": 4436,
+      "sha256": "c6e3ec3c025c17ea9d786253b96d8f0d2562d17716f5f4a287bce0ac8fe2b22a"
+    },
+    {
+      "kind": "foundation/runtime/artifact-activation.mjs",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/foundation/runtime/artifact-activation.mjs",
+      "mediaType": "text/javascript",
+      "bytes": 4478,
+      "sha256": "19b6ef731bb66d168340fa16c9d5e98c8ecf06e60e162f5ab82a52b4dfb4a6b5"
+    },
+    {
+      "kind": "foundation/runtime/sync-revision.mjs",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/foundation/runtime/sync-revision.mjs",
+      "mediaType": "text/javascript",
+      "bytes": 4216,
+      "sha256": "d9eb938c4f6234ac01d802e0acfc0904bff23150049c6996fa1c47dd3e0ce63e"
+    },
+    {
+      "kind": "foundation/AI_POLICY.md",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/foundation/AI_POLICY.md",
+      "mediaType": "text/javascript",
+      "bytes": 939,
+      "sha256": "4de9bbb3e1226eecc9e22ab7b34536f71a5d904154517f043a28cea1da8c076f"
+    },
+    {
+      "kind": "provider/releases/latest.json",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/provider/releases/latest.json",
+      "mediaType": "application/json",
+      "bytes": 2793,
+      "sha256": "5e0961b4a3ffe553ace09a1fe9f7db8ba3f04cdb13f33c25d42add2f98f336f4"
+    },
+    {
+      "kind": "provider/releases/full/coffee-codebook-6.0.0.json",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/provider/releases/full/coffee-codebook-6.0.0.json",
+      "mediaType": "application/json",
+      "bytes": 385280,
+      "sha256": "a438f93644dfe7bdc5541a13174c1e723c4ce21bfe3966b11ab629a8ffbfd47c"
+    },
+    {
+      "kind": "coffee-qr-codebook/coffee_label_lexicon_v1.json",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/coffee-qr-codebook/coffee_label_lexicon_v1.json",
+      "mediaType": "application/json",
+      "bytes": 16925,
+      "sha256": "f159bf904777498bd66b43110ce8c916e3dcac9041d42408be9817d9c75574e4"
+    },
+    {
+      "kind": "coffee-knowledge/releases/latest.json",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/coffee-knowledge/releases/latest.json",
+      "mediaType": "application/json",
+      "bytes": 1395,
+      "sha256": "320de92b1a3faa03f838400c5a93a503c16328c42b34d8480d397236f981bc88"
+    },
+    {
+      "kind": "coffee-knowledge/releases/coffee-knowledge-1.0.0-alpha.7.json",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/d1357ebef23ba233e3aa262fcbba33c932ffa89c/coffee-knowledge/releases/coffee-knowledge-1.0.0-alpha.7.json",
+      "mediaType": "application/json",
+      "bytes": 772657,
+      "sha256": "04272283fb2eb6a9ba9bb692e6693437b7538dba31a55d8546133c5dfc6c1070"
+    }
+  ]
+}
