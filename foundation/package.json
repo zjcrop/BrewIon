@@ -1,0 +1,14 @@
+{
+  "name": "@brewion/coffee-foundation",
+  "version": "1.0.2",
+  "private": true,
+  "type": "module",
+  "exports": "./runtime/index.mjs",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "verify": "node scripts/verify-foundation.mjs && npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

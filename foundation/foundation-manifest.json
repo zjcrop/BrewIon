@@ -6,8 +6,9 @@
   "status": "stable",
   "authority": {
     "repository": "zjcrop/BrewIon",
-    "ref": "main",
-    "manifest": "foundation/foundation-manifest.json"
+    "refPolicy": "immutable-commit",
+    "manifest": "foundation/foundation-manifest.json",
+    "releaseManifest": "foundation/releases/coffee-foundation-1.0.2.json"
   },
   "contracts": {
     "recognitionDocument": {
@@ -21,6 +22,30 @@
     "aiEnrichmentResult": {
       "contract": "ai-enrichment-result/1.0",
       "schema": "schemas/ai-enrichment-result-v1.schema.json"
+    },
+    "recognitionBook": {
+      "contract": "recognition-book/1.0",
+      "schema": "schemas/recognition-book-v1.schema.json"
+    },
+    "fieldDecision": {
+      "contract": "coffee-field-decision/1.0",
+      "schema": "schemas/coffee-field-decision-v1.schema.json"
+    },
+    "foundationCandidate": {
+      "contract": "coffee-foundation-candidate/1.0",
+      "schema": "schemas/foundation-candidate-v1.schema.json"
+    },
+    "syncRevision": {
+      "contract": "coffee-sync-revision/1.0",
+      "schema": "schemas/sync-revision-v1.schema.json"
+    },
+    "archive": {
+      "contract": "coffee-archive/1.0",
+      "schema": "schemas/coffee-archive-v1.schema.json"
+    },
+    "migrationResult": {
+      "contract": "coffee-migration-result/1.0",
+      "schema": "schemas/migration-result-v1.schema.json"
     },
     "codebookProvider": {
       "contract": "coffee-codebook/1.0",
@@ -47,14 +72,30 @@
     "localization": "candidate-may-extend-never-replace-official-name",
     "artifactIntegrity": "sha256-required",
     "activation": "stage-verify-atomic-activate",
+    "sync": "coffee-sync-revision/1.0",
+    "archive": "coffee-archive/1.0",
     "failure": "retain-last-known-good",
-    "consumerCompatibility": "contract-major-must-match"
+    "consumerCompatibility": "contract-major-must-match",
+    "migration": "unknown-major-reject-no-partial-write",
+    "paidExternalService": "forbidden",
+    "aiAvailability": "optional-core-must-work-without-ai",
+    "aiProviderPolicy": "consumer-configured-free-only"
   },
   "consumerRules": {
     "applicationToApplicationDependencyForbidden": true,
     "platformOcrAdaptersAllowed": true,
     "platformAdaptersMustEmitRecognitionDocument": true,
     "unknownValuesMustRemainUnknown": true,
-    "modelPredictionMustNotMasqueradeAsHumanObservation": true
+    "modelPredictionMustNotMasqueradeAsHumanObservation": true,
+    "consumerMustPinImmutableRelease": true,
+    "consumerMustNotLoadMainOrLatestAtRuntime": true,
+    "sameRevisionSameHashIsIdempotent": true,
+    "sameRevisionDifferentHashIsConflict": true
+  },
+  "runtime": {
+    "entry": "runtime/index.mjs",
+    "normalization": "coffee-normalization/1.0",
+    "activation": "stage-verify-atomic-activate",
+    "dependencies": []
   }
 }

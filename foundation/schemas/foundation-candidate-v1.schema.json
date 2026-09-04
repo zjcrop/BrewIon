@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brewion:foundation:candidate:1.0",
+  "title": "Coffee Foundation Candidate 1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "contract", "releaseId", "artifacts"],
+  "properties": {
+    "schemaVersion": { "const": "coffee-foundation-candidate/1.0" },
+    "contract": { "type": "string", "pattern": "^coffee-foundation/\\d+\\.\\d+$" },
+    "releaseId": { "type": "string", "minLength": 1 },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "url", "bytes", "sha256"],
+        "properties": {
+          "kind": { "type": "string", "minLength": 1 },
+          "url": { "type": "string", "minLength": 1 },
+          "mediaType": { "type": "string" },
+          "bytes": { "type": "integer", "minimum": 0 },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        }
+      }
+    }
+  }
+}

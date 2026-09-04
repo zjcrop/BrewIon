@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brewion:foundation:migration-result:1.0",
+  "title": "Coffee Foundation Migration Result 1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sourceContract", "targetContract", "status", "sourceHash", "targetHash", "payload", "warnings"],
+  "properties": {
+    "schemaVersion": { "const": "coffee-migration-result/1.0" },
+    "sourceContract": { "type": "string", "minLength": 1 },
+    "targetContract": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["applied", "review", "rejected"] },
+    "sourceHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "targetHash": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "payload": {},
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  }
+}

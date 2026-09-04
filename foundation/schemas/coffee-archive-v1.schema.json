@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brewion:foundation:archive:1.0",
+  "title": "Coffee Foundation Archive 1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "archiveId", "createdAt", "producer", "foundationReleaseId", "records"],
+  "properties": {
+    "schemaVersion": { "const": "coffee-archive/1.0" },
+    "archiveId": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "producer": { "type": "string", "minLength": 1 },
+    "foundationReleaseId": { "type": "string", "minLength": 1 },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["recordId", "recordContract", "hashAlgorithm", "contentHash", "record"],
+        "properties": {
+          "recordId": { "type": "string", "minLength": 1 },
+          "recordContract": { "type": "string", "minLength": 1 },
+          "hashAlgorithm": { "const": "sha256-canonical-json-v1" },
+          "contentHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "record": {}
+        }
+      }
+    },
+    "extensions": { "type": "object" }
+  }
+}

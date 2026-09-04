@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brewion:foundation:recognition-book:1.0",
+  "title": "Coffee Foundation RecognitionBook 1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "codebookVersion", "lexiconVersion", "knowledgeVersion", "normalizationContract", "fieldAliases", "entries"],
+  "properties": {
+    "schemaVersion": { "const": "recognition-book/1.0" },
+    "codebookVersion": { "type": "string" },
+    "lexiconVersion": { "type": "string" },
+    "knowledgeVersion": { "type": ["string", "null"] },
+    "normalizationContract": { "const": "coffee-normalization/1.0" },
+    "fieldAliases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field", "names", "aliases"],
+        "properties": {
+          "field": { "type": "string", "minLength": 1 },
+          "names": { "$ref": "#/$defs/uniqueStrings" },
+          "aliases": { "$ref": "#/$defs/uniqueStrings" }
+        }
+      }
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field", "canonicalId", "coreCode", "coreTable", "qrIndex", "qrEligible", "knowledgeOnly", "status", "names", "aliases", "confidence", "source", "automaticResolution"],
+        "properties": {
+          "field": { "enum": ["country", "region", "entity", "variety", "process", "flavor"] },
+          "canonicalId": { "type": "string", "minLength": 1 },
+          "coreCode": { "type": ["string", "null"] },
+          "coreTable": { "type": ["string", "null"] },
+          "qrIndex": { "type": ["integer", "null"], "minimum": 1 },
+          "qrEligible": { "type": "boolean" },
+          "knowledgeOnly": { "type": "boolean" },
+          "status": { "type": "string" },
+          "names": { "$ref": "#/$defs/uniqueStrings" },
+          "aliases": { "$ref": "#/$defs/uniqueStrings" },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "source": { "enum": ["core-codebook", "coffee-knowledge"] },
+          "automaticResolution": { "enum": ["allowed", "review", "blocked"] }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "uniqueStrings": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  }
+}

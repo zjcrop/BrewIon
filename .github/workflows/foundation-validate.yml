@@ -6,6 +6,7 @@ on:
       - 'foundation/**'
       - 'provider/releases/latest.json'
       - 'coffee-knowledge/releases/latest.json'
+      - 'coffee-qr-codebook/coffee_label_lexicon_v1.json'
       - '.github/workflows/foundation-validate.yml'
   push:
     branches: [main]
@@ -13,6 +14,7 @@ on:
       - 'foundation/**'
       - 'provider/releases/latest.json'
       - 'coffee-knowledge/releases/latest.json'
+      - 'coffee-qr-codebook/coffee_label_lexicon_v1.json'
       - '.github/workflows/foundation-validate.yml'
   workflow_dispatch:
 
@@ -33,3 +35,6 @@ jobs:
           node-version: '20'
       - name: Verify foundation contracts and upstream manifests
         run: node foundation/scripts/verify-foundation.mjs
+      - name: Run foundation runtime and compatibility tests
+        working-directory: foundation
+        run: npm test

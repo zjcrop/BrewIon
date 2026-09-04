@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brewion:foundation:sync-revision:1.0",
+  "title": "Coffee Foundation Immutable Sync Revision 1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "revisionId", "parentRevisionId", "entityType", "entityId", "sequence", "createdAt", "hashAlgorithm", "contentHash", "payloadContract", "payload", "tombstone"],
+  "properties": {
+    "schemaVersion": { "const": "coffee-sync-revision/1.0" },
+    "revisionId": { "type": "string", "minLength": 1 },
+    "parentRevisionId": { "type": ["string", "null"] },
+    "entityType": { "type": "string", "minLength": 1 },
+    "entityId": { "type": "string", "minLength": 1 },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "hashAlgorithm": { "const": "sha256-canonical-json-v1" },
+    "contentHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "payloadContract": { "type": "string", "minLength": 1 },
+    "payload": {},
+    "tombstone": { "type": "boolean" },
+    "extensions": { "type": "object" }
+  }
+}
