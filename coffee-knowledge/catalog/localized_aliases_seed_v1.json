@@ -1,7 +1,7 @@
 {
   "_format": "coffee-localized-alias-seed",
   "_schemaVersion": 1,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "updatedAt": "2026-09-04",
   "policy": {
     "purpose": "Seed high-frequency Japanese/Korean OCR and search candidates without promoting AI-generated forms to official names.",
@@ -38,6 +38,10 @@
     {"targetCode":"VA-MAR","language":"ko","alias":"마라고지페","nameType":"ai_transliterated","confidence":0.75,"reviewStatus":"pending_market_verification"},
     {"targetCode":"VA-CAS","language":"ja","alias":"カスティージョ","nameType":"ai_transliterated","confidence":0.8,"reviewStatus":"pending_market_verification"},
     {"targetCode":"VA-CAS","language":"ko","alias":"카스티요","nameType":"ai_transliterated","confidence":0.8,"reviewStatus":"pending_market_verification"},
+    {"targetCode":"VA-PB","language":"ja","alias":"ピンクブルボン","nameType":"ai_transliterated","confidence":0.8,"reviewStatus":"pending_market_verification"},
+    {"targetCode":"VA-PB","language":"ko","alias":"핑크 버번","nameType":"ai_transliterated","confidence":0.8,"reviewStatus":"pending_market_verification"},
+    {"targetCode":"VA-SID","language":"ja","alias":"シドラ","nameType":"ai_transliterated","confidence":0.75,"reviewStatus":"pending_market_verification"},
+    {"targetCode":"VA-SID","language":"ko","alias":"시드라","nameType":"ai_transliterated","confidence":0.75,"reviewStatus":"pending_market_verification"},
     {"targetCode":"PR-NA","language":"ja","alias":"ナチュラル","nameType":"ai_transliterated","confidence":0.85,"reviewStatus":"pending_market_verification"},
     {"targetCode":"PR-NA","language":"ko","alias":"내추럴","nameType":"ai_transliterated","confidence":0.85,"reviewStatus":"pending_market_verification"},
     {"targetCode":"PR-WA","language":"ja","alias":"ウォッシュド","nameType":"ai_transliterated","confidence":0.85,"reviewStatus":"pending_market_verification"},
