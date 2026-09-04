@@ -1,0 +1,35 @@
+name: Coffee foundation validate
+
+on:
+  pull_request:
+    paths:
+      - 'foundation/**'
+      - 'provider/releases/latest.json'
+      - 'coffee-knowledge/releases/latest.json'
+      - '.github/workflows/foundation-validate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'foundation/**'
+      - 'provider/releases/latest.json'
+      - 'coffee-knowledge/releases/latest.json'
+      - '.github/workflows/foundation-validate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: brewion-foundation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-foundation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify foundation contracts and upstream manifests
+        run: node foundation/scripts/verify-foundation.mjs
