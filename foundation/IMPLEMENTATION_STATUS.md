@@ -1,13 +1,14 @@
 # Coffee Foundation 基座实施状态
 
 更新时间：2026-09-04  
-当前稳定发布：`coffee-foundation-1.0.2`  
+当前稳定发布：`coffee-foundation-1.0.3`
 合同主版本：`coffee-foundation/1.0`
 
 ## 已完成
 
 - 统一合同：RecognitionDocument、Canonical Coffee Record、AI 候选、RecognitionBook、字段决策、同步修订、归档与迁移结果。
 - 统一运行时：中英日韩文本/OCR 规范化、RecognitionBook 构建、跨应用字段名归一、Legacy/OCR 文档适配。
+- 日期运行时：中文大小写数字、英文月份与美英顺序、日本和历、民国纪年、韩文日期；缺年与歧义只进入复核。
 - 数据安全：知识层候选不自动获得 core/QR code；同名歧义和受阻实体保持 review/conflict。
 - 激活安全：合同主版本、bytes、SHA-256、JSON 结构校验；暂存完成后原子切换；失败保留 last-known-good。
 - 同步安全：不可变 revision、幂等重放、同 ID 不同哈希冲突、canonical JSON SHA-256。
@@ -18,7 +19,7 @@
 
 ## 当前验证结果
 
-- Foundation 运行时：12/12 通过。
+- Foundation 运行时：17/17 通过（日期兼容语料覆盖 29 种写法）。
 - Provider 增量/修正重建：2/2 通过。
 - v6 冻结索引：56 countries、247 regions、460 entities、52 varieties、25 processes、127 flavors，未重排。
 - Coffee Knowledge：52/52 核心品种语义覆盖；5 个研究冲突实体均阻止自动解析；QR 索引改动为 0。

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brewion:foundation:coffee-date-decision:1.0",
+  "title": "Coffee Foundation Date Decision 1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "field", "rawValue", "normalizedValue", "locale", "detectedLabel", "status", "reason", "canonicalDate", "precision", "calendar", "components", "candidates", "assumptions", "evidenceRefs"],
+  "properties": {
+    "schemaVersion": { "const": "coffee-date-decision/1.0" },
+    "field": { "type": "string", "minLength": 1 },
+    "rawValue": { "type": "string" },
+    "normalizedValue": { "type": "string" },
+    "locale": { "enum": ["zh-Hans", "zh-Hant", "en", "ja", "ko"] },
+    "detectedLabel": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["field", "text"],
+          "properties": {
+            "field": { "enum": ["roastDate", "productionDate", "bestBeforeDate"] },
+            "text": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "status": { "enum": ["unknown", "review", "conflict", "invalid", "confirmed"] },
+    "reason": { "type": "string", "minLength": 1 },
+    "canonicalDate": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "precision": { "enum": ["unknown", "month-day", "day"] },
+    "calendar": { "enum": ["unknown", "gregory", "japanese", "roc"] },
+    "components": { "$ref": "#/$defs/components" },
+    "candidates": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/candidate" }
+    },
+    "assumptions": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "evidenceRefs": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+  },
+  "$defs": {
+    "components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["year", "month", "day"],
+      "properties": {
+        "year": { "type": ["integer", "null"], "minimum": 1, "maximum": 9999 },
+        "month": { "type": ["integer", "null"], "minimum": 1, "maximum": 12 },
+        "day": { "type": ["integer", "null"], "minimum": 1, "maximum": 31 }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonicalDate", "components", "calendar", "pattern", "yearSource"],
+      "properties": {
+        "canonicalDate": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "components": { "$ref": "#/$defs/components" },
+        "calendar": { "enum": ["gregory", "japanese", "roc"] },
+        "pattern": { "type": "string", "minLength": 1 },
+        "yearSource": { "enum": ["explicit", "era", "reference", "two-digit", "missing"] },
+        "era": { "type": ["string", "null"] },
+        "eraValid": { "type": "boolean" }
+      }
+    }
+  }
+}

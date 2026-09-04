@@ -17,6 +17,7 @@ const files = [
   'foundation/foundation-manifest.json',
   'foundation/schemas/recognition-document-v1.1.schema.json',
   'foundation/schemas/coffee-canonical-record-v1.schema.json',
+  'foundation/schemas/coffee-date-decision-v1.schema.json',
   'foundation/schemas/ai-enrichment-result-v1.schema.json',
   'foundation/schemas/recognition-book-v1.schema.json',
   'foundation/schemas/coffee-field-decision-v1.schema.json',
@@ -26,11 +27,13 @@ const files = [
   'foundation/schemas/migration-result-v1.schema.json',
   'foundation/runtime/index.mjs',
   'foundation/runtime/normalization-adapter.mjs',
+  'foundation/runtime/date-parser.mjs',
   'foundation/runtime/recognition-book.mjs',
   'foundation/runtime/contract-adapter.mjs',
   'foundation/runtime/artifact-activation.mjs',
   'foundation/runtime/sync-revision.mjs',
   'foundation/AI_POLICY.md',
+  'foundation/DATE_COMPATIBILITY.md',
   'provider/releases/latest.json',
   'provider/releases/full/coffee-codebook-6.0.0.json',
   'coffee-qr-codebook/coffee_label_lexicon_v1.json',
@@ -40,10 +43,15 @@ const files = [
 
 function descriptor(relative) {
   const bytes = fs.readFileSync(path.join(repoRoot, relative));
+  const mediaType = relative.endsWith('.json')
+    ? 'application/json'
+    : relative.endsWith('.md')
+      ? 'text/markdown'
+      : 'text/javascript';
   return {
     kind: relative,
     url: `https://raw.githubusercontent.com/zjcrop/BrewIon/${ref}/${relative}`,
-    mediaType: relative.endsWith('.json') ? 'application/json' : 'text/javascript',
+    mediaType,
     bytes: bytes.byteLength,
     sha256: crypto.createHash('sha256').update(bytes).digest('hex')
   };

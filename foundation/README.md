@@ -28,6 +28,7 @@
 - `coffee-foundation/1.0`
 - `recognition-document/1.1`
 - `coffee-canonical-record/1.0`
+- `coffee-date-decision/1.0`
 - `ai-enrichment-result/1.0`
 - `recognition-book/1.0`
 - `coffee-field-decision/1.0`
@@ -43,6 +44,8 @@
 `runtime/index.mjs` 是零第三方依赖的参考实现，提供：
 
 - NFKC、空白、标点、OCR 常见误字的确定性规范化；
+- 中英日韩日期、中文大小写数字、民国纪年与日本和历的确定性解析；
+- 缺年、两位年份、美英数字顺序、字段标签和非公历日期的复核门禁；
 - 从冻结的 v6 编码表、标签词典和知识增强包构建 `RecognitionBook`；
 - 唯一正式代码自动确认、知识层候选人工确认、同名冲突阻断；
 - Legacy/OCR 输入到 `RecognitionDocument 1.1` 的无损适配；
@@ -50,7 +53,7 @@
 
 ## 发布与消费
 
-`foundation-manifest.json` 定义合同边界；`releases/coffee-foundation-1.0.2.json` 是当前生产消费者使用的不可变候选清单。消费者必须依次执行：
+`foundation-manifest.json` 定义合同边界；`releases/coffee-foundation-1.0.3.json` 是当前生产消费者使用的不可变候选清单。消费者必须依次执行：
 
 1. 下载已锁定 commit 上的版本化清单；
 2. 检查 `coffee-foundation` 主版本；

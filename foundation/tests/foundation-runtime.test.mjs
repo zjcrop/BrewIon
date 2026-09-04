@@ -13,6 +13,7 @@ import {
   createNormalizationAdapter,
   createSyncRevision,
   normalizeMatchKey,
+  parseCoffeeDate,
   resolveRecognitionValue,
   sha256Text,
   verifyArtifactText,
@@ -33,6 +34,84 @@ test('normalization is deterministic across Chinese, English, Japanese and Korea
   assert.equal(ko.normalize('카보닉  매서레이션').matchKey, '카보닉매서레이션');
   assert.equal(normalizeMatchKey('二氧化碳・浸渍'), '二氧化碳浸渍');
   assert.equal(createNormalizationAdapter({ locale: 'zh-CN' }).normalize('烘培日期').display, '烘焙日期');
+});
+
+test('date parser supports Chinese ordinary, financial and omitted-year forms', () => {
+  for (const value of ['2026年7月15日', '二〇二六年七月十五日', '贰零贰陆年柒月拾伍日', '二千零二十六年七月十五日']) {
+    const decision = parseCoffeeDate(value, { locale: 'zh-CN', field: 'roastDate' });
+    assert.equal(decision.status, 'confirmed', value);
+    assert.equal(decision.canonicalDate, '2026-07-15', value);
+  }
+  const partial = parseCoffeeDate('烘焙日期：柒月拾伍日', { locale: 'zh-CN', field: 'roastDate' });
+  assert.equal(partial.status, 'review');
+  assert.equal(partial.reason, 'missing-year');
+  assert.deepEqual(partial.components, { year: null, month: 7, day: 15 });
+  const inferred = parseCoffeeDate('七月十五日', { locale: 'zh-CN', field: 'roastDate', referenceDate: '2026-07-14', inferMissingYear: true });
+  assert.equal(inferred.status, 'review');
+  assert.equal(inferred.canonicalDate, '2025-07-15');
+  assert.equal(inferred.reason, 'year-inferred-from-reference-requires-confirmation');
+});
+
+test('date parser supports English month names and blocks unresolved numeric order', () => {
+  for (const value of ['July 15, 2026', '15th July 2026', '15 JUL 2026', '2026 JUL 15']) {
+    const decision = parseCoffeeDate(value, { locale: 'en', field: 'roastDate' });
+    assert.equal(decision.status, 'confirmed', value);
+    assert.equal(decision.canonicalDate, '2026-07-15', value);
+  }
+  assert.equal(parseCoffeeDate('03/04/2026', { locale: 'en' }).status, 'conflict');
+  assert.equal(parseCoffeeDate('03/04/2026', { locale: 'en-US' }).canonicalDate, '2026-03-04');
+  assert.equal(parseCoffeeDate('03/04/2026', { locale: 'en-GB' }).canonicalDate, '2026-04-03');
+  assert.equal(parseCoffeeDate('15 JUL 26', { locale: 'en' }).reason, 'two-digit-year-requires-confirmation');
+});
+
+test('date parser supports Japanese eras and Korean written dates', () => {
+  for (const value of ['令和8年7月15日', 'R8.7.15']) {
+    const decision = parseCoffeeDate(value, { locale: 'ja-JP', field: 'roastDate' });
+    assert.equal(decision.status, 'confirmed', value);
+    assert.equal(decision.canonicalDate, '2026-07-15', value);
+  }
+  assert.equal(parseCoffeeDate('平成31年5月1日', { locale: 'ja-JP' }).reason, 'date-outside-calendar-era');
+  for (const value of ['2026년 7월 15일', '이천이십육년 칠월 십오일']) {
+    const decision = parseCoffeeDate(value, { locale: 'ko-KR', field: 'roastDate' });
+    assert.equal(decision.status, 'confirmed', value);
+    assert.equal(decision.canonicalDate, '2026-07-15', value);
+  }
+  for (const value of ['民國115年7月15日', 'ROC 115/7/15']) {
+    const decision = parseCoffeeDate(value, { locale: 'zh-TW', field: 'roastDate' });
+    assert.equal(decision.status, 'confirmed', value);
+    assert.equal(decision.canonicalDate, '2026-07-15', value);
+  }
+});
+
+test('date parser preserves field and calendar safety boundaries', () => {
+  const mismatch = parseCoffeeDate('Best before: July 15, 2026', { locale: 'en', field: 'roastDate' });
+  assert.equal(mismatch.status, 'review');
+  assert.equal(mismatch.reason, 'date-label-field-mismatch');
+  assert.equal(mismatch.detectedLabel.field, 'bestBeforeDate');
+  assert.equal(mismatch.candidates[0].canonicalDate, '2026-07-15');
+  assert.equal(parseCoffeeDate('农历七月十五日', { locale: 'zh-CN', field: 'roastDate' }).reason, 'unsupported-non-gregorian-calendar');
+  assert.equal(parseCoffeeDate('烘焙日期：昨天', { locale: 'zh-CN', field: 'roastDate' }).reason, 'relative-date-requires-explicit-date');
+  assert.equal(parseCoffeeDate('2026-02-30', { locale: 'en' }).status, 'invalid');
+  assert.equal(parseCoffeeDate('Best before: 2026-02-30', { locale: 'en', field: 'roastDate' }).status, 'invalid');
+  assert.equal(parseCoffeeDate('03/04/26', { locale: 'en' }).status, 'conflict');
+});
+
+test('date expression corpus remains compatible across supported scripts', () => {
+  const expressions = [
+    '2026年7月15日', '二〇二六年七月十五日', '二零二六年七月十五号',
+    '贰零贰陆年柒月拾伍日', '貳零貳陸年柒月拾伍日', '二千零二十六年七月十五',
+    '２０２６年７月１５日', '2026/07/15', '2026.7.15', '20260715',
+    'July 15, 2026', 'Jul 15 2026', 'Jul. 15th, 2026', '15 July 2026',
+    '15th of July, 2026', '15-JUL-2026', 'JUL-15-2026', '2026 JUL 15', '2026-07-15',
+    '令和8年7月15日', '令和八年七月十五日', 'R8.7.15', 'R8年7月15日',
+    '2026년 7월 15일', '이천이십육년 칠월 십오일', '2026. 7. 15.',
+    '民國115年7月15日', '民国一百一十五年七月十五日', 'ROC 115/7/15'
+  ];
+  for (const value of expressions) {
+    const decision = parseCoffeeDate(value, { locale: 'en' });
+    assert.equal(decision.status, 'confirmed', value);
+    assert.equal(decision.canonicalDate, '2026-07-15', value);
+  }
 });
 
 test('RecognitionBook preserves every frozen core code and QR row index', () => {

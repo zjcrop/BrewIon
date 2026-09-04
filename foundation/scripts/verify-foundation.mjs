@@ -26,6 +26,11 @@ assert.equal(manifest.policies?.stableId, 'immutable');
 assert.equal(manifest.policies?.indexedTables, 'append-only');
 assert.equal(manifest.policies?.lowConfidence, 'review-only');
 assert.equal(manifest.policies?.conflict, 'review-only');
+assert.equal(manifest.policies?.dateCanonicalForm, 'YYYY-MM-DD');
+assert.equal(manifest.policies?.ambiguousDate, 'review-only');
+assert.equal(manifest.policies?.missingDateYear, 'review-only');
+assert.equal(manifest.policies?.dateLabelMismatch, 'review-only');
+assert.equal(manifest.policies?.nonGregorianDate, 'explicit-calendar-no-silent-conversion');
 assert.equal(manifest.policies?.aiAuthority, 'advisory-only-never-overwrite-fact');
 assert.equal(manifest.policies?.artifactIntegrity, 'sha256-required');
 assert.equal(manifest.policies?.failure, 'retain-last-known-good');
@@ -36,6 +41,7 @@ assert.equal(manifest.policies?.aiProviderPolicy, 'consumer-configured-free-only
 assert.equal(manifest.consumerRules?.applicationToApplicationDependencyForbidden, true);
 assert.equal(manifest.consumerRules?.platformAdaptersMustEmitRecognitionDocument, true);
 assert.equal(manifest.consumerRules?.unknownValuesMustRemainUnknown, true);
+assert.equal(manifest.consumerRules?.dateWriteRequiresConfirmedDecision, true);
 assert.equal(manifest.consumerRules?.consumerMustPinImmutableRelease, true);
 assert.equal(manifest.consumerRules?.consumerMustNotLoadMainOrLatestAtRuntime, true);
 assert.equal(manifest.consumerRules?.sameRevisionSameHashIsIdempotent, true);
@@ -51,6 +57,7 @@ const contracts = manifest.contracts || {};
 const schemaContracts = [
   ['recognitionDocument', 'recognition-document/1.1'],
   ['canonicalCoffeeRecord', 'coffee-canonical-record/1.0'],
+  ['dateDecision', 'coffee-date-decision/1.0'],
   ['aiEnrichmentResult', 'ai-enrichment-result/1.0'],
   ['recognitionBook', 'recognition-book/1.0'],
   ['fieldDecision', 'coffee-field-decision/1.0'],
@@ -89,6 +96,15 @@ assert.equal(canonical.properties?.schemaVersion?.const, 'coffee-canonical-recor
 for (const field of ['id', 'countryCode', 'regionCode', 'entityCode', 'varietyCode', 'processCode', 'roastCode', 'altitude', 'roastDate', 'flavorTags', 'cropSeason', 'evidence', 'review']) {
   assert.ok(canonical.required.includes(field), `Canonical record missing ${field}`);
 }
+
+const dateDecision = readJson('foundation/schemas/coffee-date-decision-v1.schema.json');
+assert.equal(dateDecision.properties?.schemaVersion?.const, 'coffee-date-decision/1.0');
+assert.equal(dateDecision.additionalProperties, false);
+for (const field of ['rawValue', 'normalizedValue', 'detectedLabel', 'status', 'reason', 'canonicalDate', 'components', 'candidates', 'evidenceRefs']) {
+  assert.ok(dateDecision.required.includes(field), `Date decision missing ${field}`);
+}
+assert.ok(exists('foundation/runtime/date-parser.mjs'), 'date parser runtime missing');
+assert.ok(exists('foundation/DATE_COMPATIBILITY.md'), 'date compatibility specification missing');
 
 const ai = readJson('foundation/schemas/ai-enrichment-result-v1.schema.json');
 assert.equal(ai.properties?.schemaVersion?.const, 'ai-enrichment-result/1.0');
@@ -140,7 +156,7 @@ assert.deepEqual(latestRelease, release, 'latest discovery pointer differs from 
 assert.equal(release.schemaVersion, 'coffee-foundation-candidate/1.0');
 assert.equal(release.contract, manifest.contract);
 assert.equal(release.releaseId, registry.releaseId);
-assert.ok(release.artifacts.length >= 22, 'foundation release is missing required artifacts');
+assert.ok(release.artifacts.length >= 25, 'foundation release is missing required artifacts');
 for (const item of release.artifacts) {
   assert.match(item.url, /^https:\/\/raw\.githubusercontent\.com\/zjcrop\/BrewIon\/[a-f0-9]{40}\//, `artifact is not immutable: ${item.kind}`);
   assert.doesNotMatch(item.url, /\/(?:main|latest)\//, `artifact follows mutable branch: ${item.kind}`);
@@ -155,6 +171,7 @@ console.log(JSON.stringify({
   foundation: manifest.contract,
   recognition: contracts.recognitionDocument.contract,
   canonical: contracts.canonicalCoffeeRecord.contract,
+  dateDecision: contracts.dateDecision.contract,
   ai: contracts.aiEnrichmentResult.contract,
   recognitionBook: contracts.recognitionBook.contract,
   fieldDecision: contracts.fieldDecision.contract,

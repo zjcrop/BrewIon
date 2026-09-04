@@ -1,4 +1,5 @@
 export * from './normalization-adapter.mjs';
+export * from './date-parser.mjs';
 export * from './recognition-book.mjs';
 export * from './artifact-activation.mjs';
 export * from './contract-adapter.mjs';
