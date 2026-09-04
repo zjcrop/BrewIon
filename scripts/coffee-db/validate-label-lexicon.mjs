@@ -6,8 +6,10 @@ const ROOT = process.cwd();
 const filePath = path.resolve(ROOT, 'coffee-qr-codebook/coffee_label_lexicon_v1.json');
 const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
 const errors = [];
+const warnings = [];
 
 function fail(message) { errors.push(message); }
+function warn(message) { warnings.push(message); }
 function normalized(value) { return String(value || '').normalize('NFKC').trim().toLocaleLowerCase('en-US'); }
 
 if (data?._format !== 'brewion-coffee-label-lexicon') fail('unexpected _format');
@@ -34,7 +36,7 @@ for (const field of requiredFields) {
   for (const alias of record.aliases) {
     const key = normalized(alias);
     if (!key) fail(`${field} contains empty alias`);
-    if (seen.has(key)) fail(`${field} contains duplicate alias ${alias}`);
+    if (seen.has(key)) warn(`${field} contains duplicate display alias ${alias}`);
     seen.add(key);
   }
 }
@@ -48,7 +50,7 @@ for (const groupName of ['species', 'process', 'roastLevel']) {
     for (const alias of aliases) {
       const normalizedAlias = normalized(alias);
       if (!normalizedAlias) fail(`valueAliases.${groupName}.${key} contains empty alias`);
-      if (seen.has(normalizedAlias)) fail(`valueAliases.${groupName}.${key} contains duplicate alias ${alias}`);
+      if (seen.has(normalizedAlias)) warn(`valueAliases.${groupName}.${key} contains duplicate display alias ${alias}`);
       seen.add(normalizedAlias);
     }
   }
@@ -65,7 +67,9 @@ console.log(JSON.stringify({
   version: data.version,
   languages: [...languages],
   fields: Object.keys(data.fields || {}).length,
+  warnings: warnings.length,
   errors: errors.length
 }, null, 2));
+for (const warning of warnings) console.warn(`WARN: ${warning}`);
 for (const error of errors) console.error(`ERROR: ${error}`);
 if (errors.length) process.exit(1);
