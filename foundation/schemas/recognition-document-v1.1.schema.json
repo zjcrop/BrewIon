@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brewion:foundation:recognition-document:1.1",
+  "title": "Coffee Foundation RecognitionDocument 1.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "parserVersion", "engine", "createdAt", "images", "blocks", "fullText"],
+  "properties": {
+    "schemaVersion": { "const": "recognition-document/1.1" },
+    "parserVersion": { "type": "string", "minLength": 1 },
+    "engine": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "rawFullText": { "type": "string" },
+    "fullText": { "type": "string" },
+    "images": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "role", "roleLabel", "order"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "role": { "enum": ["front", "back", "side", "date", "text"] },
+          "roleLabel": { "type": "string" },
+          "order": { "type": "integer", "minimum": 0 },
+          "fileName": { "type": "string" },
+          "nativeSource": { "type": "boolean" }
+        }
+      }
+    },
+    "blocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "imageId", "imageRole", "order", "text", "confidence", "polygon", "engine"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "imageId": { "type": "string", "minLength": 1 },
+          "imageRole": { "enum": ["front", "back", "side", "date", "text"] },
+          "order": { "type": "integer", "minimum": 0 },
+          "text": { "type": "string", "minLength": 1 },
+          "rawText": { "type": "string" },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "polygon": {
+            "oneOf": [
+              { "type": "null" },
+              {
+                "type": "array",
+                "minItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["x", "y"],
+                  "properties": {
+                    "x": { "type": "number" },
+                    "y": { "type": "number" }
+                  }
+                }
+              }
+            ]
+          },
+          "engine": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["field", "confidence"],
+        "properties": {
+          "field": { "type": "string", "minLength": 1 },
+          "labelBlockId": { "type": ["string", "null"] },
+          "valueBlockId": { "type": ["string", "null"] },
+          "value": { "type": ["string", "null"] },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "method": { "type": "string" }
+        }
+      }
+    },
+    "extensions": {
+      "type": "object"
+    }
+  }
+}
