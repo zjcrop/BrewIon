@@ -1,0 +1,35 @@
+{
+  "_format": "coffee-foundation-consumer-matrix",
+  "_schemaVersion": 1,
+  "updatedAt": "2026-09-04",
+  "foundationContract": "coffee-foundation/1.0",
+  "consumers": [
+    {
+      "repository": "zjcrop/luckybean",
+      "observedMainCommit": "5c929ea263311f094ba4336a07e86c950f3c7000",
+      "acceptedContracts": ["recognition-document/1.1", "coffee-codebook/1.0", "coffee-knowledge/1.0"],
+      "foundationRuntimeIntegrated": false,
+      "status": "contract-compatible-consumer-migration-pending"
+    },
+    {
+      "repository": "zjcrop/AromaSense",
+      "observedMainCommit": "23e6b42cc94b130804a5a2bd80a9f9652890cda2",
+      "acceptedContracts": ["recognition-document/1.1", "coffee-codebook/1.0", "coffee-knowledge/1.0"],
+      "foundationRuntimeIntegrated": false,
+      "status": "contract-compatible-direct-luckybean-dependency-removal-pending"
+    },
+    {
+      "repository": "zjcrop/brew-profiles",
+      "acceptedContracts": ["coffee-codebook/1.0"],
+      "foundationRuntimeIntegrated": false,
+      "status": "calculation-authority-boundary-only"
+    }
+  ],
+  "rules": {
+    "consumerMustPinImmutableRelease": true,
+    "consumerMustVerifyBytesAndSha256": true,
+    "consumerMustRetainLastKnownGood": true,
+    "applicationToApplicationDependencyForbidden": true,
+    "statusCannotBePromotedByVersionStringOnly": true
+  }
+}
