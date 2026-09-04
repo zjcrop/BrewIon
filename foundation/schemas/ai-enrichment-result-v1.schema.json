@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brewion:foundation:ai-enrichment-result:1.0",
+  "title": "Coffee Foundation AI Enrichment Result 1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "task", "engine", "createdAt", "inputFingerprint", "candidates"],
+  "properties": {
+    "schemaVersion": { "const": "ai-enrichment-result/1.0" },
+    "task": { "enum": ["translate", "normalize", "alias", "resolve", "enrich", "review"] },
+    "engine": { "type": "string", "minLength": 1 },
+    "model": { "type": ["string", "null"] },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "inputFingerprint": { "type": "string", "minLength": 1 },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field", "value", "confidence", "status", "evidenceRefs"],
+        "properties": {
+          "field": { "type": "string", "minLength": 1 },
+          "value": {},
+          "canonicalId": { "type": ["string", "null"] },
+          "locale": { "type": ["string", "null"] },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "status": { "enum": ["candidate", "review", "rejected", "confirmed"] },
+          "reason": { "type": "string" },
+          "evidenceRefs": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority", "mayOverwriteFact"],
+      "properties": {
+        "authority": { "const": "advisory" },
+        "mayOverwriteFact": { "const": false }
+      }
+    },
+    "extensions": { "type": "object" }
+  }
+}
