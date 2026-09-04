@@ -11086,9 +11086,9 @@
     "geoHierarchyCorrections": 1,
     "groupedEntityCoreCodes": 24,
     "groupedRegionCoreCodes": 2,
-    "localizedAliases": 68,
+    "localizedAliases": 72,
     "localizedNames": 25,
-    "pendingLocalizedAliases": 60,
+    "pendingLocalizedAliases": 64,
     "processes": 25,
     "regions": 247,
     "relations": 1105,
@@ -18996,6 +18996,38 @@
       "nameType": "ai_transliterated",
       "reviewStatus": "pending_market_verification",
       "targetCode": "VA-CAS"
+    },
+    {
+      "alias": "ピンクブルボン",
+      "confidence": 0.8,
+      "language": "ja",
+      "nameType": "ai_transliterated",
+      "reviewStatus": "pending_market_verification",
+      "targetCode": "VA-PB"
+    },
+    {
+      "alias": "핑크 버번",
+      "confidence": 0.8,
+      "language": "ko",
+      "nameType": "ai_transliterated",
+      "reviewStatus": "pending_market_verification",
+      "targetCode": "VA-PB"
+    },
+    {
+      "alias": "シドラ",
+      "confidence": 0.75,
+      "language": "ja",
+      "nameType": "ai_transliterated",
+      "reviewStatus": "pending_market_verification",
+      "targetCode": "VA-SID"
+    },
+    {
+      "alias": "시드라",
+      "confidence": 0.75,
+      "language": "ko",
+      "nameType": "ai_transliterated",
+      "reviewStatus": "pending_market_verification",
+      "targetCode": "VA-SID"
     },
     {
       "alias": "ナチュラル",
