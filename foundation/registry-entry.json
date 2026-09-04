@@ -1,0 +1,10 @@
+{
+  "provider": "brewion",
+  "type": "foundation",
+  "contract": "coffee-foundation/1.0",
+  "manifestUrl": "https://raw.githubusercontent.com/zjcrop/BrewIon/main/foundation/foundation-manifest.json",
+  "required": true,
+  "updatePolicy": "background-check-stage-verify-atomic-activate",
+  "failurePolicy": "retain-last-known-good",
+  "integrityPolicy": "verify-contract-major-and-sha256-before-activation"
+}
