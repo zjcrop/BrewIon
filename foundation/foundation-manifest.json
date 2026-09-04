@@ -1,0 +1,60 @@
+{
+  "_format": "coffee-foundation-manifest",
+  "_schemaVersion": 1,
+  "provider": "brewion",
+  "contract": "coffee-foundation/1.0",
+  "status": "stable",
+  "authority": {
+    "repository": "zjcrop/BrewIon",
+    "ref": "main",
+    "manifest": "foundation/foundation-manifest.json"
+  },
+  "contracts": {
+    "recognitionDocument": {
+      "contract": "recognition-document/1.1",
+      "schema": "schemas/recognition-document-v1.1.schema.json"
+    },
+    "canonicalCoffeeRecord": {
+      "contract": "coffee-canonical-record/1.0",
+      "schema": "schemas/coffee-canonical-record-v1.schema.json"
+    },
+    "aiEnrichmentResult": {
+      "contract": "ai-enrichment-result/1.0",
+      "schema": "schemas/ai-enrichment-result-v1.schema.json"
+    },
+    "codebookProvider": {
+      "contract": "coffee-codebook/1.0",
+      "manifest": "../provider/releases/latest.json",
+      "registry": "../provider/registry-entry.json"
+    },
+    "coffeeKnowledge": {
+      "contract": "coffee-knowledge/1.0",
+      "manifest": "../coffee-knowledge/releases/latest.json"
+    }
+  },
+  "locales": {
+    "preferred": ["zh-Hans", "en"],
+    "supported": ["zh-Hans", "zh-Hant", "en", "ja", "ko"]
+  },
+  "policies": {
+    "stableId": "immutable",
+    "indexedTables": "append-only",
+    "existingMetadataCorrection": "corrections-only",
+    "recognitionEvidence": "preserve-source-and-confidence",
+    "lowConfidence": "review-only",
+    "conflict": "review-only",
+    "aiAuthority": "advisory-only-never-overwrite-fact",
+    "localization": "candidate-may-extend-never-replace-official-name",
+    "artifactIntegrity": "sha256-required",
+    "activation": "stage-verify-atomic-activate",
+    "failure": "retain-last-known-good",
+    "consumerCompatibility": "contract-major-must-match"
+  },
+  "consumerRules": {
+    "applicationToApplicationDependencyForbidden": true,
+    "platformOcrAdaptersAllowed": true,
+    "platformAdaptersMustEmitRecognitionDocument": true,
+    "unknownValuesMustRemainUnknown": true,
+    "modelPredictionMustNotMasqueradeAsHumanObservation": true
+  }
+}
