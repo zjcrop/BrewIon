@@ -1,7 +1,7 @@
 # Coffee Foundation 基座实施状态
 
 更新时间：2026-09-04  
-当前稳定发布：`coffee-foundation-1.0.3`；开发目标：`coffee-foundation-1.0.4`
+当前稳定发布：`coffee-foundation-1.0.4`
 合同主版本：`coffee-foundation/1.0`
 
 ## 已完成
