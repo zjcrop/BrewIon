@@ -8,7 +8,7 @@
     "repository": "zjcrop/BrewIon",
     "refPolicy": "immutable-commit",
     "manifest": "foundation/foundation-manifest.json",
-    "releaseManifest": "foundation/releases/coffee-foundation-1.0.3.json"
+    "releaseManifest": "foundation/releases/coffee-foundation-1.0.4.json"
   },
   "contracts": {
     "recognitionDocument": {
@@ -50,6 +50,10 @@
     "migrationResult": {
       "contract": "coffee-migration-result/1.0",
       "schema": "schemas/migration-result-v1.schema.json"
+    },
+    "defectDictionary": {
+      "contract": "coffee-defect-dictionary/1.0",
+      "artifact": "dictionaries/defect-dictionary-v1.json"
     },
     "codebookProvider": {
       "contract": "coffee-codebook/1.0",
@@ -106,6 +110,8 @@
     "entry": "runtime/index.mjs",
     "normalization": "coffee-normalization/1.0",
     "dateParsing": "coffee-date-decision/1.0",
+    "aiAdapter": "ai-enrichment-result/1.0",
+    "defectDictionary": "coffee-defect-dictionary/1.0",
     "activation": "stage-verify-atomic-activate",
     "dependencies": []
   }
