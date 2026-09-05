@@ -105,6 +105,14 @@ for (const field of ['rawValue', 'normalizedValue', 'detectedLabel', 'status', '
 }
 assert.ok(exists('foundation/runtime/date-parser.mjs'), 'date parser runtime missing');
 assert.ok(exists('foundation/DATE_COMPATIBILITY.md'), 'date compatibility specification missing');
+assert.ok(exists('foundation/runtime/ai-adapter.mjs'), 'AI adapter runtime missing');
+const defectDictionary = readJson('foundation/dictionaries/defect-dictionary-v1.json');
+assert.equal(defectDictionary.schemaVersion, 'coffee-defect-dictionary/1.0');
+assert.ok(defectDictionary.items.length >= 9, 'defect dictionary coverage regressed');
+assert.equal(new Set(defectDictionary.items.map((item) => item.id)).size, defectDictionary.items.length, 'duplicate defect id');
+for (const item of defectDictionary.items) {
+  assert.ok(item.names?.['zh-Hans'] && item.names?.en, `defect ${item.id} lacks bilingual canonical names`);
+}
 
 const ai = readJson('foundation/schemas/ai-enrichment-result-v1.schema.json');
 assert.equal(ai.properties?.schemaVersion?.const, 'ai-enrichment-result/1.0');

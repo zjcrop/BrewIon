@@ -32,6 +32,8 @@ const files = [
   'foundation/runtime/contract-adapter.mjs',
   'foundation/runtime/artifact-activation.mjs',
   'foundation/runtime/sync-revision.mjs',
+  'foundation/runtime/ai-adapter.mjs',
+  'foundation/dictionaries/defect-dictionary-v1.json',
   'foundation/AI_POLICY.md',
   'foundation/DATE_COMPATIBILITY.md',
   'provider/releases/latest.json',

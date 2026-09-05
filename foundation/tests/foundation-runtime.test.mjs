@@ -8,6 +8,7 @@ import {
   assertCompatibleContract,
   buildRecognitionBook,
   compareSyncRevision,
+  createZhipuAiAdapter,
   createCoffeeArchive,
   createAtomicFoundationActivator,
   createNormalizationAdapter,
@@ -247,4 +248,28 @@ test('archive verification detects record mutation before import', async () => {
   assert.deepEqual(await verifyCoffeeArchive(archive, { supportedContractMajors: { 'coffee-canonical-record': 1 } }), { ok: true, recordCount: 1 });
   archive.records[0].record.label = 'mutated';
   await assert.rejects(() => verifyCoffeeArchive(archive), /hash mismatch/);
+});
+
+test('AI adapter requires two samples and validates the returned schema', async () => {
+  const skipped = await createZhipuAiAdapter({ apiKey: 'test', fetchImpl: async () => { throw new Error('must not call'); } }).enrichCoffeeBatch(['one']);
+  assert.deepEqual(skipped, { ok: false, skipped: true, reason: 'minimum-two-samples' });
+  const adapter = createZhipuAiAdapter({
+    apiKey: 'test',
+    fetchImpl: async (_url, request) => {
+      const payload = JSON.parse(request.body);
+      const match = payload.messages[1].content.match(/inputFingerprint 必须原样返回：([a-f0-9]{64})/);
+      return { ok: true, async json() { return { choices: [{ message: { content: JSON.stringify({
+        schemaVersion: 'ai-enrichment-result/1.0', task: 'normalize', engine: 'zhipu', model: 'glm-4-flash',
+        createdAt: '2026-09-04T00:00:00.000Z', inputFingerprint: match[1],
+        candidates: [{ field: 'country', value: 'Ethiopia', canonicalId: null, locale: 'en', confidence: 0.91, status: 'candidate', evidenceRefs: ['sample:1'] }],
+        policy: { authority: 'advisory', mayOverwriteFact: false }
+      }) } }] }; } };
+    }
+  });
+  const accepted = await adapter.enrichCoffeeBatch(['Ethiopia Gesha', 'Kenya SL28']);
+  assert.equal(accepted.ok, true);
+  assert.equal(accepted.result.candidates[0].evidenceRefs[0], 'sample:1');
+
+  const invalid = createZhipuAiAdapter({ apiKey: 'test', fetchImpl: async () => ({ ok: true, async json() { return { choices: [{ message: { content: '{"schemaVersion":"wrong"}' } }] }; } }) });
+  assert.equal((await invalid.enrichCoffeeBatch(['a', 'b'])).reason, 'schema-invalid');
 });

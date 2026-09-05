@@ -1,7 +1,7 @@
 # Coffee Foundation 基座实施状态
 
 更新时间：2026-09-04  
-当前稳定发布：`coffee-foundation-1.0.3`
+当前稳定发布：`coffee-foundation-1.0.3`；开发目标：`coffee-foundation-1.0.4`
 合同主版本：`coffee-foundation/1.0`
 
 ## 已完成
@@ -15,6 +15,8 @@
 - 归档安全：逐记录哈希、未知主版本拒绝、校验失败不允许部分写入。
 - 发布安全：生产 registry 锁定 40 位 commit 上的版本化清单；制品 URL 全部锁定不可变 commit；`main/latest` 仅作更新发现。
 - 成本与 AI：基座零第三方运行时依赖、默认现金成本为 0；AI 完全可选，只能给出候选。
+- 智谱 Adapter：批量阈值、超时/离线降级、输入指纹和 `ai-enrichment-result/1.0` 严格校验已进入基座运行时。
+- 缺陷字典：中英规范名与日韩兼容名集中维护，消费者只保存稳定 defect id。
 - CI：Foundation 合同、真实 v6 行号、知识包、运行时行为和不可变制品均纳入自动门禁。
 
 ## 当前验证结果

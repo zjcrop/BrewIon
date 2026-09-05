@@ -4,3 +4,4 @@ export * from './recognition-book.mjs';
 export * from './artifact-activation.mjs';
 export * from './contract-adapter.mjs';
 export * from './sync-revision.mjs';
+export * from './ai-adapter.mjs';
