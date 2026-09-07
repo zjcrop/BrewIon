@@ -22,7 +22,7 @@
       "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/19ffa6c8107364a2d3fbb72c6286ca05a2b0b58a/foundation/schemas/coffee-canonical-record-v1.schema.json",
       "mediaType": "application/json",
       "bytes": 2775,
-      "sha256": "912142af89e50655be8019bef593f64190317bb3c28022876808e71d18da6802"
+      "sha256": "912142af89e50655be4809bef593f64190317bb3c28022876808e71d18da6802"
     },
     {
       "kind": "foundation/schemas/coffee-date-decision-v1.schema.json",
