@@ -8,7 +8,7 @@
     "repository": "zjcrop/BrewIon",
     "refPolicy": "immutable-commit",
     "manifest": "foundation/foundation-manifest.json",
-    "releaseManifest": "foundation/releases/coffee-foundation-1.0.4.json"
+    "releaseManifest": "foundation/releases/coffee-foundation-1.0.5.json"
   },
   "contracts": {
     "recognitionDocument": {
@@ -26,6 +26,10 @@
     "aiEnrichmentResult": {
       "contract": "ai-enrichment-result/1.0",
       "schema": "schemas/ai-enrichment-result-v1.schema.json"
+    },
+    "aiPageStructureResult": {
+      "contract": "ai-page-structure-result/1.0",
+      "schema": "schemas/ai-page-structure-result-v1.schema.json"
     },
     "recognitionBook": {
       "contract": "recognition-book/1.0",
@@ -82,6 +86,7 @@
     "lowConfidence": "review-only",
     "conflict": "review-only",
     "aiAuthority": "advisory-only-never-overwrite-fact",
+    "aiPageStructure": "evidence-bound-advisory-no-invention",
     "localization": "candidate-may-extend-never-replace-official-name",
     "artifactIntegrity": "sha256-required",
     "activation": "stage-verify-atomic-activate",
@@ -111,6 +116,7 @@
     "normalization": "coffee-normalization/1.0",
     "dateParsing": "coffee-date-decision/1.0",
     "aiAdapter": "ai-enrichment-result/1.0",
+    "aiPageStructure": "ai-page-structure-result/1.0",
     "defectDictionary": "coffee-defect-dictionary/1.0",
     "activation": "stage-verify-atomic-activate",
     "dependencies": []
