@@ -32,6 +32,7 @@ assert.equal(manifest.policies?.missingDateYear, 'review-only');
 assert.equal(manifest.policies?.dateLabelMismatch, 'review-only');
 assert.equal(manifest.policies?.nonGregorianDate, 'explicit-calendar-no-silent-conversion');
 assert.equal(manifest.policies?.aiAuthority, 'advisory-only-never-overwrite-fact');
+assert.equal(manifest.policies?.aiPageStructure, 'evidence-bound-advisory-no-invention');
 assert.equal(manifest.policies?.artifactIntegrity, 'sha256-required');
 assert.equal(manifest.policies?.failure, 'retain-last-known-good');
 assert.equal(manifest.policies?.migration, 'unknown-major-reject-no-partial-write');
@@ -59,6 +60,7 @@ const schemaContracts = [
   ['canonicalCoffeeRecord', 'coffee-canonical-record/1.0'],
   ['dateDecision', 'coffee-date-decision/1.0'],
   ['aiEnrichmentResult', 'ai-enrichment-result/1.0'],
+  ['aiPageStructureResult', 'ai-page-structure-result/1.0'],
   ['recognitionBook', 'recognition-book/1.0'],
   ['fieldDecision', 'coffee-field-decision/1.0'],
   ['foundationCandidate', 'coffee-foundation-candidate/1.0'],
@@ -119,6 +121,14 @@ assert.equal(ai.properties?.schemaVersion?.const, 'ai-enrichment-result/1.0');
 assert.equal(ai.properties?.policy?.properties?.authority?.const, 'advisory');
 assert.equal(ai.properties?.policy?.properties?.mayOverwriteFact?.const, false);
 
+const pageStructure = readJson('foundation/schemas/ai-page-structure-result-v1.schema.json');
+assert.equal(pageStructure.properties?.schemaVersion?.const, 'ai-page-structure-result/1.0');
+assert.equal(pageStructure.properties?.task?.const, 'structure-page');
+assert.equal(pageStructure.properties?.policy?.properties?.authority?.const, 'advisory');
+assert.equal(pageStructure.properties?.policy?.properties?.mayInventFact?.const, false);
+assert.equal(pageStructure.properties?.policy?.properties?.mayOverwriteFact?.const, false);
+assert.equal(pageStructure.additionalProperties, false);
+
 const recognitionBook = readJson('foundation/schemas/recognition-book-v1.schema.json');
 assert.equal(recognitionBook.properties?.schemaVersion?.const, 'recognition-book/1.0');
 const fieldDecision = readJson('foundation/schemas/coffee-field-decision-v1.schema.json');
@@ -164,7 +174,7 @@ assert.deepEqual(latestRelease, release, 'latest discovery pointer differs from 
 assert.equal(release.schemaVersion, 'coffee-foundation-candidate/1.0');
 assert.equal(release.contract, manifest.contract);
 assert.equal(release.releaseId, registry.releaseId);
-assert.ok(release.artifacts.length >= 25, 'foundation release is missing required artifacts');
+assert.ok(release.artifacts.length >= 26, 'foundation release is missing required artifacts');
 for (const item of release.artifacts) {
   assert.match(item.url, /^https:\/\/raw\.githubusercontent\.com\/zjcrop\/BrewIon\/[a-f0-9]{40}\//, `artifact is not immutable: ${item.kind}`);
   assert.doesNotMatch(item.url, /\/(?:main|latest)\//, `artifact follows mutable branch: ${item.kind}`);
@@ -181,6 +191,7 @@ console.log(JSON.stringify({
   canonical: contracts.canonicalCoffeeRecord.contract,
   dateDecision: contracts.dateDecision.contract,
   ai: contracts.aiEnrichmentResult.contract,
+  aiPageStructure: contracts.aiPageStructureResult.contract,
   recognitionBook: contracts.recognitionBook.contract,
   fieldDecision: contracts.fieldDecision.contract,
   syncRevision: contracts.syncRevision.contract,
