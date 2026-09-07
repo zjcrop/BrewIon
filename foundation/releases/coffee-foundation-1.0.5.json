@@ -57,7 +57,7 @@
       "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/19ffa6c8107364a2d3fbb72c6286ca05a2b0b58a/foundation/schemas/coffee-field-decision-v1.schema.json",
       "mediaType": "application/json",
       "bytes": 1766,
-      "sha256": "f6e28805c0ec01689a881374528d19ca65a178ebbdf4fe3820bfd6f9e7dc6001"
+      "sha256": "f6e28805b0ec01689a881374528d19ca65a178ebbdf4fe3820bfd6f9e7dc6001"
     },
     {
       "kind": "foundation/schemas/foundation-candidate-v1.schema.json",
