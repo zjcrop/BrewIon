@@ -19,6 +19,7 @@ const files = [
   'foundation/schemas/coffee-canonical-record-v1.schema.json',
   'foundation/schemas/coffee-date-decision-v1.schema.json',
   'foundation/schemas/ai-enrichment-result-v1.schema.json',
+  'foundation/schemas/ai-page-structure-result-v1.schema.json',
   'foundation/schemas/recognition-book-v1.schema.json',
   'foundation/schemas/coffee-field-decision-v1.schema.json',
   'foundation/schemas/foundation-candidate-v1.schema.json',
