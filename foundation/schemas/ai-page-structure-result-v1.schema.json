@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ai-page-structure-result-v1.schema.json",
+  "title": "AI Page Structure Result 1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "task",
+    "engine",
+    "createdAt",
+    "inputFingerprint",
+    "samples",
+    "unassignedEvidence",
+    "policy"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "ai-page-structure-result/1.0" },
+    "task": { "const": "structure-page" },
+    "engine": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "model": { "type": ["string", "null"], "minLength": 1, "maxLength": 120 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "inputFingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "samples": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sampleRef", "confidence", "evidenceRefs", "fields"],
+        "properties": {
+          "sampleRef": { "type": "string", "pattern": "^sample:[1-9][0-9]*$" },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "evidenceRefs": { "$ref": "#/$defs/evidenceRefs" },
+          "fields": {
+            "type": "array",
+            "maxItems": 64,
+            "items": { "$ref": "#/$defs/field" }
+          },
+          "extras": {
+            "type": "array",
+            "maxItems": 24,
+            "items": { "$ref": "#/$defs/extra" }
+          }
+        }
+      }
+    },
+    "unassignedEvidence": { "$ref": "#/$defs/evidenceRefs" },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority", "mayInventFact", "mayOverwriteFact"],
+      "properties": {
+        "authority": { "const": "advisory" },
+        "mayInventFact": { "const": false },
+        "mayOverwriteFact": { "const": false }
+      }
+    }
+  },
+  "$defs": {
+    "evidenceRefs": {
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 250,
+      "items": { "type": "string", "minLength": 1, "maxLength": 128 }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "value", "confidence", "evidenceRefs"],
+      "properties": {
+        "field": {
+          "enum": [
+            "label", "country", "region", "entity", "farm", "station", "producer", "cooperative",
+            "variety", "species", "process", "lot", "grade", "roast", "roastDate", "harvest",
+            "altitude", "roaster", "weight", "flavorNotes"
+          ]
+        },
+        "value": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "evidenceRefs": { "$ref": "#/$defs/evidenceRefs" }
+      }
+    },
+    "extra": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "value", "confidence", "evidenceRefs"],
+      "properties": {
+        "field": { "enum": ["price", "brewCategory", "packageWeight", "menuCategory"] },
+        "value": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "evidenceRefs": { "$ref": "#/$defs/evidenceRefs" }
+      }
+    }
+  }
+}
