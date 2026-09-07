@@ -1,14 +1,14 @@
 {
   "schemaVersion": "coffee-foundation-candidate/1.0",
   "contract": "coffee-foundation/1.0",
-  "releaseId": "coffee-foundation-1.0.4",
+  "releaseId": "coffee-foundation-1.0.5",
   "artifacts": [
     {
       "kind": "foundation/foundation-manifest.json",
-      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/19ffa6c8107364a2d3fbb72c6286ca05a2b0b58a/foundation/foundation-manifest.json",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/9c1d0935bc0a793f42de7cc8dcbbbe1cc32de964/foundation/foundation-manifest.json",
       "mediaType": "application/json",
-      "bytes": 4314,
-      "sha256": "422db467bde15d2fb48080acd0ae14607582096ec204dfb882ca985dd00855d7"
+      "bytes": 4586,
+      "sha256": "3a314a92dc6fe5d3cabb5f88e09168be2e750588adc75cb4eb8488f0e949e06b"
     },
     {
       "kind": "foundation/schemas/recognition-document-v1.1.schema.json",
@@ -22,7 +22,7 @@
       "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/19ffa6c8107364a2d3fbb72c6286ca05a2b0b58a/foundation/schemas/coffee-canonical-record-v1.schema.json",
       "mediaType": "application/json",
       "bytes": 2775,
-      "sha256": "912142af89e50655be4809bef593f64190317bb3c28022876808e71d18da6802"
+      "sha256": "912142af89e50655be8019bef593f64190317bb3c28022876808e71d18da6802"
     },
     {
       "kind": "foundation/schemas/coffee-date-decision-v1.schema.json",
@@ -39,6 +39,13 @@
       "sha256": "002dfdb3ce29b9110711a3468b5223dea5b0ae354f0998bdd2bcef6e546f4343"
     },
     {
+      "kind": "foundation/schemas/ai-page-structure-result-v1.schema.json",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/9c1d0935bc0a793f42de7cc8dcbbbe1cc32de964/foundation/schemas/ai-page-structure-result-v1.schema.json",
+      "mediaType": "application/json",
+      "bytes": 3324,
+      "sha256": "9377573551ca4509eb2c1dc37ae8cc239ac77cb31481aa3dc482635846691593"
+    },
+    {
       "kind": "foundation/schemas/recognition-book-v1.schema.json",
       "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/19ffa6c8107364a2d3fbb72c6286ca05a2b0b58a/foundation/schemas/recognition-book-v1.schema.json",
       "mediaType": "application/json",
@@ -50,7 +57,7 @@
       "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/19ffa6c8107364a2d3fbb72c6286ca05a2b0b58a/foundation/schemas/coffee-field-decision-v1.schema.json",
       "mediaType": "application/json",
       "bytes": 1766,
-      "sha256": "f6e28805b0ec01689a881374528d19ca65a178ebbdf4fe3820bfd6f9e7dc6001"
+      "sha256": "f6e28805c0ec01689a881374528d19ca65a178ebbdf4fe3820bfd6f9e7dc6001"
     },
     {
       "kind": "foundation/schemas/foundation-candidate-v1.schema.json",
@@ -131,10 +138,10 @@
     },
     {
       "kind": "foundation/runtime/ai-adapter.mjs",
-      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/19ffa6c8107364a2d3fbb72c6286ca05a2b0b58a/foundation/runtime/ai-adapter.mjs",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/9c1d0935bc0a793f42de7cc8dcbbbe1cc32de964/foundation/runtime/ai-adapter.mjs",
       "mediaType": "text/javascript",
-      "bytes": 6713,
-      "sha256": "d74e00ab2add2316805c0cedef5053691a020d61e8cf26209f8d94efe0b9f463"
+      "bytes": 18300,
+      "sha256": "1b6be42360c362dd8d033d0e8bb4e0e4475f06dacf7be59ce34db9a77676830c"
     },
     {
       "kind": "foundation/dictionaries/defect-dictionary-v1.json",
@@ -145,10 +152,10 @@
     },
     {
       "kind": "foundation/AI_POLICY.md",
-      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/19ffa6c8107364a2d3fbb72c6286ca05a2b0b58a/foundation/AI_POLICY.md",
+      "url": "https://raw.githubusercontent.com/zjcrop/BrewIon/9c1d0935bc0a793f42de7cc8dcbbbe1cc32de964/foundation/AI_POLICY.md",
       "mediaType": "text/markdown",
-      "bytes": 1178,
-      "sha256": "d3b85ed8566cfac2ddccf6e3ce882166e814486965b6ca88603c796670e32445"
+      "bytes": 1657,
+      "sha256": "c6cb83676ec292a6a7ef9c5f050c8144dc8bb7ae5b71713b46240f201caf0a98"
     },
     {
       "kind": "foundation/DATE_COMPATIBILITY.md",
